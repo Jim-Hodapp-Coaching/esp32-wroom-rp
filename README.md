@@ -11,6 +11,6 @@ To get involved, please [request to join the community here on GitHub](https://r
 
 ## Project Team
 
-* Architect: [Caleb Bourg]([url](https://github.com/calebbourg)
-* Rust Developer: [Glyn Matthews]([url](https://github.com/glynos)
-* Project Oversight: [Jim Hodapp]([url](https://github.com/jhodapp)
+* Architect: [Caleb Bourg](https://github.com/calebbourg)
+* Rust Developer: [Glyn Matthews](https://github.com/glynos)
+* Project Oversight: [Jim Hodapp](https://github.com/jhodapp)
