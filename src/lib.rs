@@ -7,30 +7,68 @@
 //! NOTE This crate is still under active development. This API will remain volatile until 1.0.0
 
 
-struct Wifi<C, I> {
+pub struct Wifi<C, I> {
   command_handler: C,
+}
+
+pub struct FirmwareVersion {
+    major: u8,
+    minor: u8,
+    patch: u8
+}
+
+impl FirmwareVersion {
+    fn new(version: [u8]) -> FirmwareVersion {
+        self.parse(version)
+    }
+
+    // Takes in 5 bytes (e.g. 1.7.4) and returns a FirmwareVersion instance
+    fn parse(version: [u8) -> FirmwareVersion {
+        // TODO: real implementation
+        FirmwareVersion {
+            major: 1,
+            minor: 7,
+            patch: 4
+        }
+    }
 }
 
 impl<C, I> Wifi<C, I> {
     fn connect() -> Result<T> (
-        command_handler.start_client_tcp()
+        self.command_handler.start_client_tcp()
     );
+
+    fn get_firmware_version() -> Result<FirmwareVersion, Error> {
+      self.command_handler.get_fw_version()
+    }
 }
 
-struct NinaCommandHandler<I> {
-    pins: 
-    io_handler: I
-}
-
-impl NinaCommandHandler for Spi {
+impl NinaCommandHandler for SpiCommandHandler {
+    
     fn start_client_tcp (
-        self.io_interface.send_cmd(START_CLIENT_TCP, [ip, port])
+        // TODO: implement a trait interface and set of structs for different parameter sets, e.g. SocketType
+        self.io_interface.send_commmad(START_CLIENT_TCP, [ip, port])
+    )
+
+    fn get_fw_version -> Result<FirmwareVersion, Error> (
+      self.io_interface.send_command(GET_FW_VERSION, [])
     )
 }
 
 trait NinaCommandHandler {
-  fn send_cmd(&self) -> (
-  );
+  const START_CLIENT_TCP: u8 = 0x2du8;
+  const GET_FW_VERSION: u8 = 0x37u8;
+
+  type Error;
+
+  fn start_client_tcp(&self) -> Result<FirmwareVersion, Error>;
+
+  fn get_fw_version(&self) -> Result<FirmwareVersion, Error>;
+}
+
+struct SpiCommandHandler<I> {
+    pins: 
+    io_interface: I
 }
 
 // struct I2C {}
@@ -40,9 +78,9 @@ trait NinaCommandHandler {
 // }
 
 trait IoHandler {
-  fn send_cmd (
+  fn send_command (
     //   wait_for_esp_select()
-  ) 
+  ) ;
 }
 
 
@@ -53,3 +91,12 @@ trait IoHandler {
 //     }
 // }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+
+    fn firmware_parse_returns_a_populated_firmware_struct() {
+        
+    } 
+}
