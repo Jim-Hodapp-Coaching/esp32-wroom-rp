@@ -7,15 +7,10 @@
 //! NOTE This crate is still under active development. This API will remain volatile until 1.0.0
 
 
-// This is just a placeholder for now. We will need to implement a socket struct or
-// use an existing crate
-type Socket = [u8; 1];
+// This is just a placeholder for now. 
+type Params = [u8; 5];
 
-// TODO: Find a way to share these between NinaCommandHandlers
-const START_CLIENT_TCP: u8 = 0x2du8;
-const GET_FW_VERSION: u8 = 0x37u8;
-
-pub struct Wifi<C: NinaCommandHandler<I>> {
+pub struct Wifi<C: NinaCommandHandler> {
   command_handler: C,
 }
 
@@ -41,7 +36,7 @@ impl FirmwareVersion {
     }
 }
 
-impl<I: IoInterface, C: NinaCommandHandler<I>> Wifi<I, C> {
+impl<C: NinaCommandHandler> Wifi<C> {
     // fn connect(&self) -> Result<T> {
     //     self.command_handler.start_client_tcp()
     // }
@@ -51,39 +46,38 @@ impl<I: IoInterface, C: NinaCommandHandler<I>> Wifi<I, C> {
     }
 }
 
-impl SpiCommandHandler<I> {
+impl<I: IoInterface> SpiCommandHandler<I> {
     fn send_command(command: u8, parameters: [u8; 5]) -> Result<FirmwareVersion, Error> {
         Ok(FirmwareVersion::new([1,0,7,0,4]))
       }
 }
 
-impl<I> NinaCommandHandler<I> for SpiCommandHandler<I> {
+impl<I: IoInterface> NinaCommandHandler for SpiCommandHandler<I> {
 
-    type Error = dyn std::error::Error;
+    const START_CLIENT_TCP: u8 = 0x2du8;
+    const GET_FW_VERSION: u8 = 0x37u8;
 
-    fn start_client_tcp(&self, socket: Socket) -> Result<FirmwareVersion, Error> {
+    fn start_client_tcp(&self, params: Params) -> Result<FirmwareVersion, Error> {
         // TODO: implement a trait interface and set of structs for different parameter sets, e.g. SocketType
-        SpiCommandHandler::send_command(START_CLIENT_TCP, [socket])
+        SpiCommandHandler::send_command(self::START_CLIENT_TCP, params)
     }
 
     fn get_fw_version(&self) -> Result<FirmwareVersion, Error> {
-        SpiCommandHandler::send_command(GET_FW_VERSION, [])
+        SpiCommandHandler::send_command(GET_FW_VERSION, [0; 5])
     }
-}
-
-trait NinaCommandHandler<I> {
-  const START_CLIENT_TCP: u8;
-  const GET_FW_VERSION: u8;
-
-  type Error;
-
-  fn start_client_tcp(&self) -> Result<FirmwareVersion, Error>;
-
-  fn get_fw_version(&self) -> Result<FirmwareVersion, Error>;
 }
 
 struct SpiCommandHandler<I: IoInterface> {
     io_interface: I
+}
+
+trait NinaCommandHandler {
+  const START_CLIENT_TCP: u8;
+  const GET_FW_VERSION: u8;
+
+  fn start_client_tcp(&self, params: Params) -> Result<FirmwareVersion, Error>;
+
+  fn get_fw_version(&self) -> Result<FirmwareVersion, Error>;
 }
 
 trait IoInterface {
@@ -92,9 +86,9 @@ trait IoInterface {
 
   fn esp_deselect(&mut self);
 
-  fn get_esp_ready(&self);
+  fn get_esp_ready(&self) -> bool;
 
-  fn get_esp_ack(&self);
+  fn get_esp_ack(&self) -> bool;
 
   fn wait_for_esp_ready(&self);
 
@@ -105,25 +99,25 @@ trait IoInterface {
 }
 
 struct IoInterfaceImpl {
-  esp32_pins: Esp32Pins
+  esp_pins: EspPins
 }
 
 impl IoInterface for IoInterfaceImpl {
     // TODO: add error handling
     fn esp_select(&mut self) {
-        self.esp32_pins.cs.set_low().unwrap();
+        self.esp_pins.cs.set_low().unwrap();
     }
 
     fn esp_deselect(&mut self) {
-        self.esp32_pins.cs.set_high().unwrap();
+        self.esp_pins.cs.set_high().unwrap();
     }
 
     fn get_esp_ready(&self) -> bool {
-        self.esp32_pins.ack.is_low().unwrap()
+        self.esp_pins.ack.is_low().unwrap()
     }
 
     fn get_esp_ack(&self) -> bool {
-        self.esp32_pins.ack.is_high().unwrap()
+        self.esp_pins.ack.is_high().unwrap()
     }
 
     fn wait_for_esp_ready(&self) {
@@ -146,7 +140,7 @@ impl IoInterface for IoInterfaceImpl {
 
 }
 
-struct Esp32Pins {
+struct EspPins {
     cs: Pin<Gpio7, hal::gpio::PushPullOutput>,
     gpio0: Pin<Gpio2, hal::gpio::PushPullOutput>,
     resetn: Pin<Gpio11, hal::gpio::PushPullOutput>,
