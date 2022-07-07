@@ -48,7 +48,7 @@ impl<C: NinaCommandHandler> Wifi<C> {
 
 impl<I: IoInterface> SpiCommandHandler<I> {
     fn send_command(command: u8, parameters: [u8; 5]) -> Result<FirmwareVersion, Error> {
-        Ok(FirmwareVersion::new([1,0,7,0,4]))
+        Ok(FirmwareVersion::new([0x31,0x2e,0x37,0x2e,0x34])) // 1.7.4
       }
 }
 
