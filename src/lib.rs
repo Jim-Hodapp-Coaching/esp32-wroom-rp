@@ -9,6 +9,12 @@
 #![no_std]
 #![no_main]
 
+use rp2040_hal as hal;
+
+use rp2040_hal::gpio::bank0::{Gpio2, Gpio7, Gpio10, Gpio11};
+use rp2040_hal::gpio::Pin;
+use embedded_hal::digital::blocking::InputPin;
+use embedded_hal::digital::blocking::OutputPin;
 
 // This is just a placeholder for now. 
 type Params = [u8; 5];
@@ -41,7 +47,7 @@ pub struct FirmwareVersion {
 
 impl FirmwareVersion {
     fn new(version: [u8; 5]) -> FirmwareVersion {
-        FirmwareVersion::parse(version)
+        Self::parse(version)
     }
 
     // Takes in 5 bytes (e.g. 1.7.4) and returns a FirmwareVersion instance
