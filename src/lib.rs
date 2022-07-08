@@ -6,6 +6,9 @@
 //! 
 //! NOTE This crate is still under active development. This API will remain volatile until 1.0.0
 
+#![no_std]
+#![no_main]
+
 
 // This is just a placeholder for now. 
 type Params = [u8; 5];
@@ -17,6 +20,14 @@ enum NinaCommand {
   GetFirmwareVersion = 0x37u8
 
 }
+
+#[derive(Debug)]
+pub enum Error {
+    // Placeholder variants
+    Bus,
+    TimeOut
+}
+
 
 pub struct Wifi<C: NinaCommandHandler> {
   command_handler: C,
@@ -45,8 +56,8 @@ impl FirmwareVersion {
 }
 
 impl<C: NinaCommandHandler> Wifi<C> {
-    // fn connect(&self) -> Result<T> {
-    //     self.command_handler.start_client_tcp()
+    // fn connect(&self, params: Params) -> Result<T, E> {
+    //     self.command_handler.start_client_tcp(params: Params)
     // }
 
     fn get_firmware_version(&self) -> Result<FirmwareVersion, Error> {
@@ -55,7 +66,7 @@ impl<C: NinaCommandHandler> Wifi<C> {
 }
 
 impl<I: IoInterface> SpiCommandHandler<I> {
-    fn send_command(command: NinaCommand, parameters: [u8; 5]) -> Result<FirmwareVersion, Error> {
+    fn send_command(&self, command: NinaCommand, parameters: [u8; 5]) -> Result<FirmwareVersion, Error> {
         Ok(FirmwareVersion::new([0x31,0x2e,0x37,0x2e,0x34])) // 1.7.4
       }
 }
@@ -63,12 +74,11 @@ impl<I: IoInterface> SpiCommandHandler<I> {
 impl<I: IoInterface> NinaCommandHandler for SpiCommandHandler<I> {
 
     fn start_client_tcp(&self, params: Params) -> Result<FirmwareVersion, Error> {
-        // TODO: implement a trait interface and set of structs for different parameter sets, e.g. SocketType
-        SpiCommandHandler::send_command(NinaCommand::StartClientTcp, params)
+        self.send_command(NinaCommand::StartClientTcp, params)
     }
 
     fn get_fw_version(&self) -> Result<FirmwareVersion, Error> {
-        SpiCommandHandler::send_command(NinaCommand::GetFirmwareVersion, [0; 5])
+        self.send_command(NinaCommand::GetFirmwareVersion, [0; 5])
     }
 }
 
