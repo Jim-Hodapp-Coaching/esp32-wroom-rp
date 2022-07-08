@@ -9,6 +9,8 @@
 #![no_std]
 #![no_main]
 
+pub mod spi;
+
 use rp2040_hal as hal;
 
 use rp2040_hal::gpio::bank0::{Gpio2, Gpio7, Gpio10, Gpio11};
@@ -34,9 +36,24 @@ pub enum Error {
     TimeOut
 }
 
+// Wifi::new();
+// Wifi::init();
+// Wifi::get_firmware_version();
+pub struct Wifi<C> {
+  common: C,
+}
 
-pub struct Wifi<C: NinaCommandHandler> {
-  command_handler: C,
+struct WifiCommon<N> {
+    command_handler: N
+}
+
+impl<N> WifiCommon<N>
+where
+    N: NinaCommandHandler,
+{
+  fn get_firmware_version() -> Result<FirmwareVersion, Error> {
+    self.command_handler.get_firmware_version
+  }
 }
 
 pub struct FirmwareVersion {
@@ -61,35 +78,18 @@ impl FirmwareVersion {
     }
 }
 
-impl<C: NinaCommandHandler> Wifi<C> {
+impl<C> Wifi<C> {
+    fn new() {}
+    fn init() {}
+    // fn init_with_config(config: Configuration) {}
+
     // fn connect(&self, params: Params) -> Result<T, E> {
     //     self.command_handler.start_client_tcp(params: Params)
     // }
 
     fn get_firmware_version(&self) -> Result<FirmwareVersion, Error> {
-      self.command_handler.get_fw_version()
+      self.common.get_fw_version()
     }
-}
-
-impl<I: IoInterface> SpiCommandHandler<I> {
-    fn send_command(&self, command: NinaCommand, parameters: [u8; 5]) -> Result<FirmwareVersion, Error> {
-        Ok(FirmwareVersion::new([0x31,0x2e,0x37,0x2e,0x34])) // 1.7.4
-      }
-}
-
-impl<I: IoInterface> NinaCommandHandler for SpiCommandHandler<I> {
-
-    fn start_client_tcp(&self, params: Params) -> Result<FirmwareVersion, Error> {
-        self.send_command(NinaCommand::StartClientTcp, params)
-    }
-
-    fn get_fw_version(&self) -> Result<FirmwareVersion, Error> {
-        self.send_command(NinaCommand::GetFirmwareVersion, [0; 5])
-    }
-}
-
-struct SpiCommandHandler<I: IoInterface> {
-    io_interface: I
 }
 
 trait NinaCommandHandler {
