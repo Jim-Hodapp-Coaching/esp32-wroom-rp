@@ -25,7 +25,7 @@ type Params = [u8; 5];
 #[derive(Debug)]
 enum NinaCommand {
     StartClientTcp = 0x2du8,
-    GetFirmwareVersion = 0x37u8,
+    GetFwVersion = 0x37u8,
 }
 
 #[derive(Debug)]
@@ -69,24 +69,21 @@ where
     fn init() {}
 
     fn configure() {}
+
+    fn get_firmware_version(&mut self) -> Result<FirmwareVersion, self::Error> {
+        self.interface.get_fw_version()
+    }
 }
 
 // NinaCommandHandler?
 trait Interface {
     type Error;
 
-    fn get_firmware_version(&self) -> Result<FirmwareVersion, self::Error>;
+    fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error>;
 
     // This will not return FirmwareVersion
     fn start_client_tcp(&self, params: Params) -> Result<FirmwareVersion, self::Error>;
 }
-
-// trait NinaCommandHandler {
-
-//   fn start_client_tcp(&self, params: Params) -> Result<FirmwareVersion, Error>;
-
-//   fn get_firmware_version(&self) -> Result<FirmwareVersion, Error>;
-// }
 
 struct EspPins {
     cs: Pin<Gpio7, hal::gpio::PushPullOutput>,
