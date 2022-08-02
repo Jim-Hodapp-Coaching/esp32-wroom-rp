@@ -32,7 +32,7 @@ impl IoInterface for IoInterfaceImpl {
     type Error = IOError;
     // TODO: add error handling
     fn esp_select(&mut self) {
-        self.esp_pins.cs.set_low();
+        self.esp_pins.cs.set_low().unwrap();
     }
 
     //   fn esp_deselect(&mut self) -> Result<(), Error<Self::Error>> {

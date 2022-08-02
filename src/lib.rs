@@ -35,6 +35,7 @@ pub enum Error {
     TimeOut,
 }
 
+#[derive(Debug, Default, PartialEq)]
 pub struct FirmwareVersion {
     major: u8,
     minor: u8,
@@ -48,11 +49,15 @@ impl FirmwareVersion {
 
     // Takes in 5 bytes (e.g. 1.7.4) and returns a FirmwareVersion instance
     fn parse(version: [u8; 5]) -> FirmwareVersion {
-        // TODO: real implementation
+        let major: u8;
+        let minor: u8;
+        let patch: u8;
+
+        [major, _, minor, _, patch] = version;
         FirmwareVersion {
-            major: 1,
-            minor: 7,
-            patch: 4,
+            major: major,
+            minor: minor,
+            patch: patch,
         }
     }
 }
@@ -66,23 +71,15 @@ impl<I> WifiCommon<I>
 where
     I: Interface,
 {
-    fn init() {}
-
-    fn configure() {}
-
     fn get_firmware_version(&mut self) -> Result<FirmwareVersion, self::Error> {
         self.interface.get_fw_version()
     }
 }
 
-// NinaCommandHandler?
 trait Interface {
     type Error;
 
     fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error>;
-
-    // This will not return FirmwareVersion
-    fn start_client_tcp(&self, params: Params) -> Result<FirmwareVersion, self::Error>;
 }
 
 struct EspPins {
@@ -97,5 +94,17 @@ mod tests {
     use super::*;
     #[test]
 
-    fn firmware_parse_returns_a_populated_firmware_struct() {}
+    fn firmware_new_returns_a_populated_firmware_struct() {
+        let firmware_version: FirmwareVersion =
+            FirmwareVersion::new([0x31, 0x2e, 0x37, 0x2e, 0x34]);
+
+        assert_eq!(
+            firmware_version,
+            FirmwareVersion {
+                major: 1,
+                minor: 7,
+                patch: 4
+            }
+        )
+    }
 }

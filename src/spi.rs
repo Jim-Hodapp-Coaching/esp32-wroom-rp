@@ -37,10 +37,6 @@ where
     fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error> {
         Ok(FirmwareVersion::new([0x31, 0x2e, 0x37, 0x2e, 0x34])) // 1.7.4
     }
-
-    fn start_client_tcp(&self, params: Params) -> Result<FirmwareVersion, self::Error> {
-        Ok(FirmwareVersion::new([0x31, 0x2e, 0x37, 0x2e, 0x34])) // 1.7.4
-    }
 }
 
 /// Error which occurred during an SPI transaction
