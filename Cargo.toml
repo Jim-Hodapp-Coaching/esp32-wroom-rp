@@ -16,6 +16,7 @@ description = "Rust-based Espressif ESP32-WROOM WiFi hardware abstraction layer 
 cortex-m = "0.7.5"
 cortex-m-rt = "0.7.1"
 embedded-hal = { version = "=1.0.0-alpha.7" }
+embedded-time = "0.12.0"
 
 rp2040-hal = { version = "0.5.0", features=["rt", "eh1_0_alpha"] }
 rp2040-boot2 = { version = "0.2" }

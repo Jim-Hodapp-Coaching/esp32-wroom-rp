@@ -6,6 +6,8 @@
 //!
 //! NOTE This crate is still under active development. This API will remain volatile until 1.0.0
 
+#![ allow( dead_code, unused_imports ) ]
+
 #![no_std]
 #![no_main]
 
@@ -82,7 +84,7 @@ trait Interface {
     fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error>;
 }
 
-struct EspPins {
+pub struct EspPins {
     cs: Pin<Gpio7, hal::gpio::PushPullOutput>,
     gpio0: Pin<Gpio2, hal::gpio::PushPullOutput>,
     resetn: Pin<Gpio11, hal::gpio::PushPullOutput>,

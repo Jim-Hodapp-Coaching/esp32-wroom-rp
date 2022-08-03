@@ -12,7 +12,7 @@ where
     SPI: Transfer<u8>,
     IO: IoInterface,
 {
-    fn init(spi: SPI, io: IO) -> Result<Wifi<SPI, IO>, Error> {
+    pub fn init(spi: SPI, io: IO) -> Result<Wifi<SPI, IO>, Error> {
         Ok(Wifi {
             common: WifiCommon {
                 interface: SPIInterface { spi: spi, io: io },

@@ -2,7 +2,7 @@ use super::EspPins;
 use embedded_hal::digital::blocking::{InputPin, OutputPin};
 
 #[derive(Clone, Copy, Debug)]
-enum IOError {
+pub enum IOError {
     Pin,
 }
 
@@ -24,7 +24,7 @@ pub trait IoInterface {
     fn wait_for_esp_select(&mut self);
 }
 
-struct IoInterfaceImpl {
+pub struct IoInterfaceImpl {
     esp_pins: EspPins,
 }
 
