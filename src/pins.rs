@@ -10,6 +10,7 @@ enum IOError {
 }
 
 pub trait ESP32ControlInterface {
+    // FIXME: not sure how to get around exposing the error type in a public trait
     //type Error;
 
     fn esp_select(&mut self);
@@ -27,14 +28,8 @@ pub trait ESP32ControlInterface {
     fn wait_for_esp_select(&mut self);
 }
 
-// struct EspControlPins {
-//     esp_pins: EspPins<Pin<Gpio7, hal::gpio::PushPullOutput>,
-//                       Pin<Gpio2, hal::gpio::PushPullOutput>,
-//                       Pin<Gpio11, hal::gpio::PushPullOutput>,
-//                       Pin<Gpio10, hal::gpio::FloatingInput>>
-// }
-
 impl ESP32ControlInterface for EspControlPins {
+    // FIXME: not sure how to get around exposing the error type in a public trait
     //type Error = IOError;
     // TODO: add error handling
     fn esp_select(&mut self) {
@@ -77,6 +72,7 @@ impl ESP32ControlInterface for EspControlPins {
     }
 }
 
+// TODO: Make cs, gpio0, resentn, ack all generic types, leaving the crate user to fill in the type
 pub struct EspControlPins {
     pub cs: Pin<Gpio7, hal::gpio::PushPullOutput>,
     pub gpio0: Pin<Gpio2, hal::gpio::PushPullOutput>,
