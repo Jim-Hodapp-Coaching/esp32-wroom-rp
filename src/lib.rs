@@ -11,14 +11,8 @@
 #![no_std]
 #![no_main]
 
-pub mod io_interface;
+pub mod pins;
 pub mod spi;
-
-use rp2040_hal as hal;
-
-use embedded_hal::digital::blocking::{InputPin, OutputPin};
-use rp2040_hal::gpio::bank0::{Gpio10, Gpio11, Gpio2, Gpio7};
-use rp2040_hal::gpio::Pin;
 
 // This is just a placeholder for now.
 type Params = [u8; 5];
@@ -73,22 +67,19 @@ impl<I> WifiCommon<I>
 where
     I: Interface,
 {
-    fn get_firmware_version(&mut self) -> Result<FirmwareVersion, self::Error> {
+    fn init() {}
+
+    fn configure() {}
+
+    fn firmware_version(&mut self) -> Result<FirmwareVersion, self::Error> {
         self.interface.get_fw_version()
     }
 }
 
 trait Interface {
-    type Error;
+    //type Error;
 
     fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error>;
-}
-
-pub struct EspPins {
-    cs: Pin<Gpio7, hal::gpio::PushPullOutput>,
-    gpio0: Pin<Gpio2, hal::gpio::PushPullOutput>,
-    resetn: Pin<Gpio11, hal::gpio::PushPullOutput>,
-    ack: Pin<Gpio10, hal::gpio::FloatingInput>,
 }
 
 #[cfg(test)]
