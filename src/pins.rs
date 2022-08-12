@@ -13,6 +13,8 @@ pub trait ESP32ControlInterface {
     // FIXME: not sure how to get around exposing the error type in a public trait
     //type Error;
 
+    fn init(&mut self);
+
     fn esp_select(&mut self);
 
     fn esp_deselect(&mut self);
@@ -31,6 +33,11 @@ pub trait ESP32ControlInterface {
 impl ESP32ControlInterface for EspControlPins {
     // FIXME: not sure how to get around exposing the error type in a public trait
     //type Error = IOError;
+
+    fn init(&mut self) {
+        // Chip select is active-low, so we'll initialise it to a driven-high state
+        self.cs.set_high().unwrap();
+    }
     // TODO: add error handling
     fn esp_select(&mut self) {
         self.cs.set_low().unwrap();

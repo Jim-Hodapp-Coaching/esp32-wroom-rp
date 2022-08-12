@@ -117,8 +117,8 @@ fn main() -> ! {
     };
 
     let mut wifi = esp32_wroom_rp::spi::Wifi::init(spi, esp_pins).unwrap();
-
-    defmt::info!("NINA firmware version: {:?}", wifi.firmware_version());
+    let firmware_version = wifi.firmware_version();
+    defmt::info!("NINA firmware version: {:?}", firmware_version);
 
     loop {}
 }

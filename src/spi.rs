@@ -64,6 +64,9 @@ where
     //type Error = SPIError<SPI::Error, PINS::Error>;
 
     fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error> {
+        // Chip select is active-low, so we'll initialise it to a driven-high state
+        self.pins.init();
+
         self.pins.wait_for_esp_select();
 
         self.send_cmd(NinaCommand::GetFwVersion, 0).ok().unwrap();
@@ -76,6 +79,7 @@ where
             .ok()
             .unwrap();
         self.pins.esp_deselect();
+
         Ok(FirmwareVersion::new(bytes)) // 1.7.4
     }
 }
@@ -109,7 +113,7 @@ where
         cmd: NinaCommand,
         num_params: u8,
     ) -> Result<[u8; PARAMS_ARRAY_LEN], SPIError<SPI, PINS>> {
-        self.check_start_cmd();
+        self.check_start_cmd().ok().unwrap();
 
         let result = self.read_and_check_byte(cmd as u8 | ControlByte::Reply as u8)?;
         // Ensure we see a cmd byte

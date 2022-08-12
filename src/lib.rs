@@ -50,6 +50,7 @@ impl FirmwareVersion {
         let patch: u8;
 
         [major, _, minor, _, patch, _, _, _] = version;
+
         FirmwareVersion {
             major: major,
             minor: minor,
@@ -63,7 +64,7 @@ impl Format for FirmwareVersion {
         write!(
             fmt,
             "Major: {:?}, Minor: {:?}, Patch: {:?}",
-            self.major, self.minor, self.patch
+            self.major as char, self.minor as char, self.patch as char
         );
     }
 }
