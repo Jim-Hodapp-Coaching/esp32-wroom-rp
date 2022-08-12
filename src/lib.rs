@@ -39,17 +39,17 @@ pub struct FirmwareVersion {
 }
 
 impl FirmwareVersion {
-    fn new(version: [u8; 5]) -> FirmwareVersion {
+    fn new(version: [u8; 8]) -> FirmwareVersion {
         Self::parse(version)
     }
 
     // Takes in 5 bytes (e.g. 1.7.4) and returns a FirmwareVersion instance
-    fn parse(version: [u8; 5]) -> FirmwareVersion {
+    fn parse(version: [u8; 8]) -> FirmwareVersion {
         let major: u8;
         let minor: u8;
         let patch: u8;
 
-        [major, _, minor, _, patch] = version;
+        [major, _, minor, _, patch, _, _, _] = version;
         FirmwareVersion {
             major: major,
             minor: minor,
