@@ -1,6 +1,6 @@
 use super::pins::ESP32ControlInterface;
 use super::{Error, FirmwareVersion, Interface, Params, WifiCommon};
-use embedded_hal::spi::blocking::Transfer;
+use embedded_hal_02::blocking::spi::Transfer;
 
 // TODO: this should eventually move into NinaCommandHandler
 #[repr(u8)]
@@ -90,10 +90,9 @@ where
             num_params,
         ];
         for byte in buf {
-            let read_buf = &mut [0];
             let write_buf = &mut [byte];
 
-            self.spi.transfer(read_buf, write_buf).ok().unwrap()
+            self.spi.transfer(write_buf).ok().unwrap();
         }
         Ok(())
     }
