@@ -22,10 +22,10 @@ use panic_probe as _;
 // Alias for our HAL crate
 use rp2040_hal as hal;
 
+use embedded_hal_02::spi::MODE_0;
 use embedded_time::rate::Extensions;
 use rp2040_hal::clocks::Clock;
 use rp2040_hal::pac;
-use embedded_hal_02::spi::MODE_0;
 
 /// The linker will place this boot block at the start of our program image. We
 /// need this to help the ROM bootloader get our code up and running.
@@ -87,7 +87,7 @@ fn main() -> ! {
             clocks.peripheral_clock.freq(),
         )
         .unwrap();
-    
+
     defmt::info!("ESP32-WROOM-RP get NINA firmware version example");
 
     // These are implicitly used by the spi driver if they are in the correct mode
@@ -120,7 +120,5 @@ fn main() -> ! {
 
     defmt::info!("NINA firmware version: {:?}", wifi.firmware_version());
 
-    loop {
-
-    }
+    loop {}
 }

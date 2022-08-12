@@ -6,29 +6,29 @@
 //!
 //! NOTE This crate is still under active development. This API will remain volatile until 1.0.0
 
-#![ allow( dead_code, unused_imports ) ]
-
+#![allow(dead_code, unused_imports)]
 #![no_std]
 #![no_main]
 
 pub mod pins;
 pub mod spi;
 
+use defmt::{write, Format, Formatter};
+
 // This is just a placeholder for now.
 type Params = [u8; 5];
-
-#[repr(u8)]
-#[derive(Debug)]
-enum NinaCommand {
-    StartClientTcp = 0x2du8,
-    GetFwVersion = 0x37u8,
-}
 
 #[derive(Debug)]
 pub enum Error {
     // Placeholder variants
     Bus,
     TimeOut,
+}
+
+impl Format for Error {
+    fn format(&self, fmt: Formatter) {
+        write!(fmt, "Generic ESP32-WROOM-RP Error")
+    }
 }
 
 #[derive(Debug, Default, PartialEq)]
@@ -55,6 +55,16 @@ impl FirmwareVersion {
             minor: minor,
             patch: patch,
         }
+    }
+}
+
+impl Format for FirmwareVersion {
+    fn format(&self, fmt: Formatter) {
+        write!(
+            fmt,
+            "Major: {:?}, Minor: {:?}, Patch: {:?}",
+            self.major, self.minor, self.patch
+        );
     }
 }
 
