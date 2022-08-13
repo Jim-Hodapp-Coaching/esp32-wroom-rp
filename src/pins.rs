@@ -30,12 +30,25 @@ pub trait ESP32ControlInterface {
     fn wait_for_esp_select(&mut self);
 }
 
-impl ESP32ControlInterface for EspControlPins {
+pub struct EspControlPins<CS, GPIO0, RESETN, ACK> {
+    pub cs: CS,
+    pub gpio0: GPIO0,
+    pub resetn: RESETN,
+    pub ack: ACK,
+}
+
+impl<CS, GPIO0, RESETN, ACK> ESP32ControlInterface for EspControlPins<CS, GPIO0, RESETN, ACK>
+where
+    CS: OutputPin,
+    GPIO0: OutputPin,
+    RESETN: OutputPin,
+    ACK: InputPin,
+{
     // FIXME: not sure how to get around exposing the error type in a public trait
     //type Error = IOError;
 
     fn init(&mut self) {
-        // Chip select is active-low, so we'll initialise it to a driven-high state
+        // Chip select is active-low, so we'll initialize it to a driven-high state
         self.cs.set_high().unwrap();
     }
     // TODO: add error handling
@@ -77,12 +90,4 @@ impl ESP32ControlInterface for EspControlPins {
         self.esp_select();
         self.wait_for_esp_ack();
     }
-}
-
-// TODO: Make cs, gpio0, resentn, ack all generic types, leaving the crate user to fill in the type
-pub struct EspControlPins {
-    pub cs: Pin<Gpio7, hal::gpio::PushPullOutput>,
-    pub gpio0: Pin<Gpio2, hal::gpio::PushPullOutput>,
-    pub resetn: Pin<Gpio11, hal::gpio::PushPullOutput>,
-    pub ack: Pin<Gpio10, hal::gpio::FloatingInput>,
 }
