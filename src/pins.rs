@@ -10,7 +10,6 @@ pub enum IOError {
 }
 
 pub trait ESP32ControlInterface {
-
     fn init(&mut self);
 
     fn esp_select(&mut self);
@@ -42,7 +41,6 @@ where
     RESETN: OutputPin,
     ACK: InputPin,
 {
-
     fn init(&mut self) {
         // Chip select is active-low, so we'll initialize it to a driven-high state
         self.cs.set_high().unwrap();

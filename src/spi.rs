@@ -59,7 +59,7 @@ impl<SPI, PINS> Interface for SPIInterface<SPI, PINS>
 where
     SPI: Transfer<u8>,
     PINS: ESP32ControlInterface,
-
+{
     fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error> {
         // Chip select is active-low, so we'll initialize it to a driven-high state
         self.pins.init();
