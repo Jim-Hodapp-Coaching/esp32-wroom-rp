@@ -44,7 +44,7 @@ impl FirmwareVersion {
         Self::parse(version)
     }
 
-    // Takes in 5 bytes (e.g. 1.7.4) and returns a FirmwareVersion instance
+    // Takes in 8 bytes (e.g. 1.7.4) and returns a FirmwareVersion instance
     fn parse(version: [u8; 8]) -> FirmwareVersion {
         let major: u8;
         let minor: u8;
@@ -89,8 +89,6 @@ where
 }
 
 trait Interface {
-    //type Error;
-
     fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error>;
 }
 

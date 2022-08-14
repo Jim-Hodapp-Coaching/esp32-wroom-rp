@@ -57,14 +57,11 @@ struct SPIInterface<SPI, PINS> {
 
 impl<SPI, PINS> Interface for SPIInterface<SPI, PINS>
 where
-    // FIXME: figure the proper trait bound to use that allows this to compile
     SPI: Transfer<u8>,
     PINS: ESP32ControlInterface,
-{
-    //type Error = SPIError<SPI::Error, PINS::Error>;
 
     fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error> {
-        // Chip select is active-low, so we'll initialise it to a driven-high state
+        // Chip select is active-low, so we'll initialize it to a driven-high state
         self.pins.init();
 
         self.pins.wait_for_esp_select();
@@ -141,8 +138,6 @@ where
         self.read_and_check_byte(ControlByte::End as u8)?;
 
         Ok(params)
-
-        // Ok([0x31, 0x2e, 0x37, 0x2e, 0x34])
     }
 
     fn send_end_cmd(&mut self) -> Result<(), SPIError<SPI, PINS>> {

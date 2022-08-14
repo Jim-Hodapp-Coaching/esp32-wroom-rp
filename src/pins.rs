@@ -10,8 +10,6 @@ pub enum IOError {
 }
 
 pub trait ESP32ControlInterface {
-    // FIXME: not sure how to get around exposing the error type in a public trait
-    //type Error;
 
     fn init(&mut self);
 
@@ -44,22 +42,15 @@ where
     RESETN: OutputPin,
     ACK: InputPin,
 {
-    // FIXME: not sure how to get around exposing the error type in a public trait
-    //type Error = IOError;
 
     fn init(&mut self) {
         // Chip select is active-low, so we'll initialize it to a driven-high state
         self.cs.set_high().unwrap();
     }
-    // TODO: add error handling
+
     fn esp_select(&mut self) {
         self.cs.set_low().unwrap();
     }
-
-    //   fn esp_deselect(&mut self) -> Result<(), Error<Self::Error>> {
-    //     //   self.esp_pins.cs.set_high().unwrap();
-    //     self.esp_pins.cs.set_high().map_err(|e| IOError::Pin(e))?;
-    //   }
 
     fn esp_deselect(&mut self) {
         self.cs.set_high().unwrap();
