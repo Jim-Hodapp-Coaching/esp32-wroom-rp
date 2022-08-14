@@ -1,3 +1,35 @@
+//! Control interface for ESP32
+//!
+//! ## Usage
+//!
+//! ```no_run
+//! use rp2040_hal as hal;
+//! use rp2040_hal::pac;
+//!
+//! let mut pac = pac::Peripherals::take().unwrap();
+//!
+//! // The single-cycle I/O block controls our GPIO pins
+//! let sio = hal::Sio::new(pac.SIO);
+//!
+//! // Set the pins to their default state
+//! let pins = hal::gpio::Pins::new(
+//!     pac.IO_BANK0,
+//!     pac.PADS_BANK0,
+//!     sio.gpio_bank0,
+//!     &mut pac.RESETS,
+//! );
+//!
+//! let esp_pins = esp32_wroom_rp::pins::EspControlPins {
+//!     // CS on pin x (GPIO7)
+//!     cs: pins.gpio7.into_mode::<hal::gpio::PushPullOutput>(),
+//!     // GPIO0 on pin x (GPIO2)
+//!     gpio0: pins.gpio2.into_mode::<hal::gpio::PushPullOutput>(),
+//!     // RESETn on pin x (GPIO11)
+//!     resetn: pins.gpio11.into_mode::<hal::gpio::PushPullOutput>(),
+//!     // ACK on pin x (GPIO10)
+//!     ack: pins.gpio10.into_mode::<hal::gpio::FloatingInput>(),
+//! };
+//! ```
 use embedded_hal::digital::blocking::{InputPin, OutputPin};
 
 use rp2040_hal as hal;

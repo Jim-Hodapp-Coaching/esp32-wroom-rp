@@ -1,3 +1,5 @@
+//! Serial Peripheral Interface (SPI) for Wifi
+
 use super::pins::ESP32ControlInterface;
 use super::{Error, FirmwareVersion, Interface, Params, WifiCommon};
 use embedded_hal_02::blocking::spi::Transfer;
