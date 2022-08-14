@@ -157,7 +157,7 @@ where
                     let byte: u8 = word[0] as u8;
                     return Ok(byte);
                 }
-                Err(e) => {
+                Err(_e) => {
                     continue;
                 }
             }
