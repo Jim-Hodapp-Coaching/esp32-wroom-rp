@@ -22,7 +22,7 @@ use panic_probe as _;
 // Alias for our HAL crate
 use rp2040_hal as hal;
 
-use embedded_hal_02::spi::MODE_0;
+use eh_02::spi::MODE_0;
 use embedded_time::rate::Extensions;
 use rp2040_hal::clocks::Clock;
 use rp2040_hal::pac;
@@ -105,7 +105,7 @@ fn main() -> ! {
         &MODE_0,
     );
 
-    let esp_pins = esp32_wroom_rp::pins::EspControlPins {
+    let esp_pins = esp32_wroom_rp::gpio::EspControlPins {
         // CS on pin x (GPIO7)
         cs: pins.gpio7.into_mode::<hal::gpio::PushPullOutput>(),
         // GPIO0 on pin x (GPIO2)
@@ -115,7 +115,7 @@ fn main() -> ! {
         // ACK on pin x (GPIO10)
         ack: pins.gpio10.into_mode::<hal::gpio::FloatingInput>(),
     };
-
+    //let mut wifi = esp32_wroom_rp::wifi::Wifi::init(spi, esp_pins).unwrap();
     let mut wifi = esp32_wroom_rp::spi::Wifi::init(spi, esp_pins).unwrap();
     let firmware_version = wifi.firmware_version();
     defmt::info!("NINA firmware version: {:?}", firmware_version);

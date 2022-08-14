@@ -41,7 +41,7 @@ pub enum IOError {
     Pin,
 }
 
-pub trait ESP32ControlInterface {
+pub trait EspControlInterface {
     fn init(&mut self);
 
     fn esp_select(&mut self);
@@ -66,7 +66,7 @@ pub struct EspControlPins<CS, GPIO0, RESETN, ACK> {
     pub ack: ACK,
 }
 
-impl<CS, GPIO0, RESETN, ACK> ESP32ControlInterface for EspControlPins<CS, GPIO0, RESETN, ACK>
+impl<CS, GPIO0, RESETN, ACK> EspControlInterface for EspControlPins<CS, GPIO0, RESETN, ACK>
 where
     CS: OutputPin,
     GPIO0: OutputPin,

@@ -18,7 +18,7 @@ name = "esp32_wroom_rp"
 cortex-m = "0.7.5"
 cortex-m-rt = "0.7.1"
 embedded-hal = { version = "=1.0.0-alpha.7" }
-embedded-hal-02 = { version = "0.2.7", package="embedded-hal"  }
+eh-02 = { version = "0.2.7", package="embedded-hal"  }
 embedded-time = "0.12.0"
 
 defmt = "0.3.0"

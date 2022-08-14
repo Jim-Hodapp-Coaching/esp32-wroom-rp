@@ -99,8 +99,12 @@
 #![no_std]
 #![no_main]
 
-pub mod pins;
+pub mod gpio;
 pub mod spi;
+
+mod protocol;
+
+use protocol::ProtocolInterface;
 
 use defmt::{write, Format, Formatter};
 
@@ -159,25 +163,21 @@ impl Format for FirmwareVersion {
 }
 
 #[derive(Debug, Default)]
-struct WifiCommon<I> {
-    interface: I,
+struct WifiCommon<PH> {
+    protocol_handler: PH,
 }
 
-impl<I> WifiCommon<I>
+impl<PH> WifiCommon<PH>
 where
-    I: Interface,
+    PH: ProtocolInterface,
 {
     fn init() {}
 
     fn configure() {}
 
     fn firmware_version(&mut self) -> Result<FirmwareVersion, self::Error> {
-        self.interface.get_fw_version()
+        self.protocol_handler.get_fw_version()
     }
-}
-
-trait Interface {
-    fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error>;
 }
 
 #[cfg(test)]
