@@ -12,14 +12,13 @@
 //!
 //! ```toml
 //! [dependencies]
-//! {add our crate here}
+//! esp32_wroom_rp = 0.1
 //! ```
 //!
 //! Next:
 //!
 //! ```no_run
-//! use rp2040_hal as hal;
-//! use rp2040_hal::pac;
+//! use esp32_wroom_rp::spi::*;
 //!
 //! let mut pac = pac::Peripherals::take().unwrap();
 //! let core = pac::CorePeripherals::take().unwrap();
@@ -39,6 +38,20 @@
 //! .ok()
 //! .unwrap();
 //!
+//! impl embedded_hal::delay::blocking::DelayUs for DelayWrap {
+//!     type Error = core::convert::Infallible;
+//!
+//!    fn delay_us(&mut self, us: u32) -> Result<(), Self::Error> {
+//!        self.0.delay_us(us);
+//!        Ok(())
+//!    }
+//!
+//!    fn delay_ms(&mut self, ms: u32) -> Result<(), Self::Error> {
+//!        self.0.delay_ms(ms);
+//!        Ok(())
+//!    }
+//!}
+//!
 //! // The single-cycle I/O block controls our GPIO pins
 //! let sio = hal::Sio::new(pac.SIO);
 //!
@@ -49,22 +62,6 @@
 //!     sio.gpio_bank0,
 //!     &mut pac.RESETS,
 //! );
-//!
-//! let uart_pins = (
-//!     // UART TX (characters sent from RP2040) on pin 1 (GPIO0)
-//!     pins.gpio0.into_mode::<hal::gpio::FunctionUart>(),
-//!     // UART RX (characters reveived by RP2040) on pin 2 (GPIO1)
-//!     pins.gpio1.into_mode::<hal::gpio::FunctionUart>(),
-//! );
-//!
-//! let uart = hal::uart::UartPeripheral::<_, _, _>::new(pac.UART0, uart_pins, &mut pac.RESETS)
-//!     .enable(
-//!         hal::uart::common_configs::_115200_8_N_1,
-//!         clocks.peripheral_clock.freq(),
-//!     )
-//!     .unwrap();
-//!
-//! defmt::info!("ESP32-WROOM-RP get NINA firmware version example");
 //!
 //! let spi_miso = pins.gpio16.into_mode::<hal::gpio::FunctionSpi>();
 //! let spi_sclk = pins.gpio18.into_mode::<hal::gpio::FunctionSpi>();
@@ -80,7 +77,7 @@
 //!     &MODE_0,
 //! );
 //!
-//! let esp_pins = esp32_wroom_rp::pins::EspControlPins {
+//! let esp_pins = esp32_wroom_rp::gpio::EspControlPins {
 //!     // CS on pin x (GPIO7)
 //!     cs: pins.gpio7.into_mode::<hal::gpio::PushPullOutput>(),
 //!     // GPIO0 on pin x (GPIO2)
@@ -91,15 +88,19 @@
 //!     ack: pins.gpio10.into_mode::<hal::gpio::FloatingInput>(),
 //! };
 //!
-//! let mut wifi = esp32_wroom_rp::spi::Wifi::init(spi, esp_pins).unwrap();
-//! wifi.firmware_version();
+//! let mut wifi = esp32_wroom_rp::spi::Wifi::init(spi, esp_pins, &mut delay).unwrap();
+//! let version = wifi.firmware_version();
 //! ```
 
+#![doc(html_root_url = "https://docs.rs/esp32-wroom-rp")]
+#![doc(issue_tracker_base_url = "https://github.com/Jim-Hodapp-Coaching/esp32-wroom-rp/issues")]
+#![warn(missing_docs)]
 #![allow(dead_code, unused_imports)]
 #![no_std]
 #![no_main]
 
 pub mod gpio;
+/// Fundamental interface for controlling a connected ESP32-WROOM NINA firmware-based Wifi board.
 pub mod wifi;
 
 mod protocol;
@@ -126,6 +127,7 @@ impl Format for Error {
     }
 }
 
+/// A structured representation of a connected NINA firmware device's version number (e.g. 1.7.4).
 #[derive(Debug, Default, PartialEq)]
 pub struct FirmwareVersion {
     major: u8,

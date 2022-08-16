@@ -1,10 +1,9 @@
-//! Control interface for ESP32
+//! GPIO pin control interface of a connected ESP32-WROOM target Wifi board.
 //!
 //! ## Usage
 //!
 //! ```no_run
-//! use rp2040_hal as hal;
-//! use rp2040_hal::pac;
+//! use esp32_wroom_rp::gpio::*;
 //!
 //! let mut pac = pac::Peripherals::take().unwrap();
 //!
@@ -19,7 +18,7 @@
 //!     &mut pac.RESETS,
 //! );
 //!
-//! let esp_pins = esp32_wroom_rp::pins::EspControlPins {
+//! let esp_pins = esp32_wroom_rp::gpio::EspControlPins {
 //!     // CS on pin x (GPIO7)
 //!     cs: pins.gpio7.into_mode::<hal::gpio::PushPullOutput>(),
 //!     // GPIO0 on pin x (GPIO2)
@@ -62,6 +61,9 @@ pub trait EspControlInterface {
     fn wait_for_esp_select(&mut self);
 }
 
+/// A structured representation of all GPIO pins that control a ESP32-WROOM NINA firmware-based
+/// device outside of commands sent over the SPI/I²C bus. Pass a single instance of this struct
+/// into `Wifi::init()`.
 pub struct EspControlPins<CS, GPIO0, RESETN, ACK> {
     pub cs: CS,
     pub gpio0: GPIO0,

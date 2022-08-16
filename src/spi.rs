@@ -28,6 +28,8 @@ where
     S: Transfer<u8>,
     C: EspControlInterface,
 {
+    /// Initializes the ESP32-WROOM Wifi device.
+    /// Calling this function puts the connected ESP32-WROOM device in a known good state to accept commands.
     pub fn init<D: DelayUs>(spi: S, control_pins: C, delay: &mut D) -> Result<Wifi<S, C>, Error> {
         let mut wifi = Wifi {
             common: WifiCommon {
@@ -42,6 +44,7 @@ where
         Ok(wifi)
     }
 
+    /// Retrieves the NINA firmware version contained on the connected ESP32-WROOM device (e.g. 1.7.4).
     pub fn firmware_version(&mut self) -> Result<FirmwareVersion, Error> {
         self.common.firmware_version()
     }
@@ -197,7 +200,7 @@ where
     }
 }
 
-/// Error which occurred during an SPI transaction
+/// Error which occurred during a SPI transaction with a target ESP32 device
 #[derive(Clone, Copy, Debug)]
 pub enum SPIError<SPIE, IOE> {
     /// The SPI implementation returned an error
