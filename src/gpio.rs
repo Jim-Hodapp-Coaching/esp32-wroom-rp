@@ -30,8 +30,8 @@
 //!     ack: pins.gpio10.into_mode::<hal::gpio::FloatingInput>(),
 //! };
 //! ```
-use embedded_hal::digital::blocking::{InputPin, OutputPin};
 use embedded_hal::delay::blocking::DelayUs;
+use embedded_hal::digital::blocking::{InputPin, OutputPin};
 
 use rp2040_hal as hal;
 use rp2040_hal::gpio::bank0::{Gpio10, Gpio11, Gpio2, Gpio7};

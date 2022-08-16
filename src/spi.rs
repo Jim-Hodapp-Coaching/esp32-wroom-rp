@@ -1,7 +1,7 @@
 //! Serial Peripheral Interface (SPI) for Wifi
 
 use super::gpio::EspControlInterface;
-use super::protocol::{ProtocolInterface, NinaProtocolHandler, NinaCommand, PARAMS_ARRAY_LEN};
+use super::protocol::{NinaCommand, NinaProtocolHandler, ProtocolInterface, PARAMS_ARRAY_LEN};
 use super::{Error, FirmwareVersion, Params, WifiCommon};
 
 use eh_02::blocking::spi::Transfer;
@@ -75,7 +75,7 @@ where
         self.control_pins.esp_deselect();
 
         Ok(FirmwareVersion::new(bytes)) // e.g. 1.7.4
-        //Ok(FirmwareVersion::new([0x31, 0x2e, 0x37, 0x2e, 0x34, 0x0, 0x0, 0x0]))
+                                        //Ok(FirmwareVersion::new([0x31, 0x2e, 0x37, 0x2e, 0x34, 0x0, 0x0, 0x0]))
     }
 
     fn send_cmd(&mut self, cmd: NinaCommand, num_params: u8) -> Result<(), self::Error> {

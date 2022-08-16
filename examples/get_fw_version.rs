@@ -23,10 +23,10 @@ use panic_probe as _;
 use rp2040_hal as hal;
 
 use eh_02::spi::MODE_0;
+use embedded_time::fixed_point::FixedPoint;
 use embedded_time::rate::Extensions;
 use hal::clocks::Clock;
 use hal::pac;
-use embedded_time::fixed_point::FixedPoint;
 
 /// The linker will place this boot block at the start of our program image. We
 /// need this to help the ROM bootloader get our code up and running.
@@ -53,7 +53,7 @@ impl embedded_hal::delay::blocking::DelayUs for DelayWrap {
     fn delay_ms(&mut self, ms: u32) -> Result<(), Self::Error> {
         self.0.delay_ms(ms);
         Ok(())
-    } 
+    }
 }
 
 /// Entry point to our bare-metal application.
@@ -82,7 +82,10 @@ fn main() -> ! {
     .ok()
     .unwrap();
 
-    let mut delay = DelayWrap(cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().integer()));
+    let mut delay = DelayWrap(cortex_m::delay::Delay::new(
+        core.SYST,
+        clocks.system_clock.freq().integer(),
+    ));
 
     // The single-cycle I/O block controls our GPIO pins
     let sio = hal::Sio::new(pac.SIO);
@@ -136,8 +139,7 @@ fn main() -> ! {
         // ACK on pin x (GPIO10)
         ack: pins.gpio10.into_mode::<hal::gpio::FloatingInput>(),
     };
-    //let mut wifi = esp32_wroom_rp::wifi::Wifi::init(spi, esp_pins).unwrap();
-    let mut wifi = esp32_wroom_rp::spi::Wifi::init(spi, esp_pins, &mut delay).unwrap();
+    let mut wifi = esp32_wroom_rp::wifi::Wifi::init(spi, esp_pins, &mut delay).unwrap();
     let firmware_version = wifi.firmware_version();
     defmt::info!("NINA firmware version: {:?}", firmware_version);
 

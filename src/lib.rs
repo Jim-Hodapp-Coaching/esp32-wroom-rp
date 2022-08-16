@@ -101,6 +101,7 @@
 
 pub mod gpio;
 pub mod spi;
+pub mod wifi;
 
 mod protocol;
 

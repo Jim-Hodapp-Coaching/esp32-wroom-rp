@@ -17,7 +17,11 @@ pub trait ProtocolInterface {
     fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error>;
 
     fn send_cmd(&mut self, cmd: NinaCommand, num_params: u8) -> Result<(), self::Error>;
-    fn wait_response_cmd(&mut self, cmd: NinaCommand, num_params: u8,) -> Result<[u8; PARAMS_ARRAY_LEN], self::Error>;
+    fn wait_response_cmd(
+        &mut self,
+        cmd: NinaCommand,
+        num_params: u8,
+    ) -> Result<[u8; PARAMS_ARRAY_LEN], self::Error>;
     fn send_end_cmd(&mut self) -> Result<(), self::Error>;
 
     fn get_param(&mut self) -> Result<u8, self::Error>;
@@ -27,8 +31,7 @@ pub trait ProtocolInterface {
 }
 
 #[derive(Debug, Default)]
-pub struct NinaProtocolHandler<B, C>
-{
+pub struct NinaProtocolHandler<B, C> {
     /// A Spi or I2c instance
     pub bus: B,
     /// A EspControlPins instance
