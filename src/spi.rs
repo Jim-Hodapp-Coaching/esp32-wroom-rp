@@ -53,14 +53,16 @@ where
     S: Transfer<u8>,
     C: EspControlInterface,
 {
+    fn init(&mut self) {
+        // Chip select is active-low, so we'll initialize it to a driven-high state
+        self.control_pins.init();
+    }
+
     fn reset<D: DelayUs>(&mut self, delay: &mut D) {
         self.control_pins.reset(delay)
     }
 
     fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error> {
-        // Chip select is active-low, so we'll initialize it to a driven-high state
-        self.control_pins.init();
-
         self.control_pins.wait_for_esp_select();
 
         self.send_cmd(NinaCommand::GetFwVersion, 0).ok().unwrap();

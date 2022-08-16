@@ -174,6 +174,7 @@ where
     PH: ProtocolInterface,
 {
     fn init<D: DelayUs>(&mut self, delay: &mut D) {
+        self.protocol_handler.init();
         self.reset(delay);
     }
 

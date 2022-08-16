@@ -13,6 +13,7 @@ pub enum NinaCommand {
 }
 
 pub trait ProtocolInterface {
+    fn init(&mut self);
     fn reset<D: DelayUs>(&mut self, delay: &mut D);
     fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error>;
 
