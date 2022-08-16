@@ -31,6 +31,7 @@
 //! };
 //! ```
 use embedded_hal::digital::blocking::{InputPin, OutputPin};
+use embedded_hal::delay::blocking::DelayUs;
 
 use rp2040_hal as hal;
 use rp2040_hal::gpio::bank0::{Gpio10, Gpio11, Gpio2, Gpio7};
@@ -43,6 +44,8 @@ pub enum IOError {
 
 pub trait EspControlInterface {
     fn init(&mut self);
+
+    fn reset<D: DelayUs>(&mut self, delay: &mut D);
 
     fn esp_select(&mut self);
 
@@ -76,6 +79,15 @@ where
     fn init(&mut self) {
         // Chip select is active-low, so we'll initialize it to a driven-high state
         self.cs.set_high().unwrap();
+    }
+
+    fn reset<D: DelayUs>(&mut self, delay: &mut D) {
+        self.gpio0.set_high().unwrap();
+        self.cs.set_high().unwrap();
+        self.resetn.set_low().unwrap();
+        delay.delay_ms(10).ok().unwrap();
+        self.resetn.set_high().unwrap();
+        delay.delay_ms(750).ok().unwrap();
     }
 
     fn esp_select(&mut self) {

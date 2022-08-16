@@ -1,5 +1,7 @@
 use super::*;
+
 use eh_02::blocking::spi::Transfer;
+use embedded_hal::delay::blocking::DelayUs;
 
 pub const PARAMS_ARRAY_LEN: usize = 8;
 
@@ -11,6 +13,7 @@ pub enum NinaCommand {
 }
 
 pub trait ProtocolInterface {
+    fn reset<D: DelayUs>(&mut self, delay: &mut D);
     fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error>;
 
     fn send_cmd(&mut self, cmd: NinaCommand, num_params: u8) -> Result<(), self::Error>;

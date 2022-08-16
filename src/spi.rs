@@ -3,8 +3,9 @@
 use super::gpio::EspControlInterface;
 use super::protocol::{ProtocolInterface, NinaProtocolHandler, NinaCommand, PARAMS_ARRAY_LEN};
 use super::{Error, FirmwareVersion, Params, WifiCommon};
-use eh_02::blocking::spi::Transfer;
 
+use eh_02::blocking::spi::Transfer;
+use embedded_hal::delay::blocking::DelayUs;
 
 // TODO: this should eventually move into NinaCommandHandler
 #[repr(u8)]
@@ -27,15 +28,18 @@ where
     S: Transfer<u8>,
     C: EspControlInterface,
 {
-    pub fn init(spi: S, control_pins: C) -> Result<Wifi<S, C>, Error> {
-        Ok(Wifi {
+    pub fn init<D: DelayUs>(spi: S, control_pins: C, delay: &mut D) -> Result<Wifi<S, C>, Error> {
+        let mut wifi = Wifi {
             common: WifiCommon {
                 protocol_handler: NinaProtocolHandler {
                     bus: spi,
                     control_pins: control_pins,
                 },
             },
-        })
+        };
+
+        wifi.common.init(delay);
+        Ok(wifi)
     }
 
     pub fn firmware_version(&mut self) -> Result<FirmwareVersion, Error> {
@@ -49,6 +53,10 @@ where
     S: Transfer<u8>,
     C: EspControlInterface,
 {
+    fn reset<D: DelayUs>(&mut self, delay: &mut D) {
+        self.control_pins.reset(delay)
+    }
+
     fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error> {
         // Chip select is active-low, so we'll initialize it to a driven-high state
         self.control_pins.init();

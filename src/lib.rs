@@ -107,6 +107,7 @@ mod protocol;
 use protocol::ProtocolInterface;
 
 use defmt::{write, Format, Formatter};
+use embedded_hal::delay::blocking::DelayUs;
 
 // This is just a placeholder for now.
 type Params = [u8; 5];
@@ -171,9 +172,15 @@ impl<PH> WifiCommon<PH>
 where
     PH: ProtocolInterface,
 {
-    fn init() {}
+    fn init<D: DelayUs>(&mut self, delay: &mut D) {
+        self.reset(delay);
+    }
 
     fn configure() {}
+
+    fn reset<D: DelayUs>(&mut self, delay: &mut D) {
+        self.protocol_handler.reset(delay)
+    }
 
     fn firmware_version(&mut self) -> Result<FirmwareVersion, self::Error> {
         self.protocol_handler.get_fw_version()
