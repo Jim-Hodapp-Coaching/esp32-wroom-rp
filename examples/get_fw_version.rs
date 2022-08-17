@@ -98,20 +98,6 @@ fn main() -> ! {
         &mut pac.RESETS,
     );
 
-    let uart_pins = (
-        // UART TX (characters sent from RP2040) on pin 1 (GPIO0)
-        pins.gpio0.into_mode::<hal::gpio::FunctionUart>(),
-        // UART RX (characters reveived by RP2040) on pin 2 (GPIO1)
-        pins.gpio1.into_mode::<hal::gpio::FunctionUart>(),
-    );
-
-    let uart = hal::uart::UartPeripheral::<_, _, _>::new(pac.UART0, uart_pins, &mut pac.RESETS)
-        .enable(
-            hal::uart::common_configs::_115200_8_N_1,
-            clocks.peripheral_clock.freq(),
-        )
-        .unwrap();
-
     defmt::info!("ESP32-WROOM-RP get NINA firmware version example");
 
     // These are implicitly used by the spi driver if they are in the correct mode
