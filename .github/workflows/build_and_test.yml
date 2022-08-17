@@ -28,12 +28,20 @@ jobs:
       with:
         command: build
         args: --examples
+        toolchain: stable
+        target: thumbv6m-none-eabi
+        override: true
+        profile: minimal
     - run: echo "Debug examples built:" && ls target/thumbv6m-none-eabi/debug/examples/ |grep -v '-' |grep -v '\.d'
     - run: rm target/thumbv6m-none-eabi/debug/examples/ -rf
     - uses: actions-rs/cargo@v1
       with:
         command: build
         args: --release --examples
+        toolchain: stable
+        target: thumbv6m-none-eabi
+        override: true
+        profile: minimal
     - run: echo "Release examples built:" && ls target/thumbv6m-none-eabi/release/examples/ |grep -v '-' |grep -v '\.d'
     - run: rm target/thumbv6m-none-eabi/release/examples/ -rf
     - name: Run tests
