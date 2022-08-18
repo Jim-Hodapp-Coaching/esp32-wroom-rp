@@ -39,34 +39,3 @@ pub struct NinaProtocolHandler<B, C> {
     pub control_pins: C,
 }
 
-// TODO:
-// 1. Research default implementation for structs that spi/i2c impls can call as a parent
-
-// Default impl (type of bus doesn't matter whether SPI or I2C)
-// impl<BUS, CONTROL_PINS> ProtocolInterface for NinaProtocolHandler<BUS, CONTROL_PINS>
-// {
-//     fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error>
-//     {
-//         Ok(FirmwareVersion::new([0x31, 0x2e, 0x37, 0x2e, 0x34, 0x0, 0x0, 0x0]))
-//     }
-
-//     fn send_cmd(&mut self, cmd: NinaCommand, num_params: u8) -> Result<(), self::Error>
-//     {
-//         Ok(())
-//     }
-
-//     fn send_end_cmd(&mut self) -> Result<(), self::Error> {
-//         Ok(())
-//     }
-// }
-
-// TODO: implement one of these for I2C in i2c.rs
-// impl<SPI> ProtocolInterface for NinaProtocolHandler<SPI>
-// where
-//     SPI: Transfer<u8>,
-// {
-//     fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error>
-//     {
-//         Ok(FirmwareVersion::new([0x31, 0x2e, 0x37, 0x2e, 0x34, 0x0, 0x0, 0x0]))
-//     }
-// }
