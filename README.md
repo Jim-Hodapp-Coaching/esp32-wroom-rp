@@ -109,14 +109,6 @@ The following table lists the pin name and pin number to properly wire between a
 |                   | GND (Pin 23)     |                 | V- rail    |
 | GP16 (Pin 21)     | MISO (Pin 21)    | MISO (Pin 5)    |            |
 
-__BME280 to Pico__
-
-| BME280 | Pico              | Breadboard |
-| ------ | ----------------- | ---------- |
-| GND    |                   | V- rail    |
-| 3.3V   | 3V3(OUT) (Pin 36) |            |
-| SDA    | I2C1 SDA (Pin 31) |            |
-| SCL    | I2C1 SCL (Pin 32) |            |
 
 ***
 
