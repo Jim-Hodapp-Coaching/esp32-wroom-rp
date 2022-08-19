@@ -95,7 +95,6 @@
 #![doc(html_root_url = "https://docs.rs/esp32-wroom-rp")]
 #![doc(issue_tracker_base_url = "https://github.com/Jim-Hodapp-Coaching/esp32-wroom-rp/issues")]
 #![warn(missing_docs)]
-#![allow(dead_code, unused_imports)]
 #![no_std]
 #![no_main]
 
