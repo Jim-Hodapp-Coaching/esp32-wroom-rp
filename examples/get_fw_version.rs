@@ -7,7 +7,6 @@
 
 #![no_std]
 #![no_main]
-#![allow(unused_variables)]
 
 extern crate esp32_wroom_rp;
 
