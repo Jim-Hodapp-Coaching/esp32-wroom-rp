@@ -25,6 +25,8 @@ jobs:
         override: true
     - name: Build crate
       run: cargo build --verbose
+    - name: Install supporting crates
+      run: cargo install flip-link
     - name: Build debug examples
       run: cargo build --verbose --examples
     #- run: echo "Debug examples built:" && ls target/thumbv6m-none-eabi/debug/examples/ |grep -v '-' |grep -v '\.d'
