@@ -48,6 +48,10 @@ where
     pub fn firmware_version(&mut self) -> Result<FirmwareVersion, Error> {
         self.common.firmware_version()
     }
+
+    pub fn join(&mut self) -> Result<(), Error> {
+        self.common.join()
+    }
 }
 
 // All SPI-specific aspects of the NinaProtocolHandler go here in this struct impl
@@ -80,6 +84,10 @@ where
         self.control_pins.esp_deselect();
 
         Ok(FirmwareVersion::new(bytes)) // e.g. 1.7.4
+    }
+
+    fn set_passphrase(&mut self) -> Result<(), self::Error> {
+      Ok(())
     }
 
     fn send_cmd(&mut self, cmd: NinaCommand, num_params: u8) -> Result<(), self::Error> {

@@ -16,6 +16,7 @@ pub trait ProtocolInterface {
     fn init(&mut self);
     fn reset<D: DelayUs>(&mut self, delay: &mut D);
     fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error>;
+    fn set_passphrase(&mut self) -> Result<(), Error>;
 
     fn send_cmd(&mut self, cmd: NinaCommand, num_params: u8) -> Result<(), self::Error>;
     fn wait_response_cmd(
