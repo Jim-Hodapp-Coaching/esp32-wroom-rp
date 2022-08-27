@@ -3,13 +3,136 @@ use super::*;
 use eh_02::blocking::spi::Transfer;
 use embedded_hal::delay::blocking::DelayUs;
 
-pub const PARAMS_ARRAY_LEN: usize = 8;
+use heapless::Vec;
+
+//pub const PARAMS_ARRAY_LEN: usize = 8;
+pub const MAX_NINA_PARAM_LENGTH: usize = 8;
 
 #[repr(u8)]
 #[derive(Debug)]
 pub enum NinaCommand {
     StartClientTcp = 0x2Du8,
     GetFwVersion = 0x37u8,
+    SetPassphrase = 0x11u8,
+}
+
+pub trait NinaParam {
+    // The size of the param length field, 1 or 2 bytes
+    type LengthSize;
+    // The actual length value of the Data
+    type Length;
+    // Is this the final parameter being sent for this NinaCommand? TODO: is generic type LastParam even needed?
+    type LastParam;
+    // The actual parameter data to send over the data bus
+    type Data;
+
+    type LengthAsBytes: IntoIterator<Item = u8>;
+
+    fn length_size(&mut self) -> Self::LengthSize;
+    fn length(&mut self) -> Self::Length;
+    fn last_param(&mut self) -> Self::LastParam;
+    // fn data(&mut self) -> Self::Data;
+
+    fn length_as_bytes(&mut self) -> Self::LengthAsBytes;
+}
+
+pub struct NinaByteParam {
+    length_size: u8,
+    length: u8,
+    last_param: bool,
+    data: Vec<u8, 1>,
+}
+
+pub struct NinaWordParam {
+    length_size: u8,
+    length: u8,
+    last_param: bool,
+    data: Vec<u8, 2>,
+}
+
+pub struct NinaArrayParam {
+    length_size: u8,
+    length: u16,
+    last_param: bool,
+    data: Vec<u8, MAX_NINA_PARAM_LENGTH>,
+}
+
+impl NinaParam for NinaByteParam {
+    type LengthSize = u8;
+    type Length = u8;
+    type LastParam = bool;
+    type Data = Vec<u8, 1>;
+    type LengthAsBytes = [u8; 1];
+
+    fn length_size(&mut self) -> Self::LengthSize {
+        self.length_size
+    }
+    fn length(&mut self) -> Self::Length {
+        self.length
+    }
+    fn last_param(&mut self) -> Self::LastParam {
+        self.last_param
+    }
+    // fn data(&mut self) -> Self::Data {
+    //     self.data
+    // }
+
+    fn length_as_bytes(&mut self) -> Self::LengthAsBytes {
+        [self.length() as u8]
+    }
+}
+
+impl NinaParam for NinaWordParam {
+    type LengthSize = u8;
+    type Length = u8;
+    type LastParam = bool;
+    type Data = Vec<u8, 2>;
+    type LengthAsBytes = [u8; 1];
+
+    fn length_size(&mut self) -> Self::LengthSize {
+        self.length_size
+    }
+    fn length(&mut self) -> Self::Length {
+        self.length
+    }
+    fn last_param(&mut self) -> Self::LastParam {
+        self.last_param
+    }
+    // fn data(&mut self) -> Self::Data {
+    //     self.data
+    // }
+
+    fn length_as_bytes(&mut self) -> Self::LengthAsBytes {
+        [self.length() as u8]
+    }
+}
+
+impl NinaParam for NinaArrayParam {
+    type LengthSize = u8;
+    type Length = u16;
+    type LastParam = bool;
+    type Data = Vec<u8, MAX_NINA_PARAM_LENGTH>;
+    type LengthAsBytes = [u8; 2];
+
+    fn length_size(&mut self) -> Self::LengthSize {
+        self.length_size
+    }
+    fn length(&mut self) -> Self::Length {
+        self.length
+    }
+    fn last_param(&mut self) -> Self::LastParam {
+        self.last_param
+    }
+    // fn data(&mut self) -> Self::Data {
+    //     self.data
+    // }
+
+    fn length_as_bytes(&mut self) -> Self::LengthAsBytes {
+        [
+            ((self.length() & 0xff00) >> 8) as u8,
+            (self.length() & 0xff) as u8,
+        ]
+    }
 }
 
 pub trait ProtocolInterface {
@@ -23,13 +146,15 @@ pub trait ProtocolInterface {
         &mut self,
         cmd: NinaCommand,
         num_params: u8,
-    ) -> Result<[u8; PARAMS_ARRAY_LEN], self::Error>;
+    ) -> Result<[u8; MAX_NINA_PARAM_LENGTH], self::Error>;
     fn send_end_cmd(&mut self) -> Result<(), self::Error>;
 
     fn get_param(&mut self) -> Result<u8, self::Error>;
     fn wait_for_byte(&mut self, wait_byte: u8) -> Result<bool, self::Error>;
     fn check_start_cmd(&mut self) -> Result<bool, self::Error>;
     fn read_and_check_byte(&mut self, check_byte: u8) -> Result<bool, self::Error>;
+    fn send_param<P: NinaParam>(&mut self, param: P) -> Result<(), self::Error>;
+    fn send_param_length<P: NinaParam>(&mut self, param: P) -> Result<(), self::Error>;
 }
 
 #[derive(Debug, Default)]
@@ -39,4 +164,3 @@ pub struct NinaProtocolHandler<B, C> {
     /// A EspControlPins instance
     pub control_pins: C,
 }
-

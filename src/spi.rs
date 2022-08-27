@@ -1,8 +1,10 @@
 //! Serial Peripheral Interface (SPI) for Wifi
 
 use super::gpio::EspControlInterface;
-use super::protocol::{NinaCommand, NinaProtocolHandler, ProtocolInterface, PARAMS_ARRAY_LEN};
-use super::{Error, FirmwareVersion, Params, WifiCommon};
+use super::protocol::{
+    NinaCommand, NinaParam, NinaProtocolHandler, ProtocolInterface, MAX_NINA_PARAM_LENGTH,
+};
+use super::{Error, FirmwareVersion, WifiCommon};
 
 use eh_02::blocking::spi::Transfer;
 use embedded_hal::delay::blocking::DelayUs;
@@ -87,7 +89,12 @@ where
     }
 
     fn set_passphrase(&mut self) -> Result<(), self::Error> {
-      Ok(())
+        self.control_pins.wait_for_esp_select();
+
+        self.send_cmd(NinaCommand::SetPassphrase, 2).ok().unwrap();
+        let ssid: &str = "calebphone";
+        let passphrase: &str = "";
+        Ok(())
     }
 
     fn send_cmd(&mut self, cmd: NinaCommand, num_params: u8) -> Result<(), self::Error> {
@@ -112,7 +119,7 @@ where
         &mut self,
         cmd: NinaCommand,
         num_params: u8,
-    ) -> Result<[u8; PARAMS_ARRAY_LEN], self::Error> {
+    ) -> Result<[u8; MAX_NINA_PARAM_LENGTH], self::Error> {
         self.check_start_cmd().ok().unwrap();
 
         let result = self.read_and_check_byte(cmd as u8 | ControlByte::Reply as u8)?;
@@ -131,12 +138,12 @@ where
 
         let num_params_to_read = self.get_param()? as usize;
 
-        if num_params_to_read > PARAMS_ARRAY_LEN {
+        if num_params_to_read > MAX_NINA_PARAM_LENGTH {
             return Ok([0x31, 0x2e, 0x37, 0x2e, 0x34, 0x0, 0x0, 0x0]);
             //return Err(SPIError::Misc);
         }
 
-        let mut params: [u8; PARAMS_ARRAY_LEN] = [0; PARAMS_ARRAY_LEN];
+        let mut params: [u8; MAX_NINA_PARAM_LENGTH] = [0; MAX_NINA_PARAM_LENGTH];
         for i in 0..num_params_to_read {
             params[i] = self.get_param().ok().unwrap()
         }
@@ -205,6 +212,20 @@ where
                 return Err(e);
             }
         }
+    }
+
+    fn send_param<P: NinaParam>(&mut self, param: P) -> Result<(), self::Error> {
+        Ok(())
+    }
+
+    fn send_param_length<P: NinaParam>(&mut self, mut param: P) -> Result<(), self::Error> {
+        // TODO: use eh2's Transfer which has separate read/write bufs
+
+        for byte in param.length_as_bytes().into_iter() {
+            let write_buf: &mut [u8] = &mut [byte];
+            self.bus.transfer(write_buf).ok().unwrap();
+        }
+        Ok(())
     }
 }
 

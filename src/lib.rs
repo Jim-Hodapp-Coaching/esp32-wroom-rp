@@ -188,6 +188,10 @@ where
     fn firmware_version(&mut self) -> Result<FirmwareVersion, self::Error> {
         self.protocol_handler.get_fw_version()
     }
+
+    fn join(&mut self) -> Result<(), Error> {
+        self.protocol_handler.set_passphrase()
+    }
 }
 
 #[cfg(test)]
