@@ -214,16 +214,20 @@ where
         }
     }
 
-    fn send_param<P: NinaParam>(&mut self, param: P) -> Result<(), self::Error> {
+    fn send_param<P: NinaParam>(&mut self, mut param: P) -> Result<(), self::Error> {
+        self.send_param_length(&mut param)?;
+
+        for byte in param.data() {
+            self.bus.transfer(&mut [byte]).ok().unwrap();
+        }
         Ok(())
     }
 
-    fn send_param_length<P: NinaParam>(&mut self, mut param: P) -> Result<(), self::Error> {
+    fn send_param_length<P: NinaParam>(&mut self, param: &mut P) -> Result<(), self::Error> {
         // TODO: use eh2's Transfer which has separate read/write bufs
 
         for byte in param.length_as_bytes().into_iter() {
-            let write_buf: &mut [u8] = &mut [byte];
-            self.bus.transfer(write_buf).ok().unwrap();
+            self.bus.transfer(&mut [byte]).ok().unwrap();
         }
         Ok(())
     }

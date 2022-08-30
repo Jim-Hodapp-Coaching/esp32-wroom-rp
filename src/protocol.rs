@@ -24,14 +24,14 @@ pub trait NinaParam {
     // Is this the final parameter being sent for this NinaCommand? TODO: is generic type LastParam even needed?
     type LastParam;
     // The actual parameter data to send over the data bus
-    type Data;
+    type Data: IntoIterator<Item = u8>;
 
     type LengthAsBytes: IntoIterator<Item = u8>;
 
     fn length_size(&mut self) -> Self::LengthSize;
     fn length(&mut self) -> Self::Length;
     fn last_param(&mut self) -> Self::LastParam;
-    // fn data(&mut self) -> Self::Data;
+    fn data(&mut self) -> Self::Data;
 
     fn length_as_bytes(&mut self) -> Self::LengthAsBytes;
 }
@@ -40,28 +40,28 @@ pub struct NinaByteParam {
     length_size: u8,
     length: u8,
     last_param: bool,
-    data: Vec<u8, 1>,
+    data: [u8; 1],
 }
 
 pub struct NinaWordParam {
     length_size: u8,
     length: u8,
     last_param: bool,
-    data: Vec<u8, 2>,
+    data: [u8; 2],
 }
 
 pub struct NinaArrayParam {
     length_size: u8,
     length: u16,
     last_param: bool,
-    data: Vec<u8, MAX_NINA_PARAM_LENGTH>,
+    data: [u8; MAX_NINA_PARAM_LENGTH],
 }
 
 impl NinaParam for NinaByteParam {
     type LengthSize = u8;
     type Length = u8;
     type LastParam = bool;
-    type Data = Vec<u8, 1>;
+    type Data = [u8; 1];
     type LengthAsBytes = [u8; 1];
 
     fn length_size(&mut self) -> Self::LengthSize {
@@ -73,9 +73,9 @@ impl NinaParam for NinaByteParam {
     fn last_param(&mut self) -> Self::LastParam {
         self.last_param
     }
-    // fn data(&mut self) -> Self::Data {
-    //     self.data
-    // }
+    fn data(&mut self) -> Self::Data {
+        self.data
+    }
 
     fn length_as_bytes(&mut self) -> Self::LengthAsBytes {
         [self.length() as u8]
@@ -86,7 +86,7 @@ impl NinaParam for NinaWordParam {
     type LengthSize = u8;
     type Length = u8;
     type LastParam = bool;
-    type Data = Vec<u8, 2>;
+    type Data = [u8; 2];
     type LengthAsBytes = [u8; 1];
 
     fn length_size(&mut self) -> Self::LengthSize {
@@ -98,9 +98,9 @@ impl NinaParam for NinaWordParam {
     fn last_param(&mut self) -> Self::LastParam {
         self.last_param
     }
-    // fn data(&mut self) -> Self::Data {
-    //     self.data
-    // }
+    fn data(&mut self) -> Self::Data {
+        self.data
+    }
 
     fn length_as_bytes(&mut self) -> Self::LengthAsBytes {
         [self.length() as u8]
@@ -111,7 +111,7 @@ impl NinaParam for NinaArrayParam {
     type LengthSize = u8;
     type Length = u16;
     type LastParam = bool;
-    type Data = Vec<u8, MAX_NINA_PARAM_LENGTH>;
+    type Data = [u8; MAX_NINA_PARAM_LENGTH];
     type LengthAsBytes = [u8; 2];
 
     fn length_size(&mut self) -> Self::LengthSize {
@@ -123,9 +123,9 @@ impl NinaParam for NinaArrayParam {
     fn last_param(&mut self) -> Self::LastParam {
         self.last_param
     }
-    // fn data(&mut self) -> Self::Data {
-    //     self.data
-    // }
+    fn data(&mut self) -> Self::Data {
+        self.data
+    }
 
     fn length_as_bytes(&mut self) -> Self::LengthAsBytes {
         [
@@ -154,7 +154,7 @@ pub trait ProtocolInterface {
     fn check_start_cmd(&mut self) -> Result<bool, self::Error>;
     fn read_and_check_byte(&mut self, check_byte: u8) -> Result<bool, self::Error>;
     fn send_param<P: NinaParam>(&mut self, param: P) -> Result<(), self::Error>;
-    fn send_param_length<P: NinaParam>(&mut self, param: P) -> Result<(), self::Error>;
+    fn send_param_length<P: NinaParam>(&mut self, param: &mut P) -> Result<(), self::Error>;
 }
 
 #[derive(Debug, Default)]
