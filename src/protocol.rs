@@ -17,20 +17,11 @@ pub enum NinaCommand {
 }
 
 pub trait NinaParam {
-    // The size of the param length field, 1 or 2 bytes
-    type LengthSize;
-    // The actual length value of the Data
-    type Length;
-    // Is this the final parameter being sent for this NinaCommand? TODO: is generic type LastParam even needed?
-    type LastParam;
     // The actual parameter data to send over the data bus
     type Data: IntoIterator<Item = u8>;
 
+    // Length of parameter in bytes
     type LengthAsBytes: IntoIterator<Item = u8>;
-
-    fn length_size(&mut self) -> Self::LengthSize;
-    fn length(&mut self) -> Self::Length;
-    fn last_param(&mut self) -> Self::LastParam;
     fn data(&mut self) -> Self::Data;
 
     fn length_as_bytes(&mut self) -> Self::LengthAsBytes;
@@ -58,79 +49,43 @@ pub struct NinaArrayParam {
 }
 
 impl NinaParam for NinaByteParam {
-    type LengthSize = u8;
-    type Length = u8;
-    type LastParam = bool;
     type Data = [u8; 1];
     type LengthAsBytes = [u8; 1];
 
-    fn length_size(&mut self) -> Self::LengthSize {
-        self.length_size
-    }
-    fn length(&mut self) -> Self::Length {
-        self.length
-    }
-    fn last_param(&mut self) -> Self::LastParam {
-        self.last_param
-    }
     fn data(&mut self) -> Self::Data {
         self.data
     }
 
     fn length_as_bytes(&mut self) -> Self::LengthAsBytes {
-        [self.length() as u8]
+        [self.length as u8]
     }
 }
 
 impl NinaParam for NinaWordParam {
-    type LengthSize = u8;
-    type Length = u8;
-    type LastParam = bool;
     type Data = [u8; 2];
     type LengthAsBytes = [u8; 1];
 
-    fn length_size(&mut self) -> Self::LengthSize {
-        self.length_size
-    }
-    fn length(&mut self) -> Self::Length {
-        self.length
-    }
-    fn last_param(&mut self) -> Self::LastParam {
-        self.last_param
-    }
     fn data(&mut self) -> Self::Data {
         self.data
     }
 
     fn length_as_bytes(&mut self) -> Self::LengthAsBytes {
-        [self.length() as u8]
+        [self.length as u8]
     }
 }
 
 impl NinaParam for NinaArrayParam {
-    type LengthSize = u8;
-    type Length = u16;
-    type LastParam = bool;
     type Data = [u8; MAX_NINA_PARAM_LENGTH];
     type LengthAsBytes = [u8; 2];
 
-    fn length_size(&mut self) -> Self::LengthSize {
-        self.length_size
-    }
-    fn length(&mut self) -> Self::Length {
-        self.length
-    }
-    fn last_param(&mut self) -> Self::LastParam {
-        self.last_param
-    }
     fn data(&mut self) -> Self::Data {
         self.data
     }
 
     fn length_as_bytes(&mut self) -> Self::LengthAsBytes {
         [
-            ((self.length() & 0xff00) >> 8) as u8,
-            (self.length() & 0xff) as u8,
+            ((self.length & 0xff00) >> 8) as u8,
+            (self.length & 0xff) as u8,
         ]
     }
 }
