@@ -2,7 +2,8 @@
 
 use super::gpio::EspControlInterface;
 use super::protocol::{
-    NinaCommand, NinaParam, NinaProtocolHandler, ProtocolInterface, MAX_NINA_PARAM_LENGTH,
+    NinaArrayParam, NinaByteParam, NinaCommand, NinaParam, NinaProtocolHandler, ProtocolInterface,
+    MAX_NINA_PARAM_LENGTH,
 };
 use super::{Error, FirmwareVersion, WifiCommon};
 
@@ -51,8 +52,8 @@ where
         self.common.firmware_version()
     }
 
-    pub fn join(&mut self) -> Result<(), Error> {
-        self.common.join()
+    pub fn join(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error> {
+        self.common.join(ssid, passphrase)
     }
 }
 
@@ -88,12 +89,27 @@ where
         Ok(FirmwareVersion::new(bytes)) // e.g. 1.7.4
     }
 
-    fn set_passphrase(&mut self) -> Result<(), self::Error> {
+    fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), self::Error> {
         self.control_pins.wait_for_esp_select();
 
         self.send_cmd(NinaCommand::SetPassphrase, 2).ok().unwrap();
-        let ssid: &str = "calebphone";
-        let passphrase: &str = "";
+
+        let ssid_param = NinaArrayParam::new(ssid);
+        self.send_param(ssid_param);
+
+        let passphrase_param = NinaArrayParam::new(passphrase);
+        self.send_param(passphrase_param);
+
+        self.send_end_cmd();
+
+        // TODO: Implement pad function
+
+        self.control_pins.esp_deselect();
+        self.control_pins.wait_for_esp_select();
+
+        self.wait_response_cmd(NinaCommand::SetPassphrase, 1);
+
+        self.control_pins.esp_deselect();
         Ok(())
     }
 

@@ -189,8 +189,8 @@ where
         self.protocol_handler.get_fw_version()
     }
 
-    fn join(&mut self) -> Result<(), Error> {
-        self.protocol_handler.set_passphrase()
+    fn join(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error> {
+        self.protocol_handler.set_passphrase(ssid, passphrase)
     }
 }
 
