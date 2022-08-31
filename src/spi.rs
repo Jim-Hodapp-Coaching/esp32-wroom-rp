@@ -3,7 +3,6 @@
 use super::gpio::EspControlInterface;
 use super::protocol::{
     NinaArrayParam, NinaByteParam, NinaCommand, NinaParam, NinaProtocolHandler, ProtocolInterface,
-    MAX_NINA_PARAM_LENGTH,
 };
 use super::{Error, FirmwareVersion, WifiCommon};
 
@@ -102,7 +101,8 @@ where
 
         self.send_end_cmd();
 
-        // TODO: Implement pad function
+        let command_size: u8 = 6 + ssid.len() as u8 + passphrase.len() as u8;
+        self.pad_to_multiple_of_4(command_size as u16);
 
         self.control_pins.esp_deselect();
         self.control_pins.wait_for_esp_select();
@@ -135,7 +135,7 @@ where
         &mut self,
         cmd: NinaCommand,
         num_params: u8,
-    ) -> Result<[u8; MAX_NINA_PARAM_LENGTH], self::Error> {
+    ) -> Result<[u8; 8], self::Error> {
         self.check_start_cmd().ok().unwrap();
 
         let result = self.read_and_check_byte(cmd as u8 | ControlByte::Reply as u8)?;
@@ -154,12 +154,12 @@ where
 
         let num_params_to_read = self.get_param()? as usize;
 
-        if num_params_to_read > MAX_NINA_PARAM_LENGTH {
+        if num_params_to_read > 8 {
             return Ok([0x31, 0x2e, 0x37, 0x2e, 0x34, 0x0, 0x0, 0x0]);
             //return Err(SPIError::Misc);
         }
 
-        let mut params: [u8; MAX_NINA_PARAM_LENGTH] = [0; MAX_NINA_PARAM_LENGTH];
+        let mut params: [u8; 8] = [0; 8];
         for i in 0..num_params_to_read {
             params[i] = self.get_param().ok().unwrap()
         }
@@ -233,8 +233,8 @@ where
     fn send_param<P: NinaParam>(&mut self, mut param: P) -> Result<(), self::Error> {
         self.send_param_length(&mut param)?;
 
-        for byte in param.data() {
-            self.bus.transfer(&mut [byte]).ok().unwrap();
+        for byte in param.data().into_iter() {
+            self.bus.transfer(&mut [*byte]).ok().unwrap();
         }
         Ok(())
     }
@@ -246,6 +246,13 @@ where
             self.bus.transfer(&mut [byte]).ok().unwrap();
         }
         Ok(())
+    }
+
+    fn pad_to_multiple_of_4(&mut self, mut command_size: u16) {
+        while command_size % 4 == 0 {
+            self.get_param().ok().unwrap();
+            command_size += 1;
+        }
     }
 }
 
