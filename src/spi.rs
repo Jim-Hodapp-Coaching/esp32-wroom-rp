@@ -120,7 +120,7 @@ where
     fn get_conn_status(&mut self) -> Result<u8, self::Error> {
         self.control_pins.wait_for_esp_select();
 
-        self.send_cmd(NinaCommand::GetConnStatus, 2).ok().unwrap();
+        self.send_cmd(NinaCommand::GetConnStatus, 0).ok().unwrap();
 
         self.control_pins.esp_deselect();
         self.control_pins.wait_for_esp_select();
