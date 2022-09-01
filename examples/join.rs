@@ -27,6 +27,8 @@ use embedded_time::rate::Extensions;
 use hal::clocks::Clock;
 use hal::pac;
 
+use embedded_hal::delay::blocking::DelayUs;
+
 /// The linker will place this boot block at the start of our program image. We
 /// need this to help the ROM bootloader get our code up and running.
 #[link_section = ".boot2"]
@@ -129,5 +131,17 @@ fn main() -> ! {
     defmt::info!("Join Result: {:?}", result);
 
     defmt::info!("Entering main loop");
-    loop {}
+
+    loop {
+        match wifi.get_connection_status() {
+            Ok(byte) => {
+                defmt::info!("Get Connection Result: {:?}", byte);
+                let sleep: u32 = 1500;
+                delay.delay_ms(sleep).ok().unwrap();
+            }
+            Err(e) => {
+                defmt::info!("Failed to Get Connection Result: {:?}", e);
+            }
+        }
+    }
 }

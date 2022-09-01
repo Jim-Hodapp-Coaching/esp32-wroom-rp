@@ -192,6 +192,10 @@ where
     fn join(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error> {
         self.protocol_handler.set_passphrase(ssid, passphrase)
     }
+
+    fn get_connection_status(&mut self) -> Result<u8, self::Error> {
+        self.protocol_handler.get_conn_status()
+    }
 }
 
 #[cfg(test)]

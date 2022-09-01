@@ -14,6 +14,7 @@ pub enum NinaCommand {
     StartClientTcp = 0x2Du8,
     GetFwVersion = 0x37u8,
     SetPassphrase = 0x11u8,
+    GetConnStatus = 0x20u8,
 }
 
 pub trait NinaParam {
@@ -124,6 +125,7 @@ pub trait ProtocolInterface {
     fn reset<D: DelayUs>(&mut self, delay: &mut D);
     fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error>;
     fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error>;
+    fn get_conn_status(&mut self) -> Result<u8, self::Error>;
 
     fn send_cmd(&mut self, cmd: NinaCommand, num_params: u8) -> Result<(), self::Error>;
     fn wait_response_cmd(

@@ -54,6 +54,10 @@ where
     pub fn join(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error> {
         self.common.join(ssid, passphrase)
     }
+
+    pub fn get_connection_status(&mut self) -> Result<u8, Error> {
+        self.common.get_connection_status()
+    }
 }
 
 // All SPI-specific aspects of the NinaProtocolHandler go here in this struct impl
@@ -111,6 +115,20 @@ where
 
         self.control_pins.esp_deselect();
         Ok(())
+    }
+
+    fn get_conn_status(&mut self) -> Result<u8, self::Error> {
+        self.control_pins.wait_for_esp_select();
+
+        self.send_cmd(NinaCommand::GetConnStatus, 2).ok().unwrap();
+
+        self.control_pins.esp_deselect();
+        self.control_pins.wait_for_esp_select();
+
+        let result = self.wait_response_cmd(NinaCommand::GetConnStatus, 1)?;
+        self.control_pins.esp_deselect();
+
+        Ok(result[0])
     }
 
     fn send_cmd(&mut self, cmd: NinaCommand, num_params: u8) -> Result<(), self::Error> {
