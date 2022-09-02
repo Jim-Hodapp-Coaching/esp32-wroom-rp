@@ -110,8 +110,6 @@ use protocol::ProtocolInterface;
 use defmt::{write, Format, Formatter};
 use embedded_hal::delay::blocking::DelayUs;
 
-// This is just a placeholder for now.
-type Params = [u8; 5];
 
 #[derive(Debug)]
 pub enum Error {
@@ -178,8 +176,6 @@ where
         self.protocol_handler.init();
         self.reset(delay);
     }
-
-    fn configure() {}
 
     fn reset<D: DelayUs>(&mut self, delay: &mut D) {
         self.protocol_handler.reset(delay)

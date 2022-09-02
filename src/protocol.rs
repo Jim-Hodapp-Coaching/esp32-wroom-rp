@@ -1,32 +1,24 @@
 use super::*;
 
-use eh_02::blocking::spi::Transfer;
 use embedded_hal::delay::blocking::DelayUs;
 
 use heapless::{String, Vec};
 
-//pub const PARAMS_ARRAY_LEN: usize = 8;
 pub const MAX_NINA_PARAM_LENGTH: usize = 255;
 
 #[repr(u8)]
 #[derive(Debug)]
 pub enum NinaCommand {
-    StartClientTcp = 0x2Du8,
     GetFwVersion = 0x37u8,
     SetPassphrase = 0x11u8,
     GetConnStatus = 0x20u8,
 }
 
 pub trait NinaParam {
-    // The actual parameter data to send over the data bus
-    type Data: IntoIterator<Item = u8>;
-
     // Length of parameter in bytes
     type LengthAsBytes: IntoIterator<Item = u8>;
 
-    fn new(data: &str) -> Self
-    where
-        Self:;
+    fn new(data: &str) -> Self;
 
     fn data(&mut self) -> &[u8];
 
@@ -34,41 +26,32 @@ pub trait NinaParam {
 }
 
 pub struct NinaByteParam {
-    // length_size: u8,
     length: u8,
-    // last_param: bool,
     data: Vec<u8, 1>,
 }
 
 pub struct NinaWordParam {
-    // length_size: u8,
     length: u8,
-    // last_param: bool,
     data: Vec<u8, 2>,
 }
 
 // Used for params that are smaller than 255 bytes
 pub struct NinaSmallArrayParam {
-    // length_size: u8,
     length: u8,
-    // last_param: bool,
     data: Vec<u8, MAX_NINA_PARAM_LENGTH>,
 }
 // Used for params that can be larger than 255 bytes up to MAX_NINA_PARAM_LENGTH
 pub struct NinaLargeArrayParam {
-    // length_size: u8,
     length: u16,
-    // last_param: bool,
     data: Vec<u8, MAX_NINA_PARAM_LENGTH>,
 }
 
 impl NinaParam for NinaByteParam {
-    type Data = Vec<u8, 1>;
     type LengthAsBytes = [u8; 1];
 
-    fn new(data: &str) -> NinaByteParam {
+    fn new(data: &str) -> Self {
         let data_as_bytes: Vec<u8, 1> = String::from(data).into_bytes();
-        NinaByteParam {
+        Self {
             length: data_as_bytes.len() as u8,
             data: data_as_bytes,
         }
@@ -84,12 +67,11 @@ impl NinaParam for NinaByteParam {
 }
 
 impl NinaParam for NinaWordParam {
-    type Data = Vec<u8, 2>;
     type LengthAsBytes = [u8; 1];
 
-    fn new(data: &str) -> NinaWordParam {
+    fn new(data: &str) -> Self {
         let data_as_bytes: Vec<u8, 2> = String::from(data).into_bytes();
-        NinaWordParam {
+        Self {
             length: data_as_bytes.len() as u8,
             data: data_as_bytes,
         }
@@ -105,12 +87,11 @@ impl NinaParam for NinaWordParam {
 }
 
 impl NinaParam for NinaSmallArrayParam {
-    type Data = Vec<u8, MAX_NINA_PARAM_LENGTH>;
     type LengthAsBytes = [u8; 1];
 
-    fn new(data: &str) -> NinaSmallArrayParam {
+    fn new(data: &str) -> Self {
         let data_as_bytes: Vec<u8, MAX_NINA_PARAM_LENGTH> = String::from(data).into_bytes();
-        NinaSmallArrayParam {
+        Self {
             length: data_as_bytes.len() as u8,
             data: data_as_bytes,
         }
@@ -126,12 +107,11 @@ impl NinaParam for NinaSmallArrayParam {
 }
 
 impl NinaParam for NinaLargeArrayParam {
-    type Data = Vec<u8, MAX_NINA_PARAM_LENGTH>;
     type LengthAsBytes = [u8; 2];
 
-    fn new(data: &str) -> NinaLargeArrayParam {
+    fn new(data: &str) -> Self {
         let data_as_bytes: Vec<u8, MAX_NINA_PARAM_LENGTH> = String::from(data).into_bytes();
-        NinaLargeArrayParam {
+        Self {
             length: data_as_bytes.len() as u16,
             data: data_as_bytes,
         }
