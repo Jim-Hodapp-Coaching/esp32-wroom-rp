@@ -259,7 +259,6 @@ where
     }
 
     fn send_param_length<P: NinaParam>(&mut self, param: &mut P) -> Result<(), self::Error> {
-
         for byte in param.length_as_bytes().into_iter() {
             self.bus.transfer(&mut [byte]).ok().unwrap();
         }
