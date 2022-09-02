@@ -110,6 +110,7 @@ use protocol::ProtocolInterface;
 use defmt::{write, Format, Formatter};
 use embedded_hal::delay::blocking::DelayUs;
 
+const ARRAY_LENGTH_PLACEHOLDER: usize = 8;
 
 #[derive(Debug)]
 pub enum Error {
@@ -133,12 +134,12 @@ pub struct FirmwareVersion {
 }
 
 impl FirmwareVersion {
-    fn new(version: [u8; 8]) -> FirmwareVersion {
+    fn new(version: [u8; ARRAY_LENGTH_PLACEHOLDER]) -> FirmwareVersion {
         Self::parse(version)
     }
 
     // Takes in 8 bytes (e.g. 1.7.4) and returns a FirmwareVersion instance
-    fn parse(version: [u8; 8]) -> FirmwareVersion {
+    fn parse(version: [u8; ARRAY_LENGTH_PLACEHOLDER]) -> FirmwareVersion {
         let major: u8;
         let minor: u8;
         let patch: u8;

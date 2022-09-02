@@ -143,7 +143,7 @@ pub trait ProtocolInterface {
         &mut self,
         cmd: NinaCommand,
         num_params: u8,
-    ) -> Result<[u8; 8], self::Error>;
+    ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], self::Error>;
     fn send_end_cmd(&mut self) -> Result<(), self::Error>;
 
     fn get_param(&mut self) -> Result<u8, self::Error>;

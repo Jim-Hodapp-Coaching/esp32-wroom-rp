@@ -4,7 +4,7 @@ use super::gpio::EspControlInterface;
 use super::protocol::{
     NinaCommand, NinaParam, NinaProtocolHandler, NinaSmallArrayParam, ProtocolInterface,
 };
-use super::{Error, FirmwareVersion, WifiCommon};
+use super::{Error, FirmwareVersion, WifiCommon, ARRAY_LENGTH_PLACEHOLDER};
 
 use eh_02::blocking::spi::Transfer;
 use embedded_hal::delay::blocking::DelayUs;
@@ -154,7 +154,7 @@ where
         &mut self,
         cmd: NinaCommand,
         num_params: u8,
-    ) -> Result<[u8; 8], self::Error> {
+    ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], self::Error> {
         self.check_start_cmd().ok().unwrap();
 
         let result = self.read_and_check_byte(cmd as u8 | ControlByte::Reply as u8)?;
@@ -178,7 +178,7 @@ where
             //return Err(SPIError::Misc);
         }
 
-        let mut params: [u8; 8] = [0; 8];
+        let mut params: [u8; ARRAY_LENGTH_PLACEHOLDER] = [0; 8];
         for i in 0..num_params_to_read {
             params[i] = self.get_param().ok().unwrap()
         }
