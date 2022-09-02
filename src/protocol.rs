@@ -40,6 +40,7 @@ pub struct NinaSmallArrayParam {
     length: u8,
     data: Vec<u8, MAX_NINA_PARAM_LENGTH>,
 }
+
 // Used for params that can be larger than 255 bytes up to MAX_NINA_PARAM_LENGTH
 pub struct NinaLargeArrayParam {
     length: u16,
