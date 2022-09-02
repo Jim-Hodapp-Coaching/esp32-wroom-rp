@@ -25,6 +25,7 @@ pub trait NinaParam {
     fn length_as_bytes(&mut self) -> Self::LengthAsBytes;
 }
 
+// Used for single byte params
 pub struct NinaByteParam {
     length: u8,
     data: Vec<u8, 1>,
