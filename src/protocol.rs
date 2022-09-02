@@ -47,7 +47,15 @@ pub struct NinaWordParam {
     data: Vec<u8, 2>,
 }
 
-pub struct NinaArrayParam {
+// Used for params that are smaller than 255 bytes
+pub struct NinaSmallArrayParam {
+    // length_size: u8,
+    length: u8,
+    // last_param: bool,
+    data: Vec<u8, MAX_NINA_PARAM_LENGTH>,
+}
+// Used for params that can be larger than 255 bytes up to MAX_NINA_PARAM_LENGTH
+pub struct NinaLargeArrayParam {
     // length_size: u8,
     length: u16,
     // last_param: bool,
@@ -96,13 +104,34 @@ impl NinaParam for NinaWordParam {
     }
 }
 
-impl NinaParam for NinaArrayParam {
+impl NinaParam for NinaSmallArrayParam {
+    type Data = Vec<u8, MAX_NINA_PARAM_LENGTH>;
+    type LengthAsBytes = [u8; 1];
+
+    fn new(data: &str) -> NinaSmallArrayParam {
+        let data_as_bytes: Vec<u8, MAX_NINA_PARAM_LENGTH> = String::from(data).into_bytes();
+        NinaSmallArrayParam {
+            length: data_as_bytes.len() as u8,
+            data: data_as_bytes,
+        }
+    }
+
+    fn data(&mut self) -> &[u8] {
+        self.data.as_slice()
+    }
+
+    fn length_as_bytes(&mut self) -> Self::LengthAsBytes {
+        [self.length as u8]
+    }
+}
+
+impl NinaParam for NinaLargeArrayParam {
     type Data = Vec<u8, MAX_NINA_PARAM_LENGTH>;
     type LengthAsBytes = [u8; 2];
 
-    fn new(data: &str) -> NinaArrayParam {
+    fn new(data: &str) -> NinaLargeArrayParam {
         let data_as_bytes: Vec<u8, MAX_NINA_PARAM_LENGTH> = String::from(data).into_bytes();
-        NinaArrayParam {
+        NinaLargeArrayParam {
             length: data_as_bytes.len() as u16,
             data: data_as_bytes,
         }

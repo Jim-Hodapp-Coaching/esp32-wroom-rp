@@ -2,7 +2,7 @@
 
 use super::gpio::EspControlInterface;
 use super::protocol::{
-    NinaArrayParam, NinaByteParam, NinaCommand, NinaParam, NinaProtocolHandler, ProtocolInterface,
+    NinaCommand, NinaParam, NinaProtocolHandler, NinaSmallArrayParam, ProtocolInterface,
 };
 use super::{Error, FirmwareVersion, WifiCommon};
 
@@ -97,10 +97,10 @@ where
 
         self.send_cmd(NinaCommand::SetPassphrase, 2).ok().unwrap();
 
-        let ssid_param = NinaArrayParam::new(ssid);
+        let ssid_param = NinaSmallArrayParam::new(ssid);
         self.send_param(ssid_param);
 
-        let passphrase_param = NinaArrayParam::new(passphrase);
+        let passphrase_param = NinaSmallArrayParam::new(passphrase);
         self.send_param(passphrase_param);
 
         self.send_end_cmd();
