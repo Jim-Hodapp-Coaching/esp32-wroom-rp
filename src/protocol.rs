@@ -31,7 +31,8 @@ pub struct NinaByteParam {
     data: Vec<u8, 1>,
 }
 
-pub struct NinaWordParam {
+
+// Used for 2-byte params
     length: u8,
     data: Vec<u8, 2>,
 }
