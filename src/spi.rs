@@ -51,6 +51,7 @@ where
         self.common.firmware_version()
     }
 
+    /// Joins a WiFi network given an SSID and a Passphrase
     pub fn join(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error> {
         self.common.join(ssid, passphrase)
     }
