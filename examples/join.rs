@@ -1,7 +1,7 @@
 //! # ESP32-WROOM-RP Pico Wireless Example
 //!
-//! This application demonstrates how to use the ESP32-WROOM-RP crate to communicate
-//! with a remote ESP32 wifi and retrieve its firmware version.
+//! This application demonstrates how to use the ESP32-WROOM-RP crate to request that
+//! a remote ESP32 WiFi target connects to a particular SSID given a passphrase.
 //!
 //! See the `Cargo.toml` file for Copyright and license details.
 
