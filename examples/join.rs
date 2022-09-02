@@ -126,8 +126,11 @@ fn main() -> ! {
         // ACK on pin x (GPIO10)
         ack: pins.gpio10.into_mode::<hal::gpio::FloatingInput>(),
     };
+    let ssid: &str = "SSID";
+    let passphrase: &str = "Passphrase";
+
     let mut wifi = esp32_wroom_rp::wifi::Wifi::init(spi, esp_pins, &mut delay).unwrap();
-    let result = wifi.join("ssid", "passphrase");
+    let result = wifi.join(ssid, passphrase);
     defmt::info!("Join Result: {:?}", result);
 
     defmt::info!("Entering main loop");
@@ -138,6 +141,10 @@ fn main() -> ! {
                 defmt::info!("Get Connection Result: {:?}", byte);
                 let sleep: u32 = 1500;
                 delay.delay_ms(sleep).ok().unwrap();
+
+                if byte == 3 {
+                    defmt::info!("Connected to Network: {:?}", ssid);
+                }
             }
             Err(e) => {
                 defmt::info!("Failed to Get Connection Result: {:?}", e);
