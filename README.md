@@ -1,3 +1,5 @@
+[![Build & Test Crate + Examples](https://github.com/Jim-Hodapp-Coaching/esp32-wroom-rp/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/Jim-Hodapp-Coaching/esp32-wroom-rp/actions/workflows/build_and_test.yml)
+
 # esp32-wroom-rp
 Rust-based Espressif ESP32-WROOM WiFi hardware abstraction layer for RP2040 series microcontroller.
 
