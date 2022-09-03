@@ -1,3 +1,5 @@
+pub mod stream;
+
 use super::*;
 
 use embedded_hal::delay::blocking::DelayUs;
@@ -132,7 +134,7 @@ impl NinaParam for NinaLargeArrayParam {
     }
 }
 
-pub trait ProtocolInterface {
+pub trait ProtocolInterface<BUS, CONTROL> {
     fn init(&mut self);
     fn reset<D: DelayUs>(&mut self, delay: &mut D);
     fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error>;

@@ -105,7 +105,7 @@ pub mod wifi;
 mod protocol;
 mod spi;
 
-use protocol::ProtocolInterface;
+use protocol::{NinaProtocolHandler, ProtocolInterface};
 
 use defmt::{write, Format, Formatter};
 use embedded_hal::delay::blocking::DelayUs;
@@ -165,13 +165,13 @@ impl Format for FirmwareVersion {
 }
 
 #[derive(Debug, Default)]
-struct WifiCommon<PH> {
-    protocol_handler: PH,
+struct WifiCommon<BUS, CONTROL> {
+    protocol_handler: NinaProtocolHandler<BUS, CONTROL>,
 }
 
-impl<PH> WifiCommon<PH>
+impl<PH, BUS, CONTROL> WifiCommon<PH, BUS, CONTROL>
 where
-    PH: ProtocolInterface,
+    PH: ProtocolInterface<BUS, CONTROL>,
 {
     fn init<D: DelayUs>(&mut self, delay: &mut D) {
         self.protocol_handler.init();

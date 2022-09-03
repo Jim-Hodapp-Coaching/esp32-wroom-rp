@@ -4,6 +4,8 @@ use super::gpio::EspControlInterface;
 use super::protocol::{
     NinaCommand, NinaParam, NinaProtocolHandler, NinaSmallArrayParam, ProtocolInterface,
 };
+
+use super::protocol::stream::Stream;
 use super::{Error, FirmwareVersion, WifiCommon, ARRAY_LENGTH_PLACEHOLDER};
 
 use eh_02::blocking::spi::Transfer;
@@ -22,7 +24,7 @@ enum ControlByte {
 
 #[derive(Debug, Default)]
 pub struct Wifi<B, C> {
-    common: WifiCommon<NinaProtocolHandler<B, C>>,
+    common: WifiCommon<B, C>,
 }
 
 impl<S, C> Wifi<S, C>
@@ -62,7 +64,7 @@ where
 }
 
 // All SPI-specific aspects of the NinaProtocolHandler go here in this struct impl
-impl<S, C> ProtocolInterface for NinaProtocolHandler<S, C>
+impl<S, C> ProtocolInterface<S, C> for NinaProtocolHandler<S, C>
 where
     S: Transfer<u8>,
     C: EspControlInterface,
@@ -94,40 +96,21 @@ where
     }
 
     fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), self::Error> {
-        self.control_pins.wait_for_esp_select();
+        let stream = Stream::new(self.protocol_handler)
+            .command(NinaCommand::SetPassphrase)
+            .param(NinaSmallArrayParam::new(ssid))
+            .param(NinaSmallArrayParam::new(passphrase))
+            .send();
 
-        self.send_cmd(NinaCommand::SetPassphrase, 2).ok().unwrap();
-
-        let ssid_param = NinaSmallArrayParam::new(ssid);
-        self.send_param(ssid_param);
-
-        let passphrase_param = NinaSmallArrayParam::new(passphrase);
-        self.send_param(passphrase_param);
-
-        self.send_end_cmd();
-
-        let command_size: u8 = 6 + ssid.len() as u8 + passphrase.len() as u8;
-        self.pad_to_multiple_of_4(command_size as u16);
-
-        self.control_pins.esp_deselect();
-        self.control_pins.wait_for_esp_select();
-
-        self.wait_response_cmd(NinaCommand::SetPassphrase, 1);
-
-        self.control_pins.esp_deselect();
-        Ok(())
+        stream.wait_response()
     }
 
     fn get_conn_status(&mut self) -> Result<u8, self::Error> {
-        self.control_pins.wait_for_esp_select();
+        let stream = Stream::new(self.protocol_handler)
+            .command(NinaCommand::GetConnStatus)
+            .send();
 
-        self.send_cmd(NinaCommand::GetConnStatus, 0).ok().unwrap();
-
-        self.control_pins.esp_deselect();
-        self.control_pins.wait_for_esp_select();
-
-        let result = self.wait_response_cmd(NinaCommand::GetConnStatus, 1)?;
-        self.control_pins.esp_deselect();
+        let result = stream.wait_response();
 
         Ok(result[0])
     }
