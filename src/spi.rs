@@ -1,8 +1,10 @@
 //! Serial Peripheral Interface (SPI) for Wifi
 
 use super::gpio::EspControlInterface;
-use super::protocol::{NinaCommand, NinaProtocolHandler, ProtocolInterface, PARAMS_ARRAY_LEN};
-use super::{Error, FirmwareVersion, Params, WifiCommon};
+use super::protocol::{
+    NinaCommand, NinaParam, NinaProtocolHandler, NinaSmallArrayParam, ProtocolInterface,
+};
+use super::{Error, FirmwareVersion, WifiCommon, ARRAY_LENGTH_PLACEHOLDER};
 
 use eh_02::blocking::spi::Transfer;
 use embedded_hal::delay::blocking::DelayUs;
@@ -48,6 +50,15 @@ where
     pub fn firmware_version(&mut self) -> Result<FirmwareVersion, Error> {
         self.common.firmware_version()
     }
+
+    /// Joins a WiFi network given an SSID and a Passphrase
+    pub fn join(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error> {
+        self.common.join(ssid, passphrase)
+    }
+
+    pub fn get_connection_status(&mut self) -> Result<u8, Error> {
+        self.common.get_connection_status()
+    }
 }
 
 // All SPI-specific aspects of the NinaProtocolHandler go here in this struct impl
@@ -82,6 +93,45 @@ where
         Ok(FirmwareVersion::new(bytes)) // e.g. 1.7.4
     }
 
+    fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), self::Error> {
+        self.control_pins.wait_for_esp_select();
+
+        self.send_cmd(NinaCommand::SetPassphrase, 2).ok().unwrap();
+
+        let ssid_param = NinaSmallArrayParam::new(ssid);
+        self.send_param(ssid_param);
+
+        let passphrase_param = NinaSmallArrayParam::new(passphrase);
+        self.send_param(passphrase_param);
+
+        self.send_end_cmd();
+
+        let command_size: u8 = 6 + ssid.len() as u8 + passphrase.len() as u8;
+        self.pad_to_multiple_of_4(command_size as u16);
+
+        self.control_pins.esp_deselect();
+        self.control_pins.wait_for_esp_select();
+
+        self.wait_response_cmd(NinaCommand::SetPassphrase, 1);
+
+        self.control_pins.esp_deselect();
+        Ok(())
+    }
+
+    fn get_conn_status(&mut self) -> Result<u8, self::Error> {
+        self.control_pins.wait_for_esp_select();
+
+        self.send_cmd(NinaCommand::GetConnStatus, 0).ok().unwrap();
+
+        self.control_pins.esp_deselect();
+        self.control_pins.wait_for_esp_select();
+
+        let result = self.wait_response_cmd(NinaCommand::GetConnStatus, 1)?;
+        self.control_pins.esp_deselect();
+
+        Ok(result[0])
+    }
+
     fn send_cmd(&mut self, cmd: NinaCommand, num_params: u8) -> Result<(), self::Error> {
         let buf: [u8; 3] = [
             ControlByte::Start as u8,
@@ -104,7 +154,7 @@ where
         &mut self,
         cmd: NinaCommand,
         num_params: u8,
-    ) -> Result<[u8; PARAMS_ARRAY_LEN], self::Error> {
+    ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], self::Error> {
         self.check_start_cmd().ok().unwrap();
 
         let result = self.read_and_check_byte(cmd as u8 | ControlByte::Reply as u8)?;
@@ -123,12 +173,12 @@ where
 
         let num_params_to_read = self.get_param()? as usize;
 
-        if num_params_to_read > PARAMS_ARRAY_LEN {
+        if num_params_to_read > 8 {
             return Ok([0x31, 0x2e, 0x37, 0x2e, 0x34, 0x0, 0x0, 0x0]);
             //return Err(SPIError::Misc);
         }
 
-        let mut params: [u8; PARAMS_ARRAY_LEN] = [0; PARAMS_ARRAY_LEN];
+        let mut params: [u8; ARRAY_LENGTH_PLACEHOLDER] = [0; 8];
         for i in 0..num_params_to_read {
             params[i] = self.get_param().ok().unwrap()
         }
@@ -196,6 +246,29 @@ where
             Err(e) => {
                 return Err(e);
             }
+        }
+    }
+
+    fn send_param<P: NinaParam>(&mut self, mut param: P) -> Result<(), self::Error> {
+        self.send_param_length(&mut param)?;
+
+        for byte in param.data().into_iter() {
+            self.bus.transfer(&mut [*byte]).ok().unwrap();
+        }
+        Ok(())
+    }
+
+    fn send_param_length<P: NinaParam>(&mut self, param: &mut P) -> Result<(), self::Error> {
+        for byte in param.length_as_bytes().into_iter() {
+            self.bus.transfer(&mut [byte]).ok().unwrap();
+        }
+        Ok(())
+    }
+
+    fn pad_to_multiple_of_4(&mut self, mut command_size: u16) {
+        while command_size % 4 == 0 {
+            self.get_param().ok().unwrap();
+            command_size += 1;
         }
     }
 }

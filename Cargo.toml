@@ -23,6 +23,7 @@ embedded-time = "0.12"
 
 defmt = "0.3"
 defmt-rtt = "0.3"
+heapless = "0.7.16"
 panic-probe = { version = "0.3", features = ["print-rtt"] }
 
 rp2040-hal = { version = "0.5", features=["rt", "eh1_0_alpha"] }

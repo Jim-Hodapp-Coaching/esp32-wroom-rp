@@ -110,8 +110,7 @@ use protocol::ProtocolInterface;
 use defmt::{write, Format, Formatter};
 use embedded_hal::delay::blocking::DelayUs;
 
-// This is just a placeholder for now.
-type Params = [u8; 5];
+const ARRAY_LENGTH_PLACEHOLDER: usize = 8;
 
 #[derive(Debug)]
 pub enum Error {
@@ -135,12 +134,12 @@ pub struct FirmwareVersion {
 }
 
 impl FirmwareVersion {
-    fn new(version: [u8; 8]) -> FirmwareVersion {
+    fn new(version: [u8; ARRAY_LENGTH_PLACEHOLDER]) -> FirmwareVersion {
         Self::parse(version)
     }
 
     // Takes in 8 bytes (e.g. 1.7.4) and returns a FirmwareVersion instance
-    fn parse(version: [u8; 8]) -> FirmwareVersion {
+    fn parse(version: [u8; ARRAY_LENGTH_PLACEHOLDER]) -> FirmwareVersion {
         let major: u8;
         let minor: u8;
         let patch: u8;
@@ -179,14 +178,20 @@ where
         self.reset(delay);
     }
 
-    fn configure() {}
-
     fn reset<D: DelayUs>(&mut self, delay: &mut D) {
         self.protocol_handler.reset(delay)
     }
 
     fn firmware_version(&mut self) -> Result<FirmwareVersion, self::Error> {
         self.protocol_handler.get_fw_version()
+    }
+
+    fn join(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error> {
+        self.protocol_handler.set_passphrase(ssid, passphrase)
+    }
+
+    fn get_connection_status(&mut self) -> Result<u8, self::Error> {
+        self.protocol_handler.get_conn_status()
     }
 }
 
