@@ -2,7 +2,8 @@
 
 use super::gpio::EspControlInterface;
 use super::protocol::{
-    NinaCommand, NinaParam, NinaProtocolHandler, NinaSmallArrayParam, ProtocolInterface,
+    NinaByteParam, NinaCommand, NinaParam, NinaProtocolHandler, NinaSmallArrayParam,
+    ProtocolInterface,
 };
 use super::{Error, FirmwareVersion, WifiCommon, ARRAY_LENGTH_PLACEHOLDER};
 
@@ -51,9 +52,14 @@ where
         self.common.firmware_version()
     }
 
-    /// Joins a WiFi network given an SSID and a Passphrase
+    /// Joins a WiFi network given an SSID and a Passphrase.
     pub fn join(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error> {
         self.common.join(ssid, passphrase)
+    }
+
+    /// Disconnects from a joined WiFi network.
+    pub fn leave(&mut self) -> Result<(), Error> {
+        self.common.leave()
     }
 
     pub fn get_connection_status(&mut self) -> Result<u8, Error> {
@@ -113,6 +119,29 @@ where
         self.control_pins.wait_for_esp_select();
 
         self.wait_response_cmd(NinaCommand::SetPassphrase, 1);
+
+        self.control_pins.esp_deselect();
+        Ok(())
+    }
+
+    fn disconnect(&mut self) -> Result<(), self::Error> {
+        self.control_pins.wait_for_esp_select();
+
+        self.send_cmd(NinaCommand::Disconnect, 1).ok().unwrap();
+
+        let dummy_param = NinaByteParam::from_bytes(&[ControlByte::Dummy as u8]);
+        self.send_param(dummy_param);
+
+        self.send_end_cmd();
+
+        // Pad byte stream to multiple of 4
+        self.read_byte().ok().unwrap();
+        self.read_byte().ok().unwrap();
+
+        self.control_pins.esp_deselect();
+        self.control_pins.wait_for_esp_select();
+
+        self.wait_response_cmd(NinaCommand::Disconnect, 1);
 
         self.control_pins.esp_deselect();
         Ok(())
@@ -206,6 +235,17 @@ where
                 Err(_e) => {
                     continue;
                 }
+            }
+        }
+    }
+
+    fn read_byte(&mut self) -> Result<u8, self::Error> {
+        match self.get_param() {
+            Ok(byte_out) => {
+                return Ok(byte_out);
+            }
+            Err(e) => {
+                return Err(e);
             }
         }
     }

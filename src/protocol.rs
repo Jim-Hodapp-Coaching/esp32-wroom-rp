@@ -12,6 +12,7 @@ pub enum NinaCommand {
     GetFwVersion = 0x37u8,
     SetPassphrase = 0x11u8,
     GetConnStatus = 0x20u8,
+    Disconnect = 0x30u8,
 }
 
 pub trait NinaParam {
@@ -19,6 +20,7 @@ pub trait NinaParam {
     type LengthAsBytes: IntoIterator<Item = u8>;
 
     fn new(data: &str) -> Self;
+    fn from_bytes(bytes: &[u8]) -> Self;
 
     fn data(&mut self) -> &[u8];
 
@@ -60,6 +62,15 @@ impl NinaParam for NinaByteParam {
         }
     }
 
+    fn from_bytes(bytes: &[u8]) -> Self {
+        let mut data_as_bytes: Vec<u8, 1> = Vec::new();
+        data_as_bytes.extend_from_slice(bytes);
+        Self {
+            length: data_as_bytes.len() as u8,
+            data: data_as_bytes,
+        }
+    }
+
     fn data(&mut self) -> &[u8] {
         self.data.as_slice()
     }
@@ -74,6 +85,15 @@ impl NinaParam for NinaWordParam {
 
     fn new(data: &str) -> Self {
         let data_as_bytes: Vec<u8, 2> = String::from(data).into_bytes();
+        Self {
+            length: data_as_bytes.len() as u8,
+            data: data_as_bytes,
+        }
+    }
+
+    fn from_bytes(bytes: &[u8]) -> Self {
+        let mut data_as_bytes: Vec<u8, 2> = Vec::new();
+        data_as_bytes.extend_from_slice(bytes);
         Self {
             length: data_as_bytes.len() as u8,
             data: data_as_bytes,
@@ -100,6 +120,15 @@ impl NinaParam for NinaSmallArrayParam {
         }
     }
 
+    fn from_bytes(bytes: &[u8]) -> Self {
+        let mut data_as_bytes: Vec<u8, MAX_NINA_PARAM_LENGTH> = Vec::new();
+        data_as_bytes.extend_from_slice(bytes);
+        Self {
+            length: data_as_bytes.len() as u8,
+            data: data_as_bytes,
+        }
+    }
+
     fn data(&mut self) -> &[u8] {
         self.data.as_slice()
     }
@@ -114,6 +143,15 @@ impl NinaParam for NinaLargeArrayParam {
 
     fn new(data: &str) -> Self {
         let data_as_bytes: Vec<u8, MAX_NINA_PARAM_LENGTH> = String::from(data).into_bytes();
+        Self {
+            length: data_as_bytes.len() as u16,
+            data: data_as_bytes,
+        }
+    }
+
+    fn from_bytes(bytes: &[u8]) -> Self {
+        let mut data_as_bytes: Vec<u8, MAX_NINA_PARAM_LENGTH> = Vec::new();
+        data_as_bytes.extend_from_slice(bytes);
         Self {
             length: data_as_bytes.len() as u16,
             data: data_as_bytes,
@@ -137,6 +175,7 @@ pub trait ProtocolInterface {
     fn reset<D: DelayUs>(&mut self, delay: &mut D);
     fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error>;
     fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error>;
+    fn disconnect(&mut self) -> Result<(), self::Error>;
     fn get_conn_status(&mut self) -> Result<u8, self::Error>;
 
     fn send_cmd(&mut self, cmd: NinaCommand, num_params: u8) -> Result<(), self::Error>;
@@ -148,6 +187,7 @@ pub trait ProtocolInterface {
     fn send_end_cmd(&mut self) -> Result<(), self::Error>;
 
     fn get_param(&mut self) -> Result<u8, self::Error>;
+    fn read_byte(&mut self) -> Result<u8, self::Error>;
     fn wait_for_byte(&mut self, wait_byte: u8) -> Result<bool, self::Error>;
     fn check_start_cmd(&mut self) -> Result<bool, self::Error>;
     fn read_and_check_byte(&mut self, check_byte: u8) -> Result<bool, self::Error>;

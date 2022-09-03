@@ -1,7 +1,8 @@
 //! # ESP32-WROOM-RP Pico Wireless Example
 //!
 //! This application demonstrates how to use the ESP32-WROOM-RP crate to request that
-//! a remote ESP32 WiFi target connects to a particular SSID given a passphrase.
+//! a remote ESP32 WiFi target connects to a particular SSID given a passphrase
+//! and then leaves (disconnects) that same network.
 //!
 //! See the `Cargo.toml` file for Copyright and license details.
 
@@ -99,7 +100,7 @@ fn main() -> ! {
         &mut pac.RESETS,
     );
 
-    defmt::info!("ESP32-WROOM-RP get NINA firmware version example");
+    defmt::info!("ESP32-WROOM-RP join/leave WiFi network");
 
     // These are implicitly used by the spi driver if they are in the correct mode
     let spi_miso = pins.gpio16.into_mode::<hal::gpio::FunctionSpi>();
@@ -144,6 +145,12 @@ fn main() -> ! {
 
                 if byte == 3 {
                     defmt::info!("Connected to Network: {:?}", ssid);
+
+                    defmt::info!("Sleeping for 5 seconds before disconnecting...");
+                    delay.delay_ms(5000).ok().unwrap();
+
+                    wifi.leave().ok().unwrap();
+                    defmt::info!("Disconnected from Network: {:?}", ssid);
                 }
             }
             Err(e) => {
