@@ -150,6 +150,7 @@ fn main() -> ! {
                     delay.delay_ms(5000).ok().unwrap();
 
                     wifi.leave().ok().unwrap();
+                } else if byte == 6 {
                     defmt::info!("Disconnected from Network: {:?}", ssid);
                 }
             }
