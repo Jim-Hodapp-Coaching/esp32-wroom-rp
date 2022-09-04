@@ -1,6 +1,6 @@
 //! Serial Peripheral Interface (SPI) for Wifi
 
-use super::gpio::EspControlInterface;
+use crate::gpio::{EspControlInterface, EspControlPins};
 use super::protocol::{
     NinaCommand, NinaParam, NinaProtocolHandler, NinaSmallArrayParam, ProtocolInterface,
 };
@@ -24,7 +24,7 @@ enum ControlByte {
 
 #[derive(Debug, Default)]
 pub struct Wifi<B, C> {
-    common: WifiCommon<B, C>,
+    common: WifiCommon<NinaProtocolHandler<B, C>>,
 }
 
 impl<S, C> Wifi<S, C>
@@ -64,11 +64,13 @@ where
 }
 
 // All SPI-specific aspects of the NinaProtocolHandler go here in this struct impl
-impl<S, C> ProtocolInterface<S, C> for NinaProtocolHandler<S, C>
+impl<S, C, CS, GPIO0, RESETN, ACK> ProtocolInterface for NinaProtocolHandler<S, C>
 where
     S: Transfer<u8>,
     C: EspControlInterface,
 {
+    type ControlPins = EspControlPins<CS, GPIO0, RESETN, ACK>;
+
     fn init(&mut self) {
         // Chip select is active-low, so we'll initialize it to a driven-high state
         self.control_pins.init();
@@ -96,7 +98,7 @@ where
     }
 
     fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), self::Error> {
-        let stream = Stream::new(self.protocol_handler)
+        let stream = Stream::new(self)
             .command(NinaCommand::SetPassphrase)
             .param(NinaSmallArrayParam::new(ssid))
             .param(NinaSmallArrayParam::new(passphrase))
@@ -106,9 +108,7 @@ where
     }
 
     fn get_conn_status(&mut self) -> Result<u8, self::Error> {
-        let stream = Stream::new(self.protocol_handler)
-            .command(NinaCommand::GetConnStatus)
-            .send();
+        let stream = Stream::new(self).command(NinaCommand::GetConnStatus).send();
 
         let result = stream.wait_response();
 
@@ -253,6 +253,10 @@ where
             self.get_param().ok().unwrap();
             command_size += 1;
         }
+    }
+
+    fn control_pins(self) -> Self::ControlPins {
+
     }
 }
 

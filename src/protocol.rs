@@ -1,5 +1,7 @@
 pub mod stream;
 
+use crate::gpio::EspControlInterface;
+
 use super::*;
 
 use embedded_hal::delay::blocking::DelayUs;
@@ -19,10 +21,13 @@ pub enum NinaCommand {
 pub trait NinaParam {
     // Length of parameter in bytes
     type LengthAsBytes: IntoIterator<Item = u8>;
+    type Length;
 
     fn new(data: &str) -> Self;
 
     fn data(&mut self) -> &[u8];
+
+    fn length(self) -> Self::Length;
 
     fn length_as_bytes(&mut self) -> Self::LengthAsBytes;
 }
@@ -53,6 +58,7 @@ pub struct NinaLargeArrayParam {
 
 impl NinaParam for NinaByteParam {
     type LengthAsBytes = [u8; 1];
+    type Length = u8;
 
     fn new(data: &str) -> Self {
         let data_as_bytes: Vec<u8, 1> = String::from(data).into_bytes();
@@ -66,6 +72,10 @@ impl NinaParam for NinaByteParam {
         self.data.as_slice()
     }
 
+    fn length(self) -> Self::Length {
+        self.length
+    }
+
     fn length_as_bytes(&mut self) -> Self::LengthAsBytes {
         [self.length as u8]
     }
@@ -73,6 +83,7 @@ impl NinaParam for NinaByteParam {
 
 impl NinaParam for NinaWordParam {
     type LengthAsBytes = [u8; 1];
+    type Length = u8;
 
     fn new(data: &str) -> Self {
         let data_as_bytes: Vec<u8, 2> = String::from(data).into_bytes();
@@ -86,6 +97,10 @@ impl NinaParam for NinaWordParam {
         self.data.as_slice()
     }
 
+    fn length(self) -> Self::Length {
+        self.length
+    }
+
     fn length_as_bytes(&mut self) -> Self::LengthAsBytes {
         [self.length as u8]
     }
@@ -93,6 +108,7 @@ impl NinaParam for NinaWordParam {
 
 impl NinaParam for NinaSmallArrayParam {
     type LengthAsBytes = [u8; 1];
+    type Length = u8;
 
     fn new(data: &str) -> Self {
         let data_as_bytes: Vec<u8, MAX_NINA_PARAM_LENGTH> = String::from(data).into_bytes();
@@ -106,6 +122,10 @@ impl NinaParam for NinaSmallArrayParam {
         self.data.as_slice()
     }
 
+    fn length(self) -> Self::Length {
+        self.length
+    }
+
     fn length_as_bytes(&mut self) -> Self::LengthAsBytes {
         [self.length as u8]
     }
@@ -113,6 +133,7 @@ impl NinaParam for NinaSmallArrayParam {
 
 impl NinaParam for NinaLargeArrayParam {
     type LengthAsBytes = [u8; 2];
+    type Length = u16;
 
     fn new(data: &str) -> Self {
         let data_as_bytes: Vec<u8, MAX_NINA_PARAM_LENGTH> = String::from(data).into_bytes();
@@ -126,6 +147,10 @@ impl NinaParam for NinaLargeArrayParam {
         self.data.as_slice()
     }
 
+    fn length(self) -> Self::Length {
+        self.length
+    }
+
     fn length_as_bytes(&mut self) -> Self::LengthAsBytes {
         [
             ((self.length & 0xff00) >> 8) as u8,
@@ -134,7 +159,9 @@ impl NinaParam for NinaLargeArrayParam {
     }
 }
 
-pub trait ProtocolInterface<BUS, CONTROL> {
+pub trait ProtocolInterface {
+    type ControlPins: EspControlInterface;
+
     fn init(&mut self);
     fn reset<D: DelayUs>(&mut self, delay: &mut D);
     fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error>;
@@ -156,6 +183,7 @@ pub trait ProtocolInterface<BUS, CONTROL> {
     fn send_param<P: NinaParam>(&mut self, param: P) -> Result<(), self::Error>;
     fn send_param_length<P: NinaParam>(&mut self, param: &mut P) -> Result<(), self::Error>;
     fn pad_to_multiple_of_4(&mut self, command_size: u16);
+    fn control_pins(self) -> Self::ControlPins;
 }
 
 #[derive(Debug, Default)]
@@ -165,3 +193,4 @@ pub struct NinaProtocolHandler<B, C> {
     /// A EspControlPins instance
     pub control_pins: C,
 }
+

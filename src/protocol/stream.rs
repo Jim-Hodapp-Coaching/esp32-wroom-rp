@@ -1,21 +1,23 @@
 use super::protocol::{NinaCommand, NinaParam, NinaProtocolHandler, ProtocolInterface};
+use crate::gpio::EspControlInterface;
 use crate::Error;
 
 use heapless::Vec;
 
 const MAX_NUMBER_OF_PARAMS: usize = 4;
 
-pub struct Stream<BUS, CONTROL, P: NinaParam, I: ProtocolInterface<BUS, CONTROL>> {
-    protocol_handler: I,
+pub struct Stream<'a, P: NinaParam, I: ProtocolInterface> {
+    protocol_handler: &'a mut I,
     params: Vec<P, MAX_NUMBER_OF_PARAMS>,
     command: Option<NinaCommand>,
 }
 
-impl<BUS, CONTROL, P, I> Stream<BUS, CONTROL, P, I>
+impl<'a, P, I> Stream<'a, P, I>
 where
     P: NinaParam,
+    I: ProtocolInterface,
 {
-    fn new(protocol_handler: NinaProtocolHandler<BUS, CONTROL>) -> Self {
+    pub fn new(protocol_handler: &mut I) -> Self {
         Self {
             protocol_handler: protocol_handler,
             params: Vec::new(),
@@ -23,53 +25,58 @@ where
         }
     }
 
-    fn command(self, command: NinaCommand) -> Self {
+    pub fn command(self, command: NinaCommand) -> Self {
         Self {
             command: Some(command),
             ..self
         }
     }
 
-    fn param(self, param: P) {
+    pub fn param(self, param: P) {
         self.params.push(param);
     }
 
-    fn send(&mut self) -> Result<(), Error> {
+    pub fn send(&mut self) -> Result<(), Error> {
         let params_iter = self.params.into_iter();
-        let number_of_params: u8 = self.params.len();
+        let number_of_params: u8 = self.params.len() as u8;
+        let control_pins = self.protocol_handler.control_pins;
+        let Some(command) = self.command;
 
-        self.protocol_handler.control_pins.wait_for_esp_select();
+        control_pins.wait_for_esp_select();
 
         self.protocol_handler
-            .send_cmd(self.command, number_of_params)
+            .send_cmd(command, number_of_params)
             .ok()
             .unwrap();
 
         // only send params if they are present
         if number_of_params > 0 {
-            params_iter.for_each(|param| self.wifi.send_param(param));
+            params_iter.for_each(|param| self.protocol_handler.send_param(param));
 
-            self.wifi.send_end_cmd();
+            self.protocol_handler.send_end_cmd();
 
-            let param_size: u16 = params_iter.map(|param| param.length() as u16).sum();
+            let param_size: u16 = params_iter.map(|param| param.length()).sum();
 
             // This is to make sure we align correctly
             // 4 (start byte, command byte, reply byte, end byte) + the sum of all param lengths
             let command_size: u16 = 4u16 + param_size;
-            self.pad_to_multiple_of_4(command_size);
+            self.protocol_handler.pad_to_multiple_of_4(command_size);
         }
 
-        self.protocol_handler.control_pins.esp_deselect();
+        control_pins.esp_deselect();
     }
 
-    fn wait_response(&mut self) {
-        self.protocol.control_pins.wait_for_esp_select();
+    pub fn wait_response(&mut self) {
+        let control_pins = self.protocol_handler.into_control_interface();
+        let Some(command) = self.command;
+
+        control_pins.wait_for_esp_select();
 
         let result = self
             .protocol_handler
-            .wait_response_cmd(self.command, self.params.len());
+            .wait_response_cmd(command, self.params.len() as u8);
 
-        self.protocol_handler.control_pins.esp_deselect();
+        control_pins.esp_deselect();
 
         result
     }

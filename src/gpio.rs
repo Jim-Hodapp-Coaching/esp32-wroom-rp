@@ -59,6 +59,7 @@ pub trait EspControlInterface {
     fn wait_for_esp_ack(&self);
 
     fn wait_for_esp_select(&mut self);
+
 }
 
 /// A structured representation of all GPIO pins that control a ESP32-WROOM NINA firmware-based

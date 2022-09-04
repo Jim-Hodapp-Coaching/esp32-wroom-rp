@@ -165,13 +165,13 @@ impl Format for FirmwareVersion {
 }
 
 #[derive(Debug, Default)]
-struct WifiCommon<BUS, CONTROL> {
-    protocol_handler: NinaProtocolHandler<BUS, CONTROL>,
+struct WifiCommon<PH> {
+    protocol_handler: PH,
 }
 
-impl<PH, BUS, CONTROL> WifiCommon<PH, BUS, CONTROL>
+impl<PH> WifiCommon<PH>
 where
-    PH: ProtocolInterface<BUS, CONTROL>,
+    PH: ProtocolInterface,
 {
     fn init<D: DelayUs>(&mut self, delay: &mut D) {
         self.protocol_handler.init();
