@@ -186,8 +186,7 @@ pub trait ProtocolInterface {
     ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], self::Error>;
     fn send_end_cmd(&mut self) -> Result<(), self::Error>;
 
-    fn get_param(&mut self) -> Result<u8, self::Error>;
-    fn read_byte(&mut self) -> Result<u8, self::Error>;
+    fn get_byte(&mut self) -> Result<u8, self::Error>;
     fn wait_for_byte(&mut self, wait_byte: u8) -> Result<bool, self::Error>;
     fn check_start_cmd(&mut self) -> Result<bool, self::Error>;
     fn read_and_check_byte(&mut self, check_byte: u8) -> Result<bool, self::Error>;
