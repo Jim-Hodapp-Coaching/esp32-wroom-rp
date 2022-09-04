@@ -1,3 +1,5 @@
+pub mod operation;
+
 use super::*;
 
 use embedded_hal::blocking::delay::DelayMs;
@@ -177,22 +179,6 @@ pub trait ProtocolInterface {
     fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error>;
     fn disconnect(&mut self) -> Result<(), self::Error>;
     fn get_conn_status(&mut self) -> Result<u8, self::Error>;
-
-    fn send_cmd(&mut self, cmd: NinaCommand, num_params: u8) -> Result<(), self::Error>;
-    fn wait_response_cmd(
-        &mut self,
-        cmd: NinaCommand,
-        num_params: u8,
-    ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], self::Error>;
-    fn send_end_cmd(&mut self) -> Result<(), self::Error>;
-
-    fn get_byte(&mut self) -> Result<u8, self::Error>;
-    fn wait_for_byte(&mut self, wait_byte: u8) -> Result<bool, self::Error>;
-    fn check_start_cmd(&mut self) -> Result<bool, self::Error>;
-    fn read_and_check_byte(&mut self, check_byte: u8) -> Result<bool, self::Error>;
-    fn send_param<P: NinaParam>(&mut self, param: P) -> Result<(), self::Error>;
-    fn send_param_length<P: NinaParam>(&mut self, param: &mut P) -> Result<(), self::Error>;
-    fn pad_to_multiple_of_4(&mut self, command_size: u16);
 }
 
 #[derive(Debug, Default)]

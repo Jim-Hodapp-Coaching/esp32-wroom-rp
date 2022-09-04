@@ -5,6 +5,8 @@ use super::protocol::{
     NinaByteParam, NinaCommand, NinaParam, NinaProtocolHandler, NinaSmallArrayParam,
     ProtocolInterface,
 };
+
+use super::protocol::operation::Operation;
 use super::{Error, FirmwareVersion, WifiCommon, ARRAY_LENGTH_PLACEHOLDER};
 
 use embedded_hal::blocking::delay::DelayMs;
@@ -164,7 +166,13 @@ where
 
         Ok(result[0])
     }
+}
 
+impl<S, C> NinaProtocolHandler<S, C>
+where
+    S: Transfer<u8>,
+    C: EspControlInterface,
+{
     fn send_cmd(&mut self, cmd: NinaCommand, num_params: u8) -> Result<(), self::Error> {
         let buf: [u8; 3] = [
             ControlByte::Start as u8,
