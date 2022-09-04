@@ -106,27 +106,13 @@ where
     }
 
     fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), self::Error> {
-        self.control_pins.wait_for_esp_select();
+        let operation = Operation::new(NinaCommand::SetPassphrase)
+            .param(NinaSmallArrayParam::new(ssid))
+            .param(NinaSmallArrayParam::new(passphrase));
 
-        self.send_cmd(NinaCommand::SetPassphrase, 2).ok().unwrap();
+        self.execute(operation);
 
-        let ssid_param = NinaSmallArrayParam::new(ssid);
-        self.send_param(ssid_param);
-
-        let passphrase_param = NinaSmallArrayParam::new(passphrase);
-        self.send_param(passphrase_param);
-
-        self.send_end_cmd();
-
-        let command_size: u8 = 6 + ssid.len() as u8 + passphrase.len() as u8;
-        self.pad_to_multiple_of_4(command_size as u16);
-
-        self.control_pins.esp_deselect();
-        self.control_pins.wait_for_esp_select();
-
-        self.wait_response_cmd(NinaCommand::SetPassphrase, 1);
-
-        self.control_pins.esp_deselect();
+        self.receive(operation, 1);
         Ok(())
     }
 
@@ -173,6 +159,44 @@ where
     S: Transfer<u8>,
     C: EspControlInterface,
 {
+    fn execute<P: NinaParam>(&mut self, operation: Operation<P>) -> Result<(), Error> {
+        let number_of_params: u8 = operation.params.len() as u8;
+        let mut param_size: u16 = 0;
+        self.control_pins.wait_for_esp_select();
+
+        // only send params if they are present
+        if number_of_params > 0 {
+            operation.params.into_iter().for_each(|param| {
+                self.send_param(param);
+                param_size = param_size + param.length();
+            });
+
+            self.send_end_cmd();
+
+            // This is to make sure we align correctly
+            // 4 (start byte, command byte, reply byte, end byte) + the sum of all param lengths
+            let command_size: u16 = 4u16 + param_size;
+            self.pad_to_multiple_of_4(command_size);
+        }
+        self.control_pins.esp_deselect();
+
+        Ok(())
+    }
+
+    fn receive<P: NinaParam>(
+        &mut self,
+        operation: Operation<P>,
+        number_of_params: u8,
+    ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
+        self.control_pins.wait_for_esp_select();
+
+        let result = self.wait_response_cmd(operation.command, number_of_params);
+
+        self.control_pins.esp_deselect();
+
+        result
+    }
+
     fn send_cmd(&mut self, cmd: NinaCommand, num_params: u8) -> Result<(), self::Error> {
         let buf: [u8; 3] = [
             ControlByte::Start as u8,

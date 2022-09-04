@@ -4,8 +4,8 @@ use heapless::Vec;
 const MAX_NUMBER_OF_PARAMS: usize = 4;
 
 pub struct Operation<P> {
-    params: Vec<P, MAX_NUMBER_OF_PARAMS>,
-    command: NinaCommand,
+    pub params: Vec<P, MAX_NUMBER_OF_PARAMS>,
+    pub command: NinaCommand,
 }
 
 impl<P> Operation<P>

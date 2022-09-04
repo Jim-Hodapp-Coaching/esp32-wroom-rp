@@ -27,6 +27,8 @@ pub trait NinaParam {
     fn data(&mut self) -> &[u8];
 
     fn length_as_bytes(&mut self) -> Self::LengthAsBytes;
+
+    fn length(self) -> u16;
 }
 
 // Used for single byte params
@@ -77,6 +79,10 @@ impl NinaParam for NinaByteParam {
         self.data.as_slice()
     }
 
+    fn length(self) -> u16 {
+        self.length as u16
+    }
+
     fn length_as_bytes(&mut self) -> Self::LengthAsBytes {
         [self.length as u8]
     }
@@ -104,6 +110,10 @@ impl NinaParam for NinaWordParam {
 
     fn data(&mut self) -> &[u8] {
         self.data.as_slice()
+    }
+
+    fn length(self) -> u16 {
+        self.length as u16
     }
 
     fn length_as_bytes(&mut self) -> Self::LengthAsBytes {
@@ -135,6 +145,10 @@ impl NinaParam for NinaSmallArrayParam {
         self.data.as_slice()
     }
 
+    fn length(self) -> u16 {
+        self.length as u16
+    }
+
     fn length_as_bytes(&mut self) -> Self::LengthAsBytes {
         [self.length as u8]
     }
@@ -162,6 +176,10 @@ impl NinaParam for NinaLargeArrayParam {
 
     fn data(&mut self) -> &[u8] {
         self.data.as_slice()
+    }
+
+    fn length(self) -> u16 {
+        self.length
     }
 
     fn length_as_bytes(&mut self) -> Self::LengthAsBytes {
