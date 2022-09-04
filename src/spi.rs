@@ -2,7 +2,8 @@
 
 use super::gpio::EspControlInterface;
 use super::protocol::{
-    NinaCommand, NinaParam, NinaProtocolHandler, NinaSmallArrayParam, ProtocolInterface,
+    NinaByteParam, NinaCommand, NinaParam, NinaProtocolHandler, NinaSmallArrayParam,
+    ProtocolInterface,
 };
 use super::{Error, FirmwareVersion, WifiCommon, ARRAY_LENGTH_PLACEHOLDER};
 
@@ -51,9 +52,14 @@ where
         self.common.firmware_version()
     }
 
-    /// Joins a WiFi network given an SSID and a Passphrase
+    /// Joins a WiFi network given an SSID and a Passphrase.
     pub fn join(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error> {
         self.common.join(ssid, passphrase)
+    }
+
+    /// Disconnects from a joined WiFi network.
+    pub fn leave(&mut self) -> Result<(), Error> {
+        self.common.leave()
     }
 
     pub fn get_connection_status(&mut self) -> Result<u8, Error> {
@@ -118,6 +124,29 @@ where
         Ok(())
     }
 
+    fn disconnect(&mut self) -> Result<(), self::Error> {
+        self.control_pins.wait_for_esp_select();
+
+        self.send_cmd(NinaCommand::Disconnect, 1).ok().unwrap();
+
+        let dummy_param = NinaByteParam::from_bytes(&[ControlByte::Dummy as u8]);
+        self.send_param(dummy_param);
+
+        self.send_end_cmd();
+
+        // Pad byte stream to multiple of 4
+        self.get_byte().ok().unwrap();
+        self.get_byte().ok().unwrap();
+
+        self.control_pins.esp_deselect();
+        self.control_pins.wait_for_esp_select();
+
+        self.wait_response_cmd(NinaCommand::Disconnect, 1);
+
+        self.control_pins.esp_deselect();
+        Ok(())
+    }
+
     fn get_conn_status(&mut self) -> Result<u8, self::Error> {
         self.control_pins.wait_for_esp_select();
 
@@ -171,7 +200,7 @@ where
             //return Err(SPIError::Misc);
         }
 
-        let num_params_to_read = self.get_param()? as usize;
+        let num_params_to_read = self.get_byte()? as usize;
 
         if num_params_to_read > 8 {
             return Ok([0x31, 0x2e, 0x37, 0x2e, 0x34, 0x0, 0x0, 0x0]);
@@ -180,7 +209,7 @@ where
 
         let mut params: [u8; ARRAY_LENGTH_PLACEHOLDER] = [0; 8];
         for i in 0..num_params_to_read {
-            params[i] = self.get_param().ok().unwrap()
+            params[i] = self.get_byte().ok().unwrap()
         }
 
         self.read_and_check_byte(ControlByte::End as u8)?;
@@ -194,7 +223,7 @@ where
         Ok(())
     }
 
-    fn get_param(&mut self) -> Result<u8, self::Error> {
+    fn get_byte(&mut self) -> Result<u8, self::Error> {
         // Blocking read, don't return until we've read a byte successfully
         loop {
             let word_out = &mut [ControlByte::Dummy as u8];
@@ -214,7 +243,7 @@ where
         let mut timeout: u16 = 1000u16;
 
         loop {
-            match self.get_param() {
+            match self.get_byte() {
                 Ok(byte_read) => {
                     if byte_read == ControlByte::Error as u8 {
                         return Ok(false);
@@ -239,7 +268,7 @@ where
     }
 
     fn read_and_check_byte(&mut self, check_byte: u8) -> Result<bool, self::Error> {
-        match self.get_param() {
+        match self.get_byte() {
             Ok(byte_out) => {
                 return Ok(byte_out == check_byte);
             }
@@ -267,7 +296,7 @@ where
 
     fn pad_to_multiple_of_4(&mut self, mut command_size: u16) {
         while command_size % 4 == 0 {
-            self.get_param().ok().unwrap();
+            self.get_byte().ok().unwrap();
             command_size += 1;
         }
     }

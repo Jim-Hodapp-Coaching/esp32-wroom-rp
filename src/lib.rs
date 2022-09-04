@@ -190,6 +190,10 @@ where
         self.protocol_handler.set_passphrase(ssid, passphrase)
     }
 
+    fn leave(&mut self) -> Result<(), Error> {
+        self.protocol_handler.disconnect()
+    }
+
     fn get_connection_status(&mut self) -> Result<u8, self::Error> {
         self.protocol_handler.get_conn_status()
     }
