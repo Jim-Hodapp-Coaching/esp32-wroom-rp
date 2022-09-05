@@ -11,6 +11,8 @@
 
 extern crate esp32_wroom_rp;
 
+include!("secrets/secrets.rs");
+
 // The macro for our start-up function
 use cortex_m_rt::entry;
 
@@ -30,7 +32,6 @@ use hal::pac;
 
 use embedded_hal::delay::blocking::DelayUs;
 
-include!("secrets.rs");
 
 /// The linker will place this boot block at the start of our program image. We
 /// need this to help the ROM bootloader get our code up and running.
@@ -129,6 +130,7 @@ fn main() -> ! {
         // ACK on pin x (GPIO10)
         ack: pins.gpio10.into_mode::<hal::gpio::FloatingInput>(),
     };
+    let passphrase: &str = "Passphrase";
 
     let mut wifi = esp32_wroom_rp::wifi::Wifi::init(spi, esp_pins, &mut delay).unwrap();
     let result = wifi.join(SSID, PASSPHRASE);
@@ -144,14 +146,14 @@ fn main() -> ! {
                 delay.delay_ms(sleep).ok().unwrap();
 
                 if byte == 3 {
-                    defmt::info!("Connected to Network: {:?}", ssid);
+                    defmt::info!("Connected to Network: {:?}", SSID);
 
                     defmt::info!("Sleeping for 5 seconds before disconnecting...");
                     delay.delay_ms(5000).ok().unwrap();
 
                     wifi.leave().ok().unwrap();
                 } else if byte == 6 {
-                    defmt::info!("Disconnected from Network: {:?}", ssid);
+                    defmt::info!("Disconnected from Network: {:?}", SSID);
                 }
             }
             Err(e) => {
