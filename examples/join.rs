@@ -30,6 +30,8 @@ use hal::pac;
 
 use embedded_hal::delay::blocking::DelayUs;
 
+include!("secrets.rs");
+
 /// The linker will place this boot block at the start of our program image. We
 /// need this to help the ROM bootloader get our code up and running.
 #[link_section = ".boot2"]
@@ -127,11 +129,9 @@ fn main() -> ! {
         // ACK on pin x (GPIO10)
         ack: pins.gpio10.into_mode::<hal::gpio::FloatingInput>(),
     };
-    let ssid: &str = "SSID";
-    let passphrase: &str = "Passphrase";
 
     let mut wifi = esp32_wroom_rp::wifi::Wifi::init(spi, esp_pins, &mut delay).unwrap();
-    let result = wifi.join(ssid, passphrase);
+    let result = wifi.join(SSID, PASSPHRASE);
     defmt::info!("Join Result: {:?}", result);
 
     defmt::info!("Entering main loop");
