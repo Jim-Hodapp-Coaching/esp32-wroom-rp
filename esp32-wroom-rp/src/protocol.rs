@@ -22,13 +22,14 @@ pub trait NinaParam {
     type LengthAsBytes: IntoIterator<Item = u8>;
 
     fn new(data: &str) -> Self;
+
     fn from_bytes(bytes: &[u8]) -> Self;
 
-    fn data(&mut self) -> &[u8];
+    fn data(&self) -> &[u8];
 
-    fn length_as_bytes(&mut self) -> Self::LengthAsBytes;
+    fn length_as_bytes(&self) -> Self::LengthAsBytes;
 
-    fn length(self) -> u16;
+    fn length(&self) -> u16;
 }
 
 // Used for single byte params
@@ -75,15 +76,15 @@ impl NinaParam for NinaByteParam {
         }
     }
 
-    fn data(&mut self) -> &[u8] {
+    fn data(&self) -> &[u8] {
         self.data.as_slice()
     }
 
-    fn length(self) -> u16 {
+    fn length(&self) -> u16 {
         self.length as u16
     }
 
-    fn length_as_bytes(&mut self) -> Self::LengthAsBytes {
+    fn length_as_bytes(&self) -> Self::LengthAsBytes {
         [self.length as u8]
     }
 }
@@ -108,15 +109,15 @@ impl NinaParam for NinaWordParam {
         }
     }
 
-    fn data(&mut self) -> &[u8] {
+    fn data(&self) -> &[u8] {
         self.data.as_slice()
     }
 
-    fn length(self) -> u16 {
+    fn length(&self) -> u16 {
         self.length as u16
     }
 
-    fn length_as_bytes(&mut self) -> Self::LengthAsBytes {
+    fn length_as_bytes(&self) -> Self::LengthAsBytes {
         [self.length as u8]
     }
 }
@@ -141,15 +142,15 @@ impl NinaParam for NinaSmallArrayParam {
         }
     }
 
-    fn data(&mut self) -> &[u8] {
+    fn data(&self) -> &[u8] {
         self.data.as_slice()
     }
 
-    fn length(self) -> u16 {
+    fn length(&self) -> u16 {
         self.length as u16
     }
 
-    fn length_as_bytes(&mut self) -> Self::LengthAsBytes {
+    fn length_as_bytes(&self) -> Self::LengthAsBytes {
         [self.length as u8]
     }
 }
@@ -174,15 +175,15 @@ impl NinaParam for NinaLargeArrayParam {
         }
     }
 
-    fn data(&mut self) -> &[u8] {
+    fn data(&self) -> &[u8] {
         self.data.as_slice()
     }
 
-    fn length(self) -> u16 {
+    fn length(&self) -> u16 {
         self.length
     }
 
-    fn length_as_bytes(&mut self) -> Self::LengthAsBytes {
+    fn length_as_bytes(&self) -> Self::LengthAsBytes {
         [
             ((self.length & 0xff00) >> 8) as u8,
             (self.length & 0xff) as u8,
