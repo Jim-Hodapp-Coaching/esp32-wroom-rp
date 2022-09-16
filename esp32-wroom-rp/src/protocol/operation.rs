@@ -7,16 +7,16 @@ pub struct Operation<P> {
     pub params: Vec<P, MAX_NUMBER_OF_PARAMS>,
     pub command: NinaCommand,
     pub has_params: bool,
+    pub number_of_params_to_receive: u8,
 }
 
-// try ?sized
-
 impl<P> Operation<P> {
-    pub fn new(command: NinaCommand) -> Self {
+    pub fn new(command: NinaCommand, number_of_params_to_receive: u8) -> Self {
         Self {
             params: Vec::new(),
             command: command,
             has_params: true,
+            number_of_params_to_receive: number_of_params_to_receive,
         }
     }
 

@@ -89,45 +89,46 @@ where
     }
 
     fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error> {
+        // TODO: improve the ergonomics around with_no_params()
         let operation =
-            Operation::new(NinaCommand::GetFwVersion).with_no_params(NinaNoParams::new(""));
+            Operation::new(NinaCommand::GetFwVersion, 1).with_no_params(NinaNoParams::new(""));
 
         self.execute(&operation);
 
-        let result = self.receive(&operation, 1)?;
+        let result = self.receive(&operation)?;
 
         Ok(FirmwareVersion::new(result)) // e.g. 1.7.4
     }
 
     fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), self::Error> {
-        let operation: Operation<NinaSmallArrayParam> = Operation::new(NinaCommand::SetPassphrase)
+        let operation = Operation::new(NinaCommand::SetPassphrase, 1)
             .param(NinaSmallArrayParam::new(ssid))
             .param(NinaSmallArrayParam::new(passphrase));
 
         self.execute(&operation);
 
-        self.receive(&operation, 1);
+        self.receive(&operation);
         Ok(())
     }
 
     fn get_conn_status(&mut self) -> Result<u8, self::Error> {
         let operation =
-            Operation::new(NinaCommand::GetConnStatus).with_no_params(NinaNoParams::new(""));
+            Operation::new(NinaCommand::GetConnStatus, 1).with_no_params(NinaNoParams::new(""));
 
         self.execute(&operation);
 
-        let result = self.receive(&operation, 1)?;
+        let result = self.receive(&operation)?;
 
         Ok(result[0])
     }
 
     fn disconnect(&mut self) -> Result<(), self::Error> {
         let dummy_param = NinaByteParam::from_bytes(&[ControlByte::Dummy as u8]);
-        let operation = Operation::new(NinaCommand::Disconnect).param(dummy_param);
+        let operation = Operation::new(NinaCommand::Disconnect, 1).param(dummy_param);
 
         self.execute(&operation);
 
-        self.receive(&operation, 1);
+        self.receive(&operation);
 
         Ok(())
     }
@@ -139,14 +140,13 @@ where
     C: EspControlInterface,
 {
     fn execute<P: NinaParam>(&mut self, operation: &Operation<P>) -> Result<(), Error> {
-        let number_of_params: u8 = operation.params.len() as u8;
         let mut param_size: u16 = 0;
         self.control_pins.wait_for_esp_select();
 
-        self.send_cmd(&operation.command, number_of_params);
+        self.send_cmd(&operation.command, operation.params.len() as u8);
 
         // only send params if they are present
-        if number_of_params > 0 {
+        if operation.has_params {
             operation.params.iter().for_each(|param| {
                 self.send_param(param);
                 param_size = param_size + param.length();
@@ -167,11 +167,11 @@ where
     fn receive<P: NinaParam>(
         &mut self,
         operation: &Operation<P>,
-        number_of_params: u8,
     ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
         self.control_pins.wait_for_esp_select();
 
-        let result = self.wait_response_cmd(&operation.command, number_of_params);
+        let result =
+            self.wait_response_cmd(&operation.command, operation.number_of_params_to_receive);
 
         self.control_pins.esp_deselect();
 

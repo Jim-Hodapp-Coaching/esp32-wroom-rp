@@ -117,7 +117,7 @@ fn main() -> ! {
     };
 
     let mut wifi = esp32_wroom_rp::wifi::Wifi::init(spi, esp_pins, &mut delay).unwrap();
-    let result = wifi.join(SSID, PADSSPHRASE);
+    let result = wifi.join(SSID, PASSPHRASE);
     defmt::info!("Join Result: {:?}", result);
 
     defmt::info!("Entering main loop");
