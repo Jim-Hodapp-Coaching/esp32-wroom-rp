@@ -9,7 +9,7 @@ use heapless::{String, Vec};
 pub const MAX_NINA_PARAM_LENGTH: usize = 255;
 
 #[repr(u8)]
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 pub enum NinaCommand {
     GetFwVersion = 0x37u8,
     SetPassphrase = 0x11u8,
@@ -30,6 +30,35 @@ pub trait NinaParam {
     fn length_as_bytes(&self) -> Self::LengthAsBytes;
 
     fn length(&self) -> u16;
+}
+
+// Used for Nina protocol commands with no parameters
+pub struct NinaNoParams {
+    _placeholder: u8,
+}
+
+impl NinaParam for NinaNoParams {
+    type LengthAsBytes = [u8; 0];
+
+    fn new(data: &str) -> Self {
+        Self { _placeholder: 0 }
+    }
+
+    fn from_bytes(bytes: &[u8]) -> Self {
+        Self { _placeholder: 0 }
+    }
+
+    fn data(&self) -> &[u8] {
+        &[0u8]
+    }
+
+    fn length_as_bytes(&self) -> Self::LengthAsBytes {
+        []
+    }
+
+    fn length(&self) -> u16 {
+        0u16
+    }
 }
 
 // Used for single byte params

@@ -2,7 +2,7 @@
 
 use super::gpio::EspControlInterface;
 use super::protocol::{
-    NinaByteParam, NinaCommand, NinaParam, NinaProtocolHandler, NinaSmallArrayParam,
+    NinaByteParam, NinaCommand, NinaNoParams, NinaParam, NinaProtocolHandler, NinaSmallArrayParam,
     ProtocolInterface,
 };
 
@@ -89,7 +89,8 @@ where
     }
 
     fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error> {
-        let operation = Operation::new(NinaCommand::GetFwVersion);
+        let operation =
+            Operation::new(NinaCommand::GetFwVersion).with_no_params(NinaNoParams::new(""));
 
         self.execute(&operation);
 
@@ -99,7 +100,7 @@ where
     }
 
     fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), self::Error> {
-        let operation = Operation::new(NinaCommand::SetPassphrase)
+        let operation: Operation<NinaSmallArrayParam> = Operation::new(NinaCommand::SetPassphrase)
             .param(NinaSmallArrayParam::new(ssid))
             .param(NinaSmallArrayParam::new(passphrase));
 
@@ -110,7 +111,8 @@ where
     }
 
     fn get_conn_status(&mut self) -> Result<u8, self::Error> {
-        let operation = Operation::new(NinaCommand::GetConnStatus);
+        let operation =
+            Operation::new(NinaCommand::GetConnStatus).with_no_params(NinaNoParams::new(""));
 
         self.execute(&operation);
 
@@ -137,15 +139,15 @@ where
     C: EspControlInterface,
 {
     fn execute<P: NinaParam>(&mut self, operation: &Operation<P>) -> Result<(), Error> {
-        let number_of_params: u8 = operation.params.unwrap().len() as u8;
+        let number_of_params: u8 = operation.params.len() as u8;
         let mut param_size: u16 = 0;
         self.control_pins.wait_for_esp_select();
 
-        self.send_cmd(operation.command, number_of_params);
+        self.send_cmd(&operation.command, number_of_params);
 
         // only send params if they are present
         if number_of_params > 0 {
-            operation.params.unwrap().iter().for_each(|param| {
+            operation.params.iter().for_each(|param| {
                 self.send_param(param);
                 param_size = param_size + param.length();
             });
@@ -176,10 +178,10 @@ where
         result
     }
 
-    fn send_cmd(&mut self, cmd: NinaCommand, num_params: u8) -> Result<(), self::Error> {
+    fn send_cmd(&mut self, cmd: &NinaCommand, num_params: u8) -> Result<(), self::Error> {
         let buf: [u8; 3] = [
             ControlByte::Start as u8,
-            (cmd as u8) & !(ControlByte::Reply as u8),
+            (*cmd as u8) & !(ControlByte::Reply as u8),
             num_params,
         ];
 
