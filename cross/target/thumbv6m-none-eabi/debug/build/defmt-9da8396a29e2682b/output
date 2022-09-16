@@ -1,0 +1,2 @@
+cargo:rustc-link-search=/Users/jhodapp/Projects/rust/esp32-wroom-rp/cross/target/thumbv6m-none-eabi/debug/build/defmt-9da8396a29e2682b/out
+cargo:rustc-cfg=no_cas

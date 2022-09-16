@@ -1,0 +1,12 @@
+cargo:rustc-cfg=polyfill_u8
+cargo:rustc-cfg=polyfill_u16
+cargo:rustc-cfg=polyfill_u32
+cargo:rustc-cfg=polyfill_usize
+cargo:rustc-cfg=polyfill_i8
+cargo:rustc-cfg=polyfill_i16
+cargo:rustc-cfg=polyfill_i32
+cargo:rustc-cfg=polyfill_isize
+cargo:rustc-cfg=polyfill_ptr
+cargo:rustc-cfg=polyfill_bool
+cargo:rustc-cfg=polyfill_u64
+cargo:rustc-cfg=polyfill_i64

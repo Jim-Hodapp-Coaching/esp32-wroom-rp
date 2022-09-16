@@ -1,0 +1,7 @@
+cargo:rustc-link-lib=static=cortex-m-rt
+cargo:rerun-if-changed=bin/thumbv6m-none-eabi.a
+cargo:rustc-cfg=cortex_m
+cargo:rustc-cfg=armv6m
+cargo:rustc-link-search=/Users/jhodapp/Projects/rust/esp32-wroom-rp/cross/target/thumbv6m-none-eabi/debug/build/cortex-m-rt-d421bd7dd33d0a75/out
+cargo:rerun-if-changed=build.rs
+cargo:rerun-if-changed=link.x.in

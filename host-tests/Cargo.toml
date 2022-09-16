@@ -1,0 +1,14 @@
+[package]
+authors = [
+    "Jim Hodapp",
+    "Caleb Bourg",
+    "Glyn Matthews"
+]
+edition = "2021"
+name = "host-tests"
+version = "0.1.0"
+publish = false
+description = "Host-side tests for the Rust-based Espressif ESP32-WROOM WiFi driver crate for RP2040 series microcontroller boards."
+
+[dev-dependencies]
+embedded-hal-mock = "0.8.0"

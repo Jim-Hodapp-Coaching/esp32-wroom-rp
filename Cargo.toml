@@ -1,45 +1,10 @@
-[package]
-authors = [
-    "Jim Hodapp",
-    "Caleb Bourg",
-    "Glyn Matthews"
+[workspace]
+members = [
+    "esp32-wroom-rp",
+    "host-tests",
 ]
-edition = "2021"
-readme = "README.md"
-name = "esp32-wroom-rp"
-version = "0.1.0"
+
 resolver = "2"
-description = "Rust-based Espressif ESP32-WROOM WiFi driver crate for RP2040 series microcontroller boards."
-
-[lib]
-name = "esp32_wroom_rp"
-
-[dependencies]
-cortex-m = "0.7"
-cortex-m-rt = "0.7"
-embedded-hal = { version = "=1.0.0-alpha.7" }
-eh-02 = { version = "0.2", package="embedded-hal"  }
-embedded-time = "0.12"
-
-defmt = "0.3"
-defmt-rtt = "0.3"
-heapless = "0.7.16"
-panic-probe = { version = "0.3", features = ["print-rtt"] }
-
-rp2040-hal = { version = "0.5", features=["rt", "eh1_0_alpha"] }
-rp2040-boot2 = { version = "0.2" }
-cortex-m-semihosting = "0.5"
-
-[features]
-default = [
-    "defmt-default",
-]
-defmt-default = []
-defmt-trace = []
-defmt-debug = []
-defmt-info = []
-defmt-warn = []
-defmt-error = []
 
 # cargo build/run
 [profile.dev]
@@ -92,6 +57,3 @@ debug-assertions = false
 incremental = false
 lto = 'fat'
 opt-level = 3
-
-[[example]]
-name = "get_fw_version"

@@ -1,0 +1,3 @@
+cargo:rustc-link-search=/Users/jhodapp/Projects/rust/esp32-wroom-rp/cross/target/thumbv6m-none-eabi/debug/build/rp2040-pac-7cee8157ee927e49/out
+cargo:rerun-if-changed=device.x
+cargo:rerun-if-changed=build.rs
