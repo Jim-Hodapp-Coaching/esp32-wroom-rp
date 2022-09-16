@@ -97,12 +97,6 @@
 #![warn(missing_docs)]
 #![cfg_attr(not(test), no_std)]
 
-// TODO: separate tests into `host_target_tests` and `target_tests` where one can target the host
-// and the other is meant for cross-compilation and being run on the target device
-// https://github.com/knurling-rs/test-embedded-app-example
-//
-// Another idea is to go back to a very early commit of our crate to get a simpler example to work with
-
 pub mod gpio;
 /// Fundamental interface for controlling a connected ESP32-WROOM NINA firmware-based Wifi board.
 pub mod wifi;
