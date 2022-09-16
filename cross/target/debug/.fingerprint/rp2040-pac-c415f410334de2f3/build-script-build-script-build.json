@@ -1,1 +1,0 @@
-{"rustc":4276420980407004710,"features":"[\"cortex-m-rt\", \"rt\"]","target":13294766831966498538,"profile":625386182497429564,"path":8553728303753533280,"deps":[],"local":[{"CheckDepInfo":{"dep_info":"debug/.fingerprint/rp2040-pac-c415f410334de2f3/dep-build-script-build-script-build"}}],"rustflags":[],"metadata":8319814550295221991,"config":2202906307356721367,"compile_kind":0}
