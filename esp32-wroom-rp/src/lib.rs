@@ -96,8 +96,6 @@
 #![doc(issue_tracker_base_url = "https://github.com/Jim-Hodapp-Coaching/esp32-wroom-rp/issues")]
 #![warn(missing_docs)]
 #![cfg_attr(not(test), no_std)]
-//#![no_std]
-//#![no_main]
 
 // TODO: separate tests into `host_target_tests` and `target_tests` where one can target the host
 // and the other is meant for cross-compilation and being run on the target device
