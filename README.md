@@ -1,7 +1,7 @@
 [![Build & Test Crate + Examples](https://github.com/Jim-Hodapp-Coaching/esp32-wroom-rp/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/Jim-Hodapp-Coaching/esp32-wroom-rp/actions/workflows/build_and_test.yml)
 
 # esp32-wroom-rp
-Rust-based Espressif ESP32-WROOM WiFi hardware abstraction layer for RP2040 series microcontroller.
+A Rust-based RP2040 series driver providing WiFi functionality via Espressif ESP32-WROOM-32U/UE WiFi daughter controllers/boards.
 
 Supports the [ESP32-WROOM-32E](https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32e_esp32-wroom-32ue_datasheet_en.pdf), [ESP32-WROOM-32UE](https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32e_esp32-wroom-32ue_datasheet_en.pdf) modules.
 
