@@ -35,5 +35,5 @@ jobs:
       run: cargo build --verbose --release --examples
     #- run: echo "Release examples built:" && ls target/thumbv6m-none-eabi/release/examples/ |grep -v '-' |grep -v '\.d'
     #- run: rm target/thumbv6m-none-eabi/release/examples/ -rf
-    #- name: Run tests
-    #  run: cargo test --verbose
+    - name: Run tests
+      run: cargo test --verbose
