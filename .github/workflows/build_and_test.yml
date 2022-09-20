@@ -27,13 +27,14 @@ jobs:
       run: cargo build --verbose
     - name: Install supporting crates
       run: cargo install flip-link
-    - name: Build debug examples
-      run: cargo build --verbose --examples
-    #- run: echo "Debug examples built:" && ls target/thumbv6m-none-eabi/debug/examples/ |grep -v '-' |grep -v '\.d'
-    #- run: rm target/thumbv6m-none-eabi/debug/examples/ -rf
-    - name: Build release examples
-      run: cargo build --verbose --release --examples
-    #- run: echo "Release examples built:" && ls target/thumbv6m-none-eabi/release/examples/ |grep -v '-' |grep -v '\.d'
-    #- run: rm target/thumbv6m-none-eabi/release/examples/ -rf
     - name: Run tests
       run: cargo test --verbose
+    # Now build debug and release versions of all example target applications
+    - name: Build debug get_fw_version example
+      run: cd cross && cargo build --verbose --bin get_fw_version
+    - name: Build release get_fw_version examples
+      run: cd cross && cargo build --verbose --release --bin get_fw_version
+    - name: Build debug join example
+      run: cd cross && cargo build --verbose --bin join
+    - name: Build release join examples
+      run: cd cross && cargo build --verbose --release --bin join
