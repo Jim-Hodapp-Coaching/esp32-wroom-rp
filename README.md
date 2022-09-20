@@ -136,13 +136,19 @@ To build the esp32-wroom-rp crate:
 cargo build
 ```
 
-To build an example (e.g. get_fw_version):
+To build all examples
+```sh
+cd cross
+cargo build
+```
+
+To build a specific example (e.g. get_fw_version):
 ```sh
 cd cross
 cargo build --bin get_fw_version
 ```
 
-To run an example (e.g. get_fw_version):
+To run a specific example (e.g. get_fw_version):
 ```sh
 cd cross
 cargo run --bin get_fw_version
