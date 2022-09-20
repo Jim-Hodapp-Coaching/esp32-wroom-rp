@@ -40,7 +40,7 @@ pub struct NinaNoParams {
 impl NinaParam for NinaNoParams {
     type LengthAsBytes = [u8; 0];
 
-    fn new(data: &str) -> Self {
+    fn new(_data: &str) -> Self {
         Self { _placeholder: 0 }
     }
 
