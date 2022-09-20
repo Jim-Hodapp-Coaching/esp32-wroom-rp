@@ -149,7 +149,7 @@ where
         if operation.has_params {
             operation.params.iter().for_each(|param| {
                 self.send_param(param);
-                param_size = param_size + param.length();
+                param_size += param.length();
             });
 
             self.send_end_cmd();
