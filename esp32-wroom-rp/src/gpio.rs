@@ -31,7 +31,7 @@
 //! ```
 
 use embedded_hal::blocking::delay::DelayMs;
-use embedded_hal::digital::v2::{OutputPin, InputPin};
+use embedded_hal::digital::v2::{InputPin, OutputPin};
 
 #[derive(Clone, Copy, Debug)]
 pub enum IOError {
@@ -141,21 +141,13 @@ mod gpio_tests {
     fn gpio_init_sets_correct_state() {
         let err = MockError::Io(ErrorKind::NotConnected);
 
-        let cs_expectations = [
-            PinTransaction::set(PinState::High),
-        ];
+        let cs_expectations = [PinTransaction::set(PinState::High)];
 
-        let gpio0_expectations = [
-            PinTransaction::set(PinState::High),
-        ];
+        let gpio0_expectations = [PinTransaction::set(PinState::High)];
 
-        let resetn_expectations = [
-            PinTransaction::set(PinState::High),
-        ];
+        let resetn_expectations = [PinTransaction::set(PinState::High)];
 
-        let ack_expectations = [
-            PinTransaction::get(PinState::Low),
-        ];
+        let ack_expectations = [PinTransaction::get(PinState::Low)];
 
         let cs_mock = PinMock::new(&cs_expectations);
         let gpio0_mock = PinMock::new(&gpio0_expectations);
