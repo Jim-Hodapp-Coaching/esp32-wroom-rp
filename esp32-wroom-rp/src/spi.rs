@@ -225,8 +225,8 @@ where
         }
 
         let mut params: [u8; ARRAY_LENGTH_PLACEHOLDER] = [0; 8];
-        for param in params {
-            params = self.get_byte().ok().unwrap()
+        for (index, _param) in params.into_iter().enumerate() {
+            params[index] = self.get_byte().ok().unwrap()
         }
         let control_byte: u8 = ControlByte::End as u8;
         self.read_and_check_byte(&control_byte)?;
