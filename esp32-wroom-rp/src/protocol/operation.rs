@@ -1,4 +1,4 @@
-use super::protocol::{NinaCommand, NinaNoParams, NinaParam};
+use super::protocol::NinaCommand;
 
 use heapless::Vec;
 const MAX_NUMBER_OF_PARAMS: usize = 4;
