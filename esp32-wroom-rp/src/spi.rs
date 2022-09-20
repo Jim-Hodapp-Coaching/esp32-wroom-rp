@@ -300,7 +300,7 @@ where
         self.send_param_length(param)?;
 
         for byte in param.data().iter() {
-            self.bus.transfer(&mut [byte.clone()]).ok().unwrap();
+            self.bus.transfer(&mut [*byte]).ok().unwrap();
         }
         Ok(())
     }
