@@ -19,6 +19,7 @@
 //!
 //! ```no_run
 //! use esp32_wroom_rp::spi::*;
+//! use embedded_hal::blocking::delay::DelayMs;
 //!
 //! let mut pac = pac::Peripherals::take().unwrap();
 //! let core = pac::CorePeripherals::take().unwrap();
@@ -37,20 +38,6 @@
 //! )
 //! .ok()
 //! .unwrap();
-//!
-//! impl embedded_hal::delay::blocking::DelayUs for DelayWrap {
-//!     type Error = core::convert::Infallible;
-//!
-//!    fn delay_us(&mut self, us: u32) -> Result<(), Self::Error> {
-//!        self.0.delay_us(us);
-//!        Ok(())
-//!    }
-//!
-//!    fn delay_ms(&mut self, ms: u32) -> Result<(), Self::Error> {
-//!        self.0.delay_ms(ms);
-//!        Ok(())
-//!    }
-//!}
 //!
 //! // The single-cycle I/O block controls our GPIO pins
 //! let sio = hal::Sio::new(pac.SIO);
@@ -107,7 +94,7 @@ mod spi;
 use protocol::ProtocolInterface;
 
 use defmt::{write, Format, Formatter};
-use embedded_hal::delay::blocking::DelayUs;
+use embedded_hal::blocking::delay::DelayMs;
 
 const ARRAY_LENGTH_PLACEHOLDER: usize = 8;
 
@@ -172,12 +159,12 @@ impl<PH> WifiCommon<PH>
 where
     PH: ProtocolInterface,
 {
-    fn init<D: DelayUs>(&mut self, delay: &mut D) {
+    fn init<D: DelayMs<u16>>(&mut self, delay: &mut D) {
         self.protocol_handler.init();
         self.reset(delay);
     }
 
-    fn reset<D: DelayUs>(&mut self, delay: &mut D) {
+    fn reset<D: DelayMs<u16>>(&mut self, delay: &mut D) {
         self.protocol_handler.reset(delay)
     }
 
@@ -201,7 +188,6 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    //use embedded_hal_mock::spi;
 
     #[test]
     fn firmware_new_returns_a_populated_firmware_struct() {
