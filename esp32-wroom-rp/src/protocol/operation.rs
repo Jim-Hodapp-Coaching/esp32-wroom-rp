@@ -26,13 +26,15 @@ impl<P> Operation<P> {
         }
     }
 
-    // Pushes a new param into the internal `params` Vector.
+    // Pushes a new param into the internal `params` Vector which
+    // builds up an internal byte stream representing one Nina command
+    // on the data bus.
     pub fn param(mut self, param: P) -> Self {
         self.params.push(param);
         self
     }
 
-    // Used for denoting an Operation where no params are necessary.
+    // Used for denoting an Operation where no params are provided.
     //
     // Sets `has_params` to `false`
     pub fn with_no_params(mut self, no_param: P) -> Self {

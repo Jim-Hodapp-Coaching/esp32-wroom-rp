@@ -145,7 +145,7 @@ where
 
         self.send_cmd(&operation.command, operation.params.len() as u8);
 
-        // only send params if they are present
+        // Only send params if they are present
         if operation.has_params {
             operation.params.iter().for_each(|param| {
                 self.send_param(param);
@@ -300,7 +300,6 @@ where
         self.send_param_length(param)?;
 
         for byte in param.data().iter() {
-            // TODO: Try using `write_iter`: https://docs.rs/embedded-hal/latest/embedded_hal/blocking/spi/write_iter/index.html
             self.bus.transfer(&mut [byte.clone()]).ok().unwrap();
         }
         Ok(())
