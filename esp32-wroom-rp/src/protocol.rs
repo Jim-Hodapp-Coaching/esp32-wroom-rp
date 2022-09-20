@@ -1,3 +1,5 @@
+pub mod operation;
+
 use super::*;
 
 use embedded_hal::blocking::delay::DelayMs;
@@ -7,7 +9,7 @@ use heapless::{String, Vec};
 pub const MAX_NINA_PARAM_LENGTH: usize = 255;
 
 #[repr(u8)]
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 pub enum NinaCommand {
     GetFwVersion = 0x37u8,
     SetPassphrase = 0x11u8,
@@ -20,11 +22,43 @@ pub trait NinaParam {
     type LengthAsBytes: IntoIterator<Item = u8>;
 
     fn new(data: &str) -> Self;
+
     fn from_bytes(bytes: &[u8]) -> Self;
 
-    fn data(&mut self) -> &[u8];
+    fn data(&self) -> &[u8];
 
-    fn length_as_bytes(&mut self) -> Self::LengthAsBytes;
+    fn length_as_bytes(&self) -> Self::LengthAsBytes;
+
+    fn length(&self) -> u16;
+}
+
+// Used for Nina protocol commands with no parameters
+pub struct NinaNoParams {
+    _placeholder: u8,
+}
+
+impl NinaParam for NinaNoParams {
+    type LengthAsBytes = [u8; 0];
+
+    fn new(_data: &str) -> Self {
+        Self { _placeholder: 0 }
+    }
+
+    fn from_bytes(_bytes: &[u8]) -> Self {
+        Self { _placeholder: 0 }
+    }
+
+    fn data(&self) -> &[u8] {
+        &[0u8]
+    }
+
+    fn length_as_bytes(&self) -> Self::LengthAsBytes {
+        []
+    }
+
+    fn length(&self) -> u16 {
+        0u16
+    }
 }
 
 // Used for single byte params
@@ -71,11 +105,15 @@ impl NinaParam for NinaByteParam {
         }
     }
 
-    fn data(&mut self) -> &[u8] {
+    fn data(&self) -> &[u8] {
         self.data.as_slice()
     }
 
-    fn length_as_bytes(&mut self) -> Self::LengthAsBytes {
+    fn length(&self) -> u16 {
+        self.length as u16
+    }
+
+    fn length_as_bytes(&self) -> Self::LengthAsBytes {
         [self.length as u8]
     }
 }
@@ -100,11 +138,15 @@ impl NinaParam for NinaWordParam {
         }
     }
 
-    fn data(&mut self) -> &[u8] {
+    fn data(&self) -> &[u8] {
         self.data.as_slice()
     }
 
-    fn length_as_bytes(&mut self) -> Self::LengthAsBytes {
+    fn length(&self) -> u16 {
+        self.length as u16
+    }
+
+    fn length_as_bytes(&self) -> Self::LengthAsBytes {
         [self.length as u8]
     }
 }
@@ -129,11 +171,15 @@ impl NinaParam for NinaSmallArrayParam {
         }
     }
 
-    fn data(&mut self) -> &[u8] {
+    fn data(&self) -> &[u8] {
         self.data.as_slice()
     }
 
-    fn length_as_bytes(&mut self) -> Self::LengthAsBytes {
+    fn length(&self) -> u16 {
+        self.length as u16
+    }
+
+    fn length_as_bytes(&self) -> Self::LengthAsBytes {
         [self.length as u8]
     }
 }
@@ -158,11 +204,15 @@ impl NinaParam for NinaLargeArrayParam {
         }
     }
 
-    fn data(&mut self) -> &[u8] {
+    fn data(&self) -> &[u8] {
         self.data.as_slice()
     }
 
-    fn length_as_bytes(&mut self) -> Self::LengthAsBytes {
+    fn length(&self) -> u16 {
+        self.length
+    }
+
+    fn length_as_bytes(&self) -> Self::LengthAsBytes {
         [
             ((self.length & 0xff00) >> 8) as u8,
             (self.length & 0xff) as u8,
@@ -177,22 +227,6 @@ pub trait ProtocolInterface {
     fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error>;
     fn disconnect(&mut self) -> Result<(), self::Error>;
     fn get_conn_status(&mut self) -> Result<u8, self::Error>;
-
-    fn send_cmd(&mut self, cmd: NinaCommand, num_params: u8) -> Result<(), self::Error>;
-    fn wait_response_cmd(
-        &mut self,
-        cmd: NinaCommand,
-        num_params: u8,
-    ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], self::Error>;
-    fn send_end_cmd(&mut self) -> Result<(), self::Error>;
-
-    fn get_byte(&mut self) -> Result<u8, self::Error>;
-    fn wait_for_byte(&mut self, wait_byte: u8) -> Result<bool, self::Error>;
-    fn check_start_cmd(&mut self) -> Result<bool, self::Error>;
-    fn read_and_check_byte(&mut self, check_byte: u8) -> Result<bool, self::Error>;
-    fn send_param<P: NinaParam>(&mut self, param: P) -> Result<(), self::Error>;
-    fn send_param_length<P: NinaParam>(&mut self, param: &mut P) -> Result<(), self::Error>;
-    fn pad_to_multiple_of_4(&mut self, command_size: u16);
 }
 
 #[derive(Debug, Default)]

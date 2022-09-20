@@ -111,7 +111,6 @@ fn main() -> ! {
         // ACK on pin x (GPIO10)
         ack: pins.gpio10.into_mode::<hal::gpio::FloatingInput>(),
     };
-    let passphrase: &str = "Passphrase";
 
     let mut wifi = esp32_wroom_rp::wifi::Wifi::init(spi, esp_pins, &mut delay).unwrap();
     let result = wifi.join(SSID, PASSPHRASE);
