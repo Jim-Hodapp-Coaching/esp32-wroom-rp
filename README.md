@@ -9,8 +9,9 @@ Future implementations will support the [ESP32-WROOM-DA](https://www.espressif.c
 
 ## Usage
 
-```
+```rust
 use esp32_wroom_rp::wifi;
+use embedded_hal::blocking::delay::DelayMs;
 
 let spi_miso = pins.gpio16.into_mode::<hal::gpio::FunctionSpi>();
 let spi_sclk = pins.gpio18.into_mode::<hal::gpio::FunctionSpi>();
@@ -122,10 +123,34 @@ The following table lists the pin name and pin number to properly wire between a
 - flip-link - this allows you to detect stack-overflows on the first core, which is the only supported target for now.
 
 ## Installation of development dependencies
-```
+```sh
 rustup target install thumbv6m-none-eabi
 cargo install flip-link
 cargo install probe-run
+```
+
+## Building the crate and running the examples
+
+To build the esp32-wroom-rp crate:
+```sh
+cargo build
+```
+
+To build an example (e.g. get_fw_version):
+```sh
+cd cross
+cargo build --bin get_fw_version
+```
+
+To run an example (e.g. get_fw_version):
+```sh
+cd cross
+cargo run --bin get_fw_version
+```
+
+## Running the crate's unit tests
+```sh
+cargo test
 ```
 
 ## Getting Involved

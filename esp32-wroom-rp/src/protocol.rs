@@ -1,6 +1,6 @@
 use super::*;
 
-use embedded_hal::delay::blocking::DelayUs;
+use embedded_hal::blocking::delay::DelayMs;
 
 use heapless::{String, Vec};
 
@@ -172,7 +172,7 @@ impl NinaParam for NinaLargeArrayParam {
 
 pub trait ProtocolInterface {
     fn init(&mut self);
-    fn reset<D: DelayUs>(&mut self, delay: &mut D);
+    fn reset<D: DelayMs<u16>>(&mut self, delay: &mut D);
     fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error>;
     fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error>;
     fn disconnect(&mut self) -> Result<(), self::Error>;
@@ -199,6 +199,6 @@ pub trait ProtocolInterface {
 pub struct NinaProtocolHandler<B, C> {
     /// A Spi or I2c instance
     pub bus: B,
-    /// A EspControlPins instance
+    /// An EspControlPins instance
     pub control_pins: C,
 }

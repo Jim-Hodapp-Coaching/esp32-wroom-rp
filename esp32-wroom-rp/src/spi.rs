@@ -7,8 +7,8 @@ use super::protocol::{
 };
 use super::{Error, FirmwareVersion, WifiCommon, ARRAY_LENGTH_PLACEHOLDER};
 
-use eh_02::blocking::spi::Transfer;
-use embedded_hal::delay::blocking::DelayUs;
+use embedded_hal::blocking::delay::DelayMs;
+use embedded_hal::blocking::spi::Transfer;
 
 // TODO: this should eventually move into NinaCommandHandler
 #[repr(u8)]
@@ -33,7 +33,11 @@ where
 {
     /// Initializes the ESP32-WROOM Wifi device.
     /// Calling this function puts the connected ESP32-WROOM device in a known good state to accept commands.
-    pub fn init<D: DelayUs>(spi: S, control_pins: C, delay: &mut D) -> Result<Wifi<S, C>, Error> {
+    pub fn init<D: DelayMs<u16>>(
+        spi: S,
+        control_pins: C,
+        delay: &mut D,
+    ) -> Result<Wifi<S, C>, Error> {
         let mut wifi = Wifi {
             common: WifiCommon {
                 protocol_handler: NinaProtocolHandler {
@@ -78,7 +82,7 @@ where
         self.control_pins.init();
     }
 
-    fn reset<D: DelayUs>(&mut self, delay: &mut D) {
+    fn reset<D: DelayMs<u16>>(&mut self, delay: &mut D) {
         self.control_pins.reset(delay)
     }
 

@@ -1,0 +1,17 @@
+[workspace]
+members = [
+  "get_fw_version",
+  "join",
+]
+
+[profile.dev]
+codegen-units = 1
+incremental = false
+lto = 'fat'
+opt-level = 's'
+
+[profile.test]
+codegen-units = 1
+incremental = false
+lto = 'fat'
+opt-level = 's'

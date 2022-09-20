@@ -1,0 +1,40 @@
+[package]
+authors = [
+    "Jim Hodapp",
+    "Caleb Bourg",
+    "Glyn Matthews"
+]
+edition = "2021"
+name = "get_fw_version"
+version = "0.1.0"
+description = "Example target application that gets the Nina firmware version with the Rust-based Espressif ESP32-WROOM WiFi driver crate for RP2040 series microcontroller boards."
+
+# makes `cargo check --all-targets` work
+[[bin]]
+name = "get_fw_version"
+bench = false
+doctest = false
+test = false
+
+[dependencies]
+defmt = "0.3.0"
+defmt-rtt = "0.3.0"
+cortex-m = "0.7"
+cortex-m-rt = "0.7"
+embedded-hal = { version = "0.2", features=["unproven"] }
+embedded-time = "0.12"
+esp32-wroom-rp = { path = "../../esp32-wroom-rp" }
+panic-probe = { version = "0.3.0", features = ["print-rtt"] }
+
+rp2040-hal = { version = "0.5", features=["rt", "eh1_0_alpha"] }
+rp2040-boot2 = { version = "0.2" }
+
+[features]
+default = ['defmt-default']
+# these features are required by defmt
+defmt-default = []
+defmt-trace = []
+defmt-debug = []
+defmt-info = []
+defmt-warn = []
+defmt-error = []
