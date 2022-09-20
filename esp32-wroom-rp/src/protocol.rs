@@ -44,7 +44,7 @@ impl NinaParam for NinaNoParams {
         Self { _placeholder: 0 }
     }
 
-    fn from_bytes(bytes: &[u8]) -> Self {
+    fn from_bytes(_bytes: &[u8]) -> Self {
         Self { _placeholder: 0 }
     }
 
