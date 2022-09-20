@@ -30,11 +30,7 @@ jobs:
     - name: Run tests
       run: cargo test --verbose
     # Now build debug and release versions of all example target applications
-    - name: Build debug get_fw_version example
-      run: cd cross && cargo build --verbose --bin get_fw_version
-    - name: Build release get_fw_version examples
-      run: cd cross && cargo build --verbose --release --bin get_fw_version
-    - name: Build debug join example
-      run: cd cross && cargo build --verbose --bin join
-    - name: Build release join examples
-      run: cd cross && cargo build --verbose --release --bin join
+    - name: Build debug examples
+      run: cd cross && cargo build --verbose
+    - name: Build release examples
+      run: cd cross && cargo build --verbose --release
