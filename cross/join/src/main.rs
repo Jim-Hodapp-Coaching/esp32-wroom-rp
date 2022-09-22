@@ -24,13 +24,11 @@ use panic_probe as _;
 // Alias for our HAL crate
 use rp2040_hal as hal;
 
+use embedded_hal::spi::MODE_0;
 use embedded_time::fixed_point::FixedPoint;
 use embedded_time::rate::Extensions;
 use hal::clocks::Clock;
 use hal::pac;
-
-use embedded_hal::spi::MODE_0;
-use embedded_hal::blocking::delay::DelayMs;
 
 /// The linker will place this boot block at the start of our program image. We
 /// need this to help the ROM bootloader get our code up and running.
@@ -87,9 +85,9 @@ fn main() -> ! {
     defmt::info!("ESP32-WROOM-RP join/leave WiFi network");
 
     // These are implicitly used by the spi driver if they are in the correct mode
-    let spi_miso = pins.gpio16.into_mode::<hal::gpio::FunctionSpi>();
-    let spi_sclk = pins.gpio18.into_mode::<hal::gpio::FunctionSpi>();
-    let spi_mosi = pins.gpio19.into_mode::<hal::gpio::FunctionSpi>();
+    let _spi_miso = pins.gpio16.into_mode::<hal::gpio::FunctionSpi>();
+    let _spi_sclk = pins.gpio18.into_mode::<hal::gpio::FunctionSpi>();
+    let _spi_mosi = pins.gpio19.into_mode::<hal::gpio::FunctionSpi>();
 
     let spi = hal::Spi::<_, _, 8>::new(pac.SPI0);
 

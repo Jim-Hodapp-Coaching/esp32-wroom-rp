@@ -33,28 +33,42 @@
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::digital::v2::{InputPin, OutputPin};
 
+#[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
-pub enum IOError {
+enum IOError {
     Pin,
 }
 
+/// Provides an internal pin interface that abstracts the extra control lines that
+/// are separate from a data bus (e.g. SPI/I2C).
+/// 
+/// Not meant to be used outside of the crate.
 pub trait EspControlInterface {
+    /// Initializes all controls pins to set ready communication with the NINA firmware.
     fn init(&mut self);
 
+    /// Resets communication with the NINA firmware.
     fn reset<D: DelayMs<u16>>(&mut self, delay: &mut D);
 
+    /// Tells the NINA firmware we're about to send it a protocol command.
     fn esp_select(&mut self);
 
+    /// Tells the NINA firmware we're done sending it a protocol command.
     fn esp_deselect(&mut self);
 
+    /// Is the NINA firmware ready to send it a protocol command?
     fn get_esp_ready(&self) -> bool;
 
+    /// Is the NINA firmware ready to receive more commands? Also referred to as BUSY.
     fn get_esp_ack(&self) -> bool;
 
+    /// Blocking waits for the NINA firmware to be ready to send it a protocol command.
     fn wait_for_esp_ready(&self);
 
+    /// Blocking waits for the NINA firmware to acknowledge it's ready to receive more commands.
     fn wait_for_esp_ack(&self);
 
+    /// Blocking waits for the NINA firmware to be ready to send it a protocol command.
     fn wait_for_esp_select(&mut self);
 }
 
@@ -62,9 +76,16 @@ pub trait EspControlInterface {
 /// device outside of commands sent over the SPI/I²C bus. Pass a single instance of this struct
 /// into `Wifi::init()`.
 pub struct EspControlPins<CS: OutputPin, GPIO0: OutputPin, RESETN: OutputPin, ACK: InputPin> {
+    /// Chip select pin to let the NINA firmware know we're going to send it a command over
+    /// the SPI bus.
     pub cs: CS,
+    /// Puts the ESP32 WiFi target into bootloading mode. Or if acting as a server, provides
+    /// a status line for when data is ready to be read.
     pub gpio0: GPIO0,
+    /// Places the ESP32 WiFi target into reset mode. Useful for when the target gets into
+    /// a stuck state.
     pub resetn: RESETN,
+    /// Is the ESP32 WiFi target busy?
     pub ack: ACK,
 }
 
@@ -134,13 +155,9 @@ mod gpio_tests {
     use embedded_hal_mock::pin::{
         Mock as PinMock, State as PinState, Transaction as PinTransaction,
     };
-    use embedded_hal_mock::MockError;
-    use std::io::ErrorKind;
 
     #[test]
     fn gpio_init_sets_correct_state() {
-        let err = MockError::Io(ErrorKind::NotConnected);
-
         let cs_expectations = [PinTransaction::set(PinState::High)];
 
         let gpio0_expectations = [PinTransaction::set(PinState::High)];

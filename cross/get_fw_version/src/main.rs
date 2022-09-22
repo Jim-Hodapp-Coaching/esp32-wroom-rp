@@ -82,9 +82,9 @@ fn main() -> ! {
     defmt::info!("ESP32-WROOM-RP get NINA firmware version example");
 
     // These are implicitly used by the spi driver if they are in the correct mode
-    let spi_miso = pins.gpio16.into_mode::<hal::gpio::FunctionSpi>();
-    let spi_sclk = pins.gpio18.into_mode::<hal::gpio::FunctionSpi>();
-    let spi_mosi = pins.gpio19.into_mode::<hal::gpio::FunctionSpi>();
+    let _spi_miso = pins.gpio16.into_mode::<hal::gpio::FunctionSpi>();
+    let _spi_sclk = pins.gpio18.into_mode::<hal::gpio::FunctionSpi>();
+    let _spi_mosi = pins.gpio19.into_mode::<hal::gpio::FunctionSpi>();
 
     let spi = hal::Spi::<_, _, 8>::new(pac.SPI0);
 

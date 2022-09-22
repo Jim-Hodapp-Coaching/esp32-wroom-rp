@@ -30,7 +30,7 @@ impl<P> Operation<P> {
     // builds up an internal byte stream representing one Nina command
     // on the data bus.
     pub fn param(mut self, param: P) -> Self {
-        self.params.push(param);
+        self.params.push(param).ok().unwrap();
         self
     }
 
@@ -38,7 +38,7 @@ impl<P> Operation<P> {
     //
     // Sets `has_params` to `false`
     pub fn with_no_params(mut self, no_param: P) -> Self {
-        self.params.push(no_param);
+        self.params.push(no_param).ok().unwrap();
         self.has_params = false;
         self
     }
