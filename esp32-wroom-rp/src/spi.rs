@@ -70,7 +70,7 @@ where
     }
 
     /// Retrieves the current WiFi network connection status.
-    /// 
+    ///
     /// NOTE: A future version will provide a enumerated type instead of the raw integer values
     /// from the NINA firmware.
     pub fn get_connection_status(&mut self) -> Result<u8, Error> {
@@ -147,8 +147,14 @@ where
     fn execute<P: NinaParam>(&mut self, operation: &Operation<P>) -> Result<(), Error> {
         let mut param_size: u16 = 0;
         self.control_pins.wait_for_esp_select();
-
-        self.send_cmd(&operation.command, operation.params.len() as u8).ok().unwrap();
+        let number_of_params: u8 = if operation.has_params {
+            operation.params.len() as u8
+        } else {
+            0
+        };
+        self.send_cmd(&operation.command, number_of_params)
+            .ok()
+            .unwrap();
 
         // Only send params if they are present
         if operation.has_params {
