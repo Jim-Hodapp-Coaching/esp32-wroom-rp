@@ -23,6 +23,7 @@ enum ControlByte {
     Error = 0xEFu8,
 }
 
+/// Fundamental struct for controlling a connected ESP32-WROOM NINA firmware-based Wifi board.
 #[derive(Debug, Default)]
 pub struct Wifi<B, C> {
     common: WifiCommon<NinaProtocolHandler<B, C>>,
@@ -68,6 +69,10 @@ where
         self.common.leave()
     }
 
+    /// Retrieves the current WiFi network connection status.
+    /// 
+    /// NOTE: A future version will provide a enumerated type instead of the raw integer values
+    /// from the NINA firmware.
     pub fn get_connection_status(&mut self) -> Result<u8, Error> {
         self.common.get_connection_status()
     }
@@ -93,7 +98,7 @@ where
         let operation =
             Operation::new(NinaCommand::GetFwVersion, 1).with_no_params(NinaNoParams::new(""));
 
-        self.execute(&operation);
+        self.execute(&operation).ok().unwrap();
 
         let result = self.receive(&operation)?;
 
@@ -105,9 +110,9 @@ where
             .param(NinaSmallArrayParam::new(ssid))
             .param(NinaSmallArrayParam::new(passphrase));
 
-        self.execute(&operation);
+        self.execute(&operation).ok().unwrap();
 
-        self.receive(&operation);
+        self.receive(&operation).ok().unwrap();
         Ok(())
     }
 
@@ -115,7 +120,7 @@ where
         let operation =
             Operation::new(NinaCommand::GetConnStatus, 1).with_no_params(NinaNoParams::new(""));
 
-        self.execute(&operation);
+        self.execute(&operation).ok().unwrap();
 
         let result = self.receive(&operation)?;
 
@@ -126,9 +131,9 @@ where
         let dummy_param = NinaByteParam::from_bytes(&[ControlByte::Dummy as u8]);
         let operation = Operation::new(NinaCommand::Disconnect, 1).param(dummy_param);
 
-        self.execute(&operation);
+        self.execute(&operation).ok().unwrap();
 
-        self.receive(&operation);
+        self.receive(&operation).ok().unwrap();
 
         Ok(())
     }
@@ -143,16 +148,16 @@ where
         let mut param_size: u16 = 0;
         self.control_pins.wait_for_esp_select();
 
-        self.send_cmd(&operation.command, operation.params.len() as u8);
+        self.send_cmd(&operation.command, operation.params.len() as u8).ok().unwrap();
 
         // Only send params if they are present
         if operation.has_params {
             operation.params.iter().for_each(|param| {
-                self.send_param(param);
+                self.send_param(param).ok().unwrap();
                 param_size += param.length();
             });
 
-            self.send_end_cmd();
+            self.send_end_cmd().ok().unwrap();
 
             // This is to make sure we align correctly
             // 4 (start byte, command byte, reply byte, end byte) + the sum of all param lengths
@@ -320,6 +325,7 @@ where
     }
 }
 
+#[allow(dead_code)]
 /// Error which occurred during a SPI transaction with a target ESP32 device
 #[derive(Clone, Copy, Debug)]
 pub enum SPIError<SPIE, IOE> {

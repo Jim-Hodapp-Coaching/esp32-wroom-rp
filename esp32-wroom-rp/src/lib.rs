@@ -98,10 +98,12 @@ use embedded_hal::blocking::delay::DelayMs;
 
 const ARRAY_LENGTH_PLACEHOLDER: usize = 8;
 
+/// Highest level error types for this crate.
 #[derive(Debug)]
 pub enum Error {
-    // Placeholder variants
+    /// SPI/I2C related communications error with the ESP32 WiFi target
     Bus,
+    /// Timeout in communicating with the ESP32 WiFi target
     TimeOut,
 }
 
