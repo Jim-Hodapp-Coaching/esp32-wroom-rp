@@ -38,7 +38,7 @@ let esp_pins = esp32_wroom_rp::gpio::EspControlPins {
     ack: pins.gpio10.into_mode::<hal::gpio::FloatingInput>(),
 };
 
-let mut wifi = esp32_wroom_rp::spi::Wifi::init(spi, esp_pins, &mut delay).unwrap();
+let mut wifi = esp32_wroom_rp::wifi::Wifi::init(spi, esp_pins, &mut delay).unwrap();
 let version = wifi.firmware_version();
 ```
 
