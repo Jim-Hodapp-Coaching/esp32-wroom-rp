@@ -19,7 +19,7 @@ let spi_mosi = pins.gpio19.into_mode::<hal::gpio::FunctionSpi>();
 
 let spi = hal::Spi::<_, _, 8>::new(pac.SPI0);
 
-Exchange the uninitialized SPI driver for an initialized one
+// Exchange the uninitialized SPI driver for an initialized one
 let spi = spi.init(
     &mut pac.RESETS,
     clocks.peripheral_clock.freq(),
