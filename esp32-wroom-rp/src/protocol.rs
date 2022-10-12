@@ -1,7 +1,6 @@
 pub mod operation;
 
 use super::*;
-use spi::*;
 
 use embedded_hal::blocking::delay::DelayMs;
 
