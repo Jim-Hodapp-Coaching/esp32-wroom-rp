@@ -1,6 +1,7 @@
 pub mod operation;
 
 use super::*;
+use spi::*;
 
 use embedded_hal::blocking::delay::DelayMs;
 
@@ -10,14 +11,14 @@ pub const MAX_NINA_PARAM_LENGTH: usize = 255;
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug)]
-pub enum NinaCommand {
+pub(crate) enum NinaCommand {
     GetFwVersion = 0x37u8,
     SetPassphrase = 0x11u8,
     GetConnStatus = 0x20u8,
     Disconnect = 0x30u8,
 }
 
-pub trait NinaParam {
+pub(crate) trait NinaParam {
     // Length of parameter in bytes
     type LengthAsBytes: IntoIterator<Item = u8>;
 
@@ -33,7 +34,7 @@ pub trait NinaParam {
 }
 
 // Used for Nina protocol commands with no parameters
-pub struct NinaNoParams {
+pub(crate) struct NinaNoParams {
     _placeholder: u8,
 }
 
@@ -62,25 +63,25 @@ impl NinaParam for NinaNoParams {
 }
 
 // Used for single byte params
-pub struct NinaByteParam {
+pub(crate) struct NinaByteParam {
     length: u8,
     data: Vec<u8, 1>,
 }
 
 // Used for 2-byte params
-pub struct NinaWordParam {
+pub(crate) struct NinaWordParam {
     length: u8,
     data: Vec<u8, 2>,
 }
 
 // Used for params that are smaller than 255 bytes
-pub struct NinaSmallArrayParam {
+pub(crate) struct NinaSmallArrayParam {
     length: u8,
     data: Vec<u8, MAX_NINA_PARAM_LENGTH>,
 }
 
 // Used for params that can be larger than 255 bytes up to MAX_NINA_PARAM_LENGTH
-pub struct NinaLargeArrayParam {
+pub(crate) struct NinaLargeArrayParam {
     length: u16,
     data: Vec<u8, MAX_NINA_PARAM_LENGTH>,
 }
@@ -220,7 +221,7 @@ impl NinaParam for NinaLargeArrayParam {
     }
 }
 
-pub trait ProtocolInterface {
+pub(crate) trait ProtocolInterface {
     fn init(&mut self);
     fn reset<D: DelayMs<u16>>(&mut self, delay: &mut D);
     fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error>;
@@ -230,7 +231,7 @@ pub trait ProtocolInterface {
 }
 
 #[derive(Debug, Default)]
-pub struct NinaProtocolHandler<B, C> {
+pub(crate) struct NinaProtocolHandler<B, C> {
     /// A Spi or I2c instance
     pub bus: B,
     /// An EspControlPins instance
