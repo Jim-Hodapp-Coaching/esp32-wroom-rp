@@ -6,7 +6,7 @@ const MAX_NUMBER_OF_PARAMS: usize = 4;
 // Encapsulates all information needed to execute commands against Nina Firmware.
 // along with user supplied data. Ex. SSID, passphrase, etc.
 
-pub struct Operation<P> {
+pub(crate) struct Operation<P> {
     pub params: Vec<P, MAX_NUMBER_OF_PARAMS>,
     pub command: NinaCommand,
     pub has_params: bool,
