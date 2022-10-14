@@ -236,3 +236,8 @@ pub(crate) struct NinaProtocolHandler<B, C> {
     /// An EspControlPins instance
     pub control_pins: C,
 }
+
+pub(crate) enum Error {
+    NinaProtocolVersionMismatch,
+    Timeout,
+}

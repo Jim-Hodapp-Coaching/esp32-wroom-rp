@@ -7,10 +7,13 @@ use super::protocol::{
 };
 
 use super::protocol::operation::Operation;
+use super::protocol::Error as ProtocolError;
 use super::{Error, FirmwareVersion, WifiCommon, ARRAY_LENGTH_PLACEHOLDER};
 
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::spi::Transfer;
+
+use core::convert::Infallible;
 
 // TODO: this should eventually move into NinaCommandHandler
 #[repr(u8)]
@@ -251,44 +254,24 @@ where
         Ok(())
     }
 
-    fn get_byte(&mut self) -> Result<u8, self::Error> {
-        // Blocking read, don't return until we've read a byte successfully
-        loop {
-            let word_out = &mut [ControlByte::Dummy as u8];
-            match self.bus.transfer(word_out) {
-                Ok(word) => {
-                    let byte: u8 = word[0] as u8;
-                    return Ok(byte);
-                }
-                Err(_e) => {
-                    continue;
-                }
-            }
-        }
+    fn get_byte(&mut self) -> Result<u8, Infallible> {
+        let word_out = &mut [ControlByte::Dummy as u8];
+        let word = self.bus.transfer(word_out).ok().unwrap();
+        Ok(word[0] as u8)
     }
 
-    fn wait_for_byte(&mut self, wait_byte: u8) -> Result<bool, self::Error> {
-        let mut timeout: u16 = 1000u16;
+    fn wait_for_byte(&mut self, wait_byte: u8) -> Result<bool, ProtocolError> {
+        let retry_limit: u16 = 1000u16;
 
-        loop {
-            match self.get_byte() {
-                Ok(byte_read) => {
-                    if byte_read == ControlByte::Error as u8 {
-                        return Ok(false);
-                        //return Err(SPIError::Misc);
-                    } else if byte_read == wait_byte {
-                        return Ok(true);
-                    } else if timeout == 0 {
-                        return Ok(false);
-                        //return Err(SPIError::Timeout);
-                    }
-                    timeout -= 1;
-                }
-                Err(e) => {
-                    return Err(e);
-                }
+        for _ in 0..retry_limit {
+            let byte_read = self.get_byte().ok().unwrap();
+            if byte_read == ControlByte::Error as u8 {
+                return Err(ProtocolError::NinaProtocolVersionMismatch);
+            } else if byte_read == wait_byte {
+                return Ok(true);
             }
         }
+        Err(ProtocolError::Timeout)
     }
 
     fn check_start_cmd(&mut self) -> Result<bool, self::Error> {
