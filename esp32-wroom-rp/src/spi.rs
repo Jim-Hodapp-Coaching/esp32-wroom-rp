@@ -113,9 +113,9 @@ where
             .param(NinaSmallArrayParam::new(ssid))
             .param(NinaSmallArrayParam::new(passphrase));
 
-        self.execute(&operation).ok().unwrap();
+        self.execute(&operation)?;
 
-        self.receive(&operation).ok().unwrap();
+        self.receive(&operation)?;
         Ok(())
     }
 
@@ -123,7 +123,7 @@ where
         let operation =
             Operation::new(NinaCommand::GetConnStatus, 1).with_no_params(NinaNoParams::new(""));
 
-        self.execute(&operation).ok().unwrap();
+        self.execute(&operation)?;
 
         let result = self.receive(&operation)?;
 
@@ -134,9 +134,9 @@ where
         let dummy_param = NinaByteParam::from_bytes(&[ControlByte::Dummy as u8]);
         let operation = Operation::new(NinaCommand::Disconnect, 1).param(dummy_param);
 
-        self.execute(&operation).ok().unwrap();
+        self.execute(&operation)?;
 
-        self.receive(&operation).ok().unwrap();
+        self.receive(&operation)?;
 
         Ok(())
     }
