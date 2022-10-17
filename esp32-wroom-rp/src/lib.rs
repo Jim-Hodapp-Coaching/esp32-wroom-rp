@@ -91,7 +91,7 @@ pub mod wifi;
 mod protocol;
 mod spi;
 
-use protocol::ProtocolInterface;
+use protocol::{ProtocolInterface, ProtocolError};
 
 use defmt::{write, Format, Formatter};
 use embedded_hal::blocking::delay::DelayMs;
@@ -103,13 +103,28 @@ const ARRAY_LENGTH_PLACEHOLDER: usize = 8;
 pub enum Error {
     /// SPI/I2C related communications error with the ESP32 WiFi target
     Bus,
-    /// Timeout in communicating with the ESP32 WiFi target
-    TimeOut,
+    /// Protocol error in communicating with the ESP32 WiFi target
+    Protocol(ProtocolError),
 }
 
 impl Format for Error {
     fn format(&self, fmt: Formatter) {
-        write!(fmt, "Generic ESP32-WROOM-RP Error")
+        match self {
+            Error::Bus => write!(fmt, "Bus error"),
+            Error::Protocol(e) => write!(fmt, "Communication protocol error with ESP32 WiFi target: {}", e),
+        }
+    }
+}
+
+impl From<protocol::ProtocolError> for Error {
+    fn from(err: protocol::ProtocolError) -> Self {
+        match err {
+            protocol::ProtocolError::CommunicationTimeout => Error::Protocol(err),
+            protocol::ProtocolError::InvalidCommand => Error::Protocol(err),
+            protocol::ProtocolError::InvalidNumberOfParameters => Error::Protocol(err),
+            protocol::ProtocolError::NinaProtocolVersionMismatch => Error::Protocol(err),
+            protocol::ProtocolError::TooManyParameters => Error::Protocol(err),
+        }
     }
 }
 
@@ -170,20 +185,20 @@ where
         self.protocol_handler.reset(delay)
     }
 
-    fn firmware_version(&mut self) -> Result<FirmwareVersion, self::Error> {
-        self.protocol_handler.get_fw_version()
+    fn firmware_version(&mut self) -> Result<FirmwareVersion, Error> {
+        Ok(self.protocol_handler.get_fw_version()?)
     }
 
     fn join(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error> {
-        self.protocol_handler.set_passphrase(ssid, passphrase)
+        Ok(self.protocol_handler.set_passphrase(ssid, passphrase)?)
     }
 
     fn leave(&mut self) -> Result<(), Error> {
-        self.protocol_handler.disconnect()
+        Ok(self.protocol_handler.disconnect()?)
     }
 
-    fn get_connection_status(&mut self) -> Result<u8, self::Error> {
-        self.protocol_handler.get_conn_status()
+    fn get_connection_status(&mut self) -> Result<u8, Error> {
+        Ok(self.protocol_handler.get_conn_status()?)
     }
 }
 

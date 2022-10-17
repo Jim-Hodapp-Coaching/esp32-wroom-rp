@@ -7,7 +7,7 @@ use super::protocol::{
 };
 
 use super::protocol::operation::Operation;
-use super::protocol::Error as ProtocolError;
+use super::protocol::ProtocolError;
 use super::{Error, FirmwareVersion, WifiCommon, ARRAY_LENGTH_PLACEHOLDER};
 
 use embedded_hal::blocking::delay::DelayMs;
@@ -93,22 +93,22 @@ where
     }
 
     fn reset<D: DelayMs<u16>>(&mut self, delay: &mut D) {
-        self.control_pins.reset(delay)
+        self.control_pins.reset(delay);
     }
 
-    fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error> {
+    fn get_fw_version(&mut self) -> Result<FirmwareVersion, ProtocolError> {
         // TODO: improve the ergonomics around with_no_params()
         let operation =
             Operation::new(NinaCommand::GetFwVersion, 1).with_no_params(NinaNoParams::new(""));
 
-        self.execute(&operation).ok().unwrap();
+        self.execute(&operation)?;
 
         let result = self.receive(&operation)?;
 
         Ok(FirmwareVersion::new(result)) // e.g. 1.7.4
     }
 
-    fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), self::Error> {
+    fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), ProtocolError> {
         let operation = Operation::new(NinaCommand::SetPassphrase, 1)
             .param(NinaSmallArrayParam::new(ssid))
             .param(NinaSmallArrayParam::new(passphrase));
@@ -119,7 +119,7 @@ where
         Ok(())
     }
 
-    fn get_conn_status(&mut self) -> Result<u8, self::Error> {
+    fn get_conn_status(&mut self) -> Result<u8, ProtocolError> {
         let operation =
             Operation::new(NinaCommand::GetConnStatus, 1).with_no_params(NinaNoParams::new(""));
 
@@ -130,7 +130,7 @@ where
         Ok(result[0])
     }
 
-    fn disconnect(&mut self) -> Result<(), self::Error> {
+    fn disconnect(&mut self) -> Result<(), ProtocolError> {
         let dummy_param = NinaByteParam::from_bytes(&[ControlByte::Dummy as u8]);
         let operation = Operation::new(NinaCommand::Disconnect, 1).param(dummy_param);
 
@@ -147,7 +147,7 @@ where
     S: Transfer<u8>,
     C: EspControlInterface,
 {
-    fn execute<P: NinaParam>(&mut self, operation: &Operation<P>) -> Result<(), Error> {
+    fn execute<P: NinaParam>(&mut self, operation: &Operation<P>) -> Result<(), ProtocolError> {
         let mut param_size: u16 = 0;
         self.control_pins.wait_for_esp_select();
         let number_of_params: u8 = if operation.has_params {
@@ -155,18 +155,16 @@ where
         } else {
             0
         };
-        self.send_cmd(&operation.command, number_of_params)
-            .ok()
-            .unwrap();
+        let result = self.send_cmd(&operation.command, number_of_params);
 
         // Only send params if they are present
         if operation.has_params {
             operation.params.iter().for_each(|param| {
-                self.send_param(param).ok().unwrap();
+                self.send_param(param).ok();
                 param_size += param.length();
             });
 
-            self.send_end_cmd().ok().unwrap();
+            self.send_end_cmd().ok();
 
             // This is to make sure we align correctly
             // 4 (start byte, command byte, reply byte, end byte) + the sum of all param lengths
@@ -175,13 +173,13 @@ where
         }
         self.control_pins.esp_deselect();
 
-        Ok(())
+        result
     }
 
     fn receive<P: NinaParam>(
         &mut self,
         operation: &Operation<P>,
-    ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
+    ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], ProtocolError> {
         self.control_pins.wait_for_esp_select();
 
         let result =
@@ -192,7 +190,7 @@ where
         result
     }
 
-    fn send_cmd(&mut self, cmd: &NinaCommand, num_params: u8) -> Result<(), self::Error> {
+    fn send_cmd(&mut self, cmd: &NinaCommand, num_params: u8) -> Result<(), ProtocolError> {
         let buf: [u8; 3] = [
             ControlByte::Start as u8,
             (*cmd as u8) & !(ControlByte::Reply as u8),
@@ -201,11 +199,11 @@ where
 
         for byte in buf {
             let write_buf = &mut [byte];
-            self.bus.transfer(write_buf).ok().unwrap();
+            self.bus.transfer(write_buf).ok();
         }
 
         if num_params == 0 {
-            self.send_end_cmd().ok().unwrap();
+            self.send_end_cmd().ok();
         }
         Ok(())
     }
@@ -214,28 +212,26 @@ where
         &mut self,
         cmd: &NinaCommand,
         num_params: u8,
-    ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], self::Error> {
+    ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], ProtocolError> {
         self.check_start_cmd().ok().unwrap();
         let byte_to_check: u8 = *cmd as u8 | ControlByte::Reply as u8;
-        let result = self.read_and_check_byte(&byte_to_check)?;
+        let result = self.read_and_check_byte(&byte_to_check).ok().unwrap();
         // Ensure we see a cmd byte
         if !result {
-            return Ok([0x31, 0x2e, 0x37, 0x2e, 0x34, 0x0, 0x0, 0x0]);
-            //return Err(SPIError::Misc);
+            return Err(ProtocolError::InvalidCommand);
         }
 
-        let result = self.read_and_check_byte(&num_params)?;
+        let result = self.read_and_check_byte(&num_params).unwrap();
         // Ensure we see the number of params we expected to receive back
         if !result {
-            return Ok([0x31, 0x2e, 0x37, 0x2e, 0x34, 0x0, 0x0, 0x0]);
-            //return Err(SPIError::Misc);
+            return Err(ProtocolError::InvalidNumberOfParameters);
         }
 
-        let num_params_to_read = self.get_byte()? as usize;
+        let num_params_to_read = self.get_byte().ok().unwrap() as usize;
 
+        // TODO: use a constant instead of inline params max == 8
         if num_params_to_read > 8 {
-            return Ok([0x31, 0x2e, 0x37, 0x2e, 0x34, 0x0, 0x0, 0x0]);
-            //return Err(SPIError::Misc);
+            return Err(ProtocolError::TooManyParameters);
         }
 
         let mut params: [u8; ARRAY_LENGTH_PLACEHOLDER] = [0; 8];
@@ -243,14 +239,14 @@ where
             params[index] = self.get_byte().ok().unwrap()
         }
         let control_byte: u8 = ControlByte::End as u8;
-        self.read_and_check_byte(&control_byte)?;
+        self.read_and_check_byte(&control_byte).ok();
 
         Ok(params)
     }
 
-    fn send_end_cmd(&mut self) -> Result<(), self::Error> {
+    fn send_end_cmd(&mut self) -> Result<(), Infallible> {
         let end_command: &mut [u8] = &mut [ControlByte::End as u8];
-        self.bus.transfer(end_command).ok().unwrap();
+        self.bus.transfer(end_command).ok();
         Ok(())
     }
 
@@ -271,58 +267,38 @@ where
                 return Ok(true);
             }
         }
-        Err(ProtocolError::Timeout)
+        Err(ProtocolError::CommunicationTimeout)
     }
 
-    fn check_start_cmd(&mut self) -> Result<bool, self::Error> {
+    fn check_start_cmd(&mut self) -> Result<bool, ProtocolError> {
         self.wait_for_byte(ControlByte::Start as u8)
     }
 
-    fn read_and_check_byte(&mut self, check_byte: &u8) -> Result<bool, self::Error> {
-        match self.get_byte() {
-            Ok(byte_out) => {
-                // Question: does comparing two &u8s work the way we would think?
-                return Ok(&byte_out == check_byte);
-            }
-            Err(e) => {
-                return Err(e);
-            }
-        }
+    fn read_and_check_byte(&mut self, check_byte: &u8) -> Result<bool, Infallible> {
+        let byte = self.get_byte().ok().unwrap();
+        Ok(&byte == check_byte)
     }
 
-    fn send_param<P: NinaParam>(&mut self, param: &P) -> Result<(), self::Error> {
+    fn send_param<P: NinaParam>(&mut self, param: &P) -> Result<(), Infallible> {
         self.send_param_length(param)?;
 
         for byte in param.data().iter() {
-            self.bus.transfer(&mut [*byte]).ok().unwrap();
+            self.bus.transfer(&mut [*byte]).ok();
         }
         Ok(())
     }
 
-    fn send_param_length<P: NinaParam>(&mut self, param: &P) -> Result<(), self::Error> {
+    fn send_param_length<P: NinaParam>(&mut self, param: &P) -> Result<(), Infallible> {
         for byte in param.length_as_bytes().into_iter() {
-            self.bus.transfer(&mut [byte]).ok().unwrap();
+            self.bus.transfer(&mut [byte]).ok();
         }
         Ok(())
     }
 
     fn pad_to_multiple_of_4(&mut self, mut command_size: u16) {
         while command_size % 4 == 0 {
-            self.get_byte().ok().unwrap();
+            self.get_byte().ok();
             command_size += 1;
         }
     }
-}
-
-#[allow(dead_code)]
-/// Error which occurred during a SPI transaction with a target ESP32 device
-#[derive(Clone, Copy, Debug)]
-pub enum SPIError<SPIE, IOE> {
-    /// The SPI implementation returned an error
-    SPI(SPIE),
-    /// The GPIO implementation returned an error when changing the chip-select pin state
-    IO(IOE),
-    /// Timeout
-    Timeout,
-    Misc,
 }

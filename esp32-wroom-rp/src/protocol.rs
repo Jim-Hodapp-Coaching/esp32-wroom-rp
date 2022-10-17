@@ -4,6 +4,8 @@ use super::*;
 
 use embedded_hal::blocking::delay::DelayMs;
 
+use defmt::{write, Format, Formatter};
+
 use heapless::{String, Vec};
 
 pub const MAX_NINA_PARAM_LENGTH: usize = 255;
@@ -223,10 +225,10 @@ impl NinaParam for NinaLargeArrayParam {
 pub(crate) trait ProtocolInterface {
     fn init(&mut self);
     fn reset<D: DelayMs<u16>>(&mut self, delay: &mut D);
-    fn get_fw_version(&mut self) -> Result<FirmwareVersion, self::Error>;
-    fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error>;
-    fn disconnect(&mut self) -> Result<(), self::Error>;
-    fn get_conn_status(&mut self) -> Result<u8, self::Error>;
+    fn get_fw_version(&mut self) -> Result<FirmwareVersion, ProtocolError>;
+    fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), ProtocolError>;
+    fn disconnect(&mut self) -> Result<(), ProtocolError>;
+    fn get_conn_status(&mut self) -> Result<u8, ProtocolError>;
 }
 
 #[derive(Debug, Default)]
@@ -237,7 +239,23 @@ pub(crate) struct NinaProtocolHandler<B, C> {
     pub control_pins: C,
 }
 
-pub(crate) enum Error {
+#[derive(Debug)]
+pub enum ProtocolError {
     NinaProtocolVersionMismatch,
-    Timeout,
+    CommunicationTimeout,
+    InvalidCommand,
+    InvalidNumberOfParameters,
+    TooManyParameters
+}
+
+impl Format for ProtocolError {
+    fn format(&self, fmt: Formatter) {
+        match self {
+            ProtocolError::NinaProtocolVersionMismatch => write!(fmt, "Encountered an unsupported version of the NINA protocol."),
+            ProtocolError::CommunicationTimeout => write!(fmt, "Communication with ESP32 target timed out."),
+            ProtocolError::InvalidCommand => write!(fmt, "Encountered an invalid command while communicating with ESP32 target."),
+            ProtocolError::InvalidNumberOfParameters => write!(fmt, "Encountered an unexpected number of parameters for a NINA command while communicating with ESP32 target."),
+            ProtocolError::TooManyParameters => write!(fmt, "Encountered too many parameters for a NINA command while communicating with ESP32 target."),
+        }
+    }
 }
