@@ -154,7 +154,7 @@ impl Default for EspControlPins<(), (), (), ()> {
             cs: (),
             gpio0: (),
             resetn: (),
-            ack: ()
+            ack: (),
         }
     }
 }

@@ -245,7 +245,7 @@ pub enum ProtocolError {
     CommunicationTimeout,
     InvalidCommand,
     InvalidNumberOfParameters,
-    TooManyParameters
+    TooManyParameters,
 }
 
 impl Format for ProtocolError {

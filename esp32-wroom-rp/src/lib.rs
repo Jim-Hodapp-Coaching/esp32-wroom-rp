@@ -91,7 +91,7 @@ pub mod wifi;
 pub mod protocol;
 mod spi;
 
-use protocol::{ProtocolInterface, ProtocolError};
+use protocol::{ProtocolError, ProtocolInterface};
 
 use defmt::{write, Format, Formatter};
 use embedded_hal::blocking::delay::DelayMs;
@@ -111,7 +111,11 @@ impl Format for Error {
     fn format(&self, fmt: Formatter) {
         match self {
             Error::Bus => write!(fmt, "Bus error"),
-            Error::Protocol(e) => write!(fmt, "Communication protocol error with ESP32 WiFi target: {}", e),
+            Error::Protocol(e) => write!(
+                fmt,
+                "Communication protocol error with ESP32 WiFi target: {}",
+                e
+            ),
         }
     }
 }

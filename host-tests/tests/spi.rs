@@ -1,11 +1,9 @@
-use embedded_hal_mock::spi;
-use embedded_hal_mock::pin::{
-    Mock as PinMock, State as PinState, Transaction as PinTransaction,
-};
 use embedded_hal_mock::delay::MockNoop;
+use embedded_hal_mock::pin::{Mock as PinMock, State as PinState, Transaction as PinTransaction};
+use embedded_hal_mock::spi;
 
-use esp32_wroom_rp::wifi::Wifi;
 use esp32_wroom_rp::gpio::EspControlInterface;
+use esp32_wroom_rp::wifi::Wifi;
 
 struct EspControlMock {}
 
@@ -18,7 +16,7 @@ impl EspControlInterface for EspControlMock {
         true
     }
 
-   fn  wait_for_esp_select(&mut self) {}
+    fn wait_for_esp_select(&mut self) {}
 
     fn wait_for_esp_ack(&self) {}
 
@@ -41,7 +39,6 @@ fn invalid_command_induces_nina_protocol_version_mismatch_error() {
         spi::Transaction::transfer(vec![0x37], vec![0x0]),
         spi::Transaction::transfer(vec![0x0], vec![0x0]),
         spi::Transaction::transfer(vec![0xee], vec![0x0]),
-
         // wait_response_cmd()
         spi::Transaction::transfer(vec![0xff], vec![0xef]),
     ];
@@ -54,7 +51,12 @@ fn invalid_command_induces_nina_protocol_version_mismatch_error() {
     let mut wifi = Wifi::init(&mut spi, &mut pins, &mut delay).ok().unwrap();
     let f = wifi.firmware_version();
 
-    assert_eq!(f.unwrap_err(), esp32_wroom_rp::Error::Protocol(esp32_wroom_rp::protocol::ProtocolError::NinaProtocolVersionMismatch));
+    assert_eq!(
+        f.unwrap_err(),
+        esp32_wroom_rp::Error::Protocol(
+            esp32_wroom_rp::protocol::ProtocolError::NinaProtocolVersionMismatch
+        )
+    );
 
     spi.done();
 }
