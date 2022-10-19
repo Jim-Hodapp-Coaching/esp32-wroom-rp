@@ -75,7 +75,7 @@ pub trait EspControlInterface {
 /// A structured representation of all GPIO pins that control a ESP32-WROOM NINA firmware-based
 /// device outside of commands sent over the SPI/I²C bus. Pass a single instance of this struct
 /// into `Wifi::init()`.
-pub struct EspControlPins<CS: OutputPin, GPIO0: OutputPin, RESETN: OutputPin, ACK: InputPin> {
+pub struct EspControlPins<CS, GPIO0, RESETN, ACK> {
     /// Chip select pin to let the NINA firmware know we're going to send it a command over
     /// the SPI bus.
     pub cs: CS,
@@ -131,13 +131,13 @@ where
 
     fn wait_for_esp_ready(&self) {
         while self.get_esp_ready() != true {
-            cortex_m::asm::nop(); // Make sure rustc doesn't optimize this loop out
+            //cortex_m::asm::nop(); // Make sure rustc doesn't optimize this loop out
         }
     }
 
     fn wait_for_esp_ack(&self) {
         while self.get_esp_ack() == false {
-            cortex_m::asm::nop(); // Make sure rustc doesn't optimize this loop out
+            //cortex_m::asm::nop(); // Make sure rustc doesn't optimize this loop out
         }
     }
 
@@ -145,6 +145,17 @@ where
         self.wait_for_esp_ready();
         self.esp_select();
         self.wait_for_esp_ack();
+    }
+}
+
+impl Default for EspControlPins<(), (), (), ()> {
+    fn default() -> Self {
+        Self {
+            cs: (),
+            gpio0: (),
+            resetn: (),
+            ack: ()
+        }
     }
 }
 

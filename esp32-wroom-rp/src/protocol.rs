@@ -1,4 +1,4 @@
-pub mod operation;
+pub(crate) mod operation;
 
 use super::*;
 
@@ -8,7 +8,7 @@ use defmt::{write, Format, Formatter};
 
 use heapless::{String, Vec};
 
-pub const MAX_NINA_PARAM_LENGTH: usize = 255;
+pub(crate) const MAX_NINA_PARAM_LENGTH: usize = 255;
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug)]
@@ -231,15 +231,15 @@ pub(crate) trait ProtocolInterface {
     fn get_conn_status(&mut self) -> Result<u8, ProtocolError>;
 }
 
-#[derive(Debug, Default)]
-pub(crate) struct NinaProtocolHandler<B, C> {
+#[derive(Debug)]
+pub(crate) struct NinaProtocolHandler<'a, B, C> {
     /// A Spi or I2c instance
-    pub bus: B,
+    pub bus: &'a mut B,
     /// An EspControlPins instance
-    pub control_pins: C,
+    pub control_pins: &'a mut C,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ProtocolError {
     NinaProtocolVersionMismatch,
     CommunicationTimeout,

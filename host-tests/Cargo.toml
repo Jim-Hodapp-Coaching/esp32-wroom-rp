@@ -12,3 +12,4 @@ description = "Host-side tests for the Rust-based Espressif ESP32-WROOM WiFi dri
 
 [dev-dependencies]
 embedded-hal-mock = "0.8.0"
+esp32-wroom-rp = { path = "../esp32-wroom-rp" }

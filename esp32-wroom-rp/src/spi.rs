@@ -27,12 +27,12 @@ enum ControlByte {
 }
 
 /// Fundamental struct for controlling a connected ESP32-WROOM NINA firmware-based Wifi board.
-#[derive(Debug, Default)]
-pub struct Wifi<B, C> {
-    common: WifiCommon<NinaProtocolHandler<B, C>>,
+#[derive(Debug)]
+pub struct Wifi<'a, B, C> {
+    common: WifiCommon<NinaProtocolHandler<'a, B, C>>,
 }
 
-impl<S, C> Wifi<S, C>
+impl<'a, S, C> Wifi<'a, S, C>
 where
     S: Transfer<u8>,
     C: EspControlInterface,
@@ -40,10 +40,10 @@ where
     /// Initializes the ESP32-WROOM Wifi device.
     /// Calling this function puts the connected ESP32-WROOM device in a known good state to accept commands.
     pub fn init<D: DelayMs<u16>>(
-        spi: S,
-        control_pins: C,
+        spi: &'a mut S,
+        control_pins: &'a mut C,
         delay: &mut D,
-    ) -> Result<Wifi<S, C>, Error> {
+    ) -> Result<Wifi<'a, S, C>, Error> {
         let mut wifi = Wifi {
             common: WifiCommon {
                 protocol_handler: NinaProtocolHandler {
@@ -82,7 +82,7 @@ where
 }
 
 // All SPI-specific aspects of the NinaProtocolHandler go here in this struct impl
-impl<S, C> ProtocolInterface for NinaProtocolHandler<S, C>
+impl<'a, S, C> ProtocolInterface for NinaProtocolHandler<'a, S, C>
 where
     S: Transfer<u8>,
     C: EspControlInterface,
@@ -142,7 +142,7 @@ where
     }
 }
 
-impl<S, C> NinaProtocolHandler<S, C>
+impl<'a, S, C> NinaProtocolHandler<'a, S, C>
 where
     S: Transfer<u8>,
     C: EspControlInterface,
@@ -199,6 +199,8 @@ where
 
         for byte in buf {
             let write_buf = &mut [byte];
+            // FIXME: temporary for test writing debugging
+            defmt::debug!("0x{:02x}, ", write_buf[0]);
             self.bus.transfer(write_buf).ok();
         }
 
@@ -213,7 +215,7 @@ where
         cmd: &NinaCommand,
         num_params: u8,
     ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], ProtocolError> {
-        self.check_start_cmd().ok().unwrap();
+        self.check_start_cmd()?;
         let byte_to_check: u8 = *cmd as u8 | ControlByte::Reply as u8;
         let result = self.read_and_check_byte(&byte_to_check).ok().unwrap();
         // Ensure we see a cmd byte

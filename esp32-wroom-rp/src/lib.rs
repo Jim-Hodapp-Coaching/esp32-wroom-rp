@@ -75,7 +75,7 @@
 //!     ack: pins.gpio10.into_mode::<hal::gpio::FloatingInput>(),
 //! };
 //!
-//! let mut wifi = esp32_wroom_rp::spi::Wifi::init(spi, esp_pins, &mut delay).unwrap();
+//! let mut wifi = esp32_wroom_rp::spi::Wifi::init(&mut spi, &mut esp_pins, &mut delay).unwrap();
 //! let version = wifi.firmware_version();
 //! ```
 
@@ -88,7 +88,7 @@ pub mod gpio;
 /// Fundamental interface for controlling a connected ESP32-WROOM NINA firmware-based Wifi board.
 pub mod wifi;
 
-mod protocol;
+pub mod protocol;
 mod spi;
 
 use protocol::{ProtocolInterface, ProtocolError};
@@ -99,7 +99,7 @@ use embedded_hal::blocking::delay::DelayMs;
 const ARRAY_LENGTH_PLACEHOLDER: usize = 8;
 
 /// Highest level error types for this crate.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Error {
     /// SPI/I2C related communications error with the ESP32 WiFi target
     Bus,
@@ -118,13 +118,7 @@ impl Format for Error {
 
 impl From<protocol::ProtocolError> for Error {
     fn from(err: protocol::ProtocolError) -> Self {
-        match err {
-            protocol::ProtocolError::CommunicationTimeout => Error::Protocol(err),
-            protocol::ProtocolError::InvalidCommand => Error::Protocol(err),
-            protocol::ProtocolError::InvalidNumberOfParameters => Error::Protocol(err),
-            protocol::ProtocolError::NinaProtocolVersionMismatch => Error::Protocol(err),
-            protocol::ProtocolError::TooManyParameters => Error::Protocol(err),
-        }
+        Error::Protocol(err)
     }
 }
 
@@ -167,7 +161,7 @@ impl Format for FirmwareVersion {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct WifiCommon<PH> {
     protocol_handler: PH,
 }
