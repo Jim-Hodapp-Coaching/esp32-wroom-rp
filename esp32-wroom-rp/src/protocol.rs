@@ -239,6 +239,8 @@ pub(crate) struct NinaProtocolHandler<'a, B, C> {
     pub control_pins: &'a mut C,
 }
 
+// TODO: look at Nina Firmware code to understand conditions
+// that lead to NinaProtocolVersionMismatch
 #[derive(Debug, PartialEq)]
 pub enum ProtocolError {
     NinaProtocolVersionMismatch,

@@ -15,6 +15,9 @@ use embedded_hal::blocking::spi::Transfer;
 
 use core::convert::Infallible;
 
+// FIXME: remove before commit
+//use defmt_rtt as _;
+
 // TODO: this should eventually move into NinaCommandHandler
 #[repr(u8)]
 #[derive(Debug)]
@@ -199,8 +202,6 @@ where
 
         for byte in buf {
             let write_buf = &mut [byte];
-            // FIXME: temporary for test writing debugging
-            defmt::debug!("0x{:02x}, ", write_buf[0]);
             self.bus.transfer(write_buf).ok();
         }
 
