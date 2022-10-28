@@ -63,10 +63,7 @@ fn main() -> ! {
     .ok()
     .unwrap();
 
-    let mut delay = cortex_m::delay::Delay::new(
-        core.SYST,
-        clocks.system_clock.freq().integer(),
-    );
+    let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().integer());
 
     // The single-cycle I/O block controls our GPIO pins
     let sio = hal::Sio::new(pac.SIO);
@@ -89,14 +86,14 @@ fn main() -> ! {
     let spi = hal::Spi::<_, _, 8>::new(pac.SPI0);
 
     // Exchange the uninitialized SPI driver for an initialized one
-    let spi = spi.init(
+    let mut spi = spi.init(
         &mut pac.RESETS,
         clocks.peripheral_clock.freq(),
         8_000_000u32.Hz(),
         &MODE_0,
     );
 
-    let esp_pins = esp32_wroom_rp::gpio::EspControlPins {
+    let mut esp_pins = esp32_wroom_rp::gpio::EspControlPins {
         // CS on pin x (GPIO7)
         cs: pins.gpio7.into_mode::<hal::gpio::PushPullOutput>(),
         // GPIO0 on pin x (GPIO2)
@@ -106,7 +103,7 @@ fn main() -> ! {
         // ACK on pin x (GPIO10)
         ack: pins.gpio10.into_mode::<hal::gpio::FloatingInput>(),
     };
-    let mut wifi = esp32_wroom_rp::wifi::Wifi::init(spi, esp_pins, &mut delay).unwrap();
+    let mut wifi = esp32_wroom_rp::wifi::Wifi::init(&mut spi, &mut esp_pins, &mut delay).unwrap();
     let firmware_version = wifi.firmware_version();
     defmt::info!("NINA firmware version: {:?}", firmware_version);
 

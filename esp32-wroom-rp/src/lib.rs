@@ -75,7 +75,7 @@
 //!     ack: pins.gpio10.into_mode::<hal::gpio::FloatingInput>(),
 //! };
 //!
-//! let mut wifi = esp32_wroom_rp::spi::Wifi::init(spi, esp_pins, &mut delay).unwrap();
+//! let mut wifi = esp32_wroom_rp::spi::Wifi::init(&mut spi, &mut esp_pins, &mut delay).unwrap();
 //! let version = wifi.firmware_version();
 //! ```
 
@@ -88,10 +88,10 @@ pub mod gpio;
 /// Fundamental interface for controlling a connected ESP32-WROOM NINA firmware-based Wifi board.
 pub mod wifi;
 
-mod protocol;
+pub mod protocol;
 mod spi;
 
-use protocol::ProtocolInterface;
+use protocol::{ProtocolError, ProtocolInterface};
 
 use defmt::{write, Format, Formatter};
 use embedded_hal::blocking::delay::DelayMs;
@@ -99,17 +99,30 @@ use embedded_hal::blocking::delay::DelayMs;
 const ARRAY_LENGTH_PLACEHOLDER: usize = 8;
 
 /// Highest level error types for this crate.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Error {
     /// SPI/I2C related communications error with the ESP32 WiFi target
     Bus,
-    /// Timeout in communicating with the ESP32 WiFi target
-    TimeOut,
+    /// Protocol error in communicating with the ESP32 WiFi target
+    Protocol(ProtocolError),
 }
 
 impl Format for Error {
     fn format(&self, fmt: Formatter) {
-        write!(fmt, "Generic ESP32-WROOM-RP Error")
+        match self {
+            Error::Bus => write!(fmt, "Bus error"),
+            Error::Protocol(e) => write!(
+                fmt,
+                "Communication protocol error with ESP32 WiFi target: {}",
+                e
+            ),
+        }
+    }
+}
+
+impl From<protocol::ProtocolError> for Error {
+    fn from(err: protocol::ProtocolError) -> Self {
+        Error::Protocol(err)
     }
 }
 
@@ -152,7 +165,7 @@ impl Format for FirmwareVersion {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct WifiCommon<PH> {
     protocol_handler: PH,
 }
@@ -170,20 +183,20 @@ where
         self.protocol_handler.reset(delay)
     }
 
-    fn firmware_version(&mut self) -> Result<FirmwareVersion, self::Error> {
-        self.protocol_handler.get_fw_version()
+    fn firmware_version(&mut self) -> Result<FirmwareVersion, Error> {
+        Ok(self.protocol_handler.get_fw_version()?)
     }
 
     fn join(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error> {
-        self.protocol_handler.set_passphrase(ssid, passphrase)
+        Ok(self.protocol_handler.set_passphrase(ssid, passphrase)?)
     }
 
     fn leave(&mut self) -> Result<(), Error> {
-        self.protocol_handler.disconnect()
+        Ok(self.protocol_handler.disconnect()?)
     }
 
-    fn get_connection_status(&mut self) -> Result<u8, self::Error> {
-        self.protocol_handler.get_conn_status()
+    fn get_connection_status(&mut self) -> Result<u8, Error> {
+        Ok(self.protocol_handler.get_conn_status()?)
     }
 }
 

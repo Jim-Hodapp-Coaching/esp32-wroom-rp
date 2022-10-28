@@ -41,7 +41,7 @@ enum IOError {
 
 /// Provides an internal pin interface that abstracts the extra control lines that
 /// are separate from a data bus (e.g. SPI/I2C).
-/// 
+///
 /// Not meant to be used outside of the crate.
 pub trait EspControlInterface {
     /// Initializes all controls pins to set ready communication with the NINA firmware.
@@ -75,7 +75,7 @@ pub trait EspControlInterface {
 /// A structured representation of all GPIO pins that control a ESP32-WROOM NINA firmware-based
 /// device outside of commands sent over the SPI/I²C bus. Pass a single instance of this struct
 /// into `Wifi::init()`.
-pub struct EspControlPins<CS: OutputPin, GPIO0: OutputPin, RESETN: OutputPin, ACK: InputPin> {
+pub struct EspControlPins<CS, GPIO0, RESETN, ACK> {
     /// Chip select pin to let the NINA firmware know we're going to send it a command over
     /// the SPI bus.
     pub cs: CS,
@@ -98,27 +98,27 @@ where
 {
     fn init(&mut self) {
         // Chip select is active-low, so we'll initialize it to a driven-high state
-        self.cs.set_high().ok().unwrap();
-        self.gpio0.set_high().ok().unwrap();
-        self.resetn.set_high().ok().unwrap();
+        self.cs.set_high().ok();
+        self.gpio0.set_high().ok();
+        self.resetn.set_high().ok();
         self.get_esp_ready();
     }
 
     fn reset<D: DelayMs<u16>>(&mut self, delay: &mut D) {
-        self.gpio0.set_high().ok().unwrap();
-        self.cs.set_high().ok().unwrap();
-        self.resetn.set_low().ok().unwrap();
+        self.gpio0.set_high().ok();
+        self.cs.set_high().ok();
+        self.resetn.set_low().ok();
         delay.delay_ms(10);
-        self.resetn.set_high().ok().unwrap();
+        self.resetn.set_high().ok();
         delay.delay_ms(750);
     }
 
     fn esp_select(&mut self) {
-        self.cs.set_low().ok().unwrap();
+        self.cs.set_low().ok();
     }
 
     fn esp_deselect(&mut self) {
-        self.cs.set_high().ok().unwrap();
+        self.cs.set_high().ok();
     }
 
     fn get_esp_ready(&self) -> bool {
@@ -131,13 +131,13 @@ where
 
     fn wait_for_esp_ready(&self) {
         while self.get_esp_ready() != true {
-            cortex_m::asm::nop(); // Make sure rustc doesn't optimize this loop out
+            //cortex_m::asm::nop(); // Make sure rustc doesn't optimize this loop out
         }
     }
 
     fn wait_for_esp_ack(&self) {
         while self.get_esp_ack() == false {
-            cortex_m::asm::nop(); // Make sure rustc doesn't optimize this loop out
+            //cortex_m::asm::nop(); // Make sure rustc doesn't optimize this loop out
         }
     }
 
@@ -145,6 +145,17 @@ where
         self.wait_for_esp_ready();
         self.esp_select();
         self.wait_for_esp_ack();
+    }
+}
+
+impl Default for EspControlPins<(), (), (), ()> {
+    fn default() -> Self {
+        Self {
+            cs: (),
+            gpio0: (),
+            resetn: (),
+            ack: (),
+        }
     }
 }
 
