@@ -17,6 +17,7 @@ pub(crate) enum NinaCommand {
     SetPassphrase = 0x11u8,
     GetConnStatus = 0x20u8,
     Disconnect = 0x30u8,
+    SetDNSConfig = 0x15u8,
 }
 
 pub(crate) trait NinaParam {
@@ -229,6 +230,7 @@ pub(crate) trait ProtocolInterface {
     fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), ProtocolError>;
     fn disconnect(&mut self) -> Result<(), ProtocolError>;
     fn get_conn_status(&mut self) -> Result<u8, ProtocolError>;
+    fn set_dns(&mut self, ip1: IpAddress, ip2: Option<IpAddress>) -> Result<(), ProtocolError>;
 }
 
 #[derive(Debug)]

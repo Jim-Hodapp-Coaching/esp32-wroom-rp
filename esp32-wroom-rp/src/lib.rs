@@ -98,6 +98,8 @@ use embedded_hal::blocking::delay::DelayMs;
 
 const ARRAY_LENGTH_PLACEHOLDER: usize = 8;
 
+pub type IpAddress = [u8; 4];
+
 /// Highest level error types for this crate.
 #[derive(Debug, Eq, PartialEq)]
 pub enum Error {
@@ -197,6 +199,10 @@ where
 
     fn get_connection_status(&mut self) -> Result<u8, Error> {
         Ok(self.protocol_handler.get_conn_status()?)
+    }
+
+    fn set_dns(&mut self, ip1: IpAddress, ip2: Option<IpAddress>) -> Result<(), Error> {
+        Ok(self.protocol_handler.set_dns(ip1, ip2)?)
     }
 }
 

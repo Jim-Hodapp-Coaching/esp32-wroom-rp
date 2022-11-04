@@ -10,6 +10,8 @@ use super::protocol::operation::Operation;
 use super::protocol::ProtocolError;
 use super::{Error, FirmwareVersion, WifiCommon, ARRAY_LENGTH_PLACEHOLDER};
 
+use super::IpAddress;
+
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::spi::Transfer;
 
@@ -82,6 +84,10 @@ where
     pub fn get_connection_status(&mut self) -> Result<u8, Error> {
         self.common.get_connection_status()
     }
+
+    pub fn set_dns(&mut self, ip1: IpAddress, ip2: Option<IpAddress>) -> Result<(), Error> {
+        self.common.set_dns(ip1, ip2)
+    }
 }
 
 // All SPI-specific aspects of the NinaProtocolHandler go here in this struct impl
@@ -140,6 +146,23 @@ where
         self.execute(&operation)?;
 
         self.receive(&operation)?;
+
+        Ok(())
+    }
+
+    fn set_dns(&mut self, ip1: IpAddress, _ip2: Option<IpAddress>) -> Result<(), ProtocolError> {
+        // FIXME: refactor Operation so it can take different NinaParam types
+        let operation = Operation::new(NinaCommand::SetDNSConfig, 3)
+            // FIXME: first param should be able to be a NinaByteParam:
+            .param(NinaSmallArrayParam::from_bytes(&[1]))
+            .param(NinaSmallArrayParam::from_bytes(&ip1))
+            .param(NinaSmallArrayParam::from_bytes(&[0]));
+
+        self.execute(&operation)?;
+
+        let result = self.receive(&operation)?;
+
+        defmt::info!("result from DNS: {:?}", result);
 
         Ok(())
     }

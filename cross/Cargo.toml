@@ -2,6 +2,7 @@
 members = [
   "get_fw_version",
   "join",
+  "dns"
 ]
 
 [profile.dev]
