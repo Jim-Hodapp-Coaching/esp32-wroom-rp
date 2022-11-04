@@ -126,13 +126,15 @@ fn main() -> ! {
                 if byte == 3 {
                     defmt::info!("Connected to Network: {:?}", SSID);
 
-                    let ip1: IpAddress = [9, 9, 9, 9];
+                    let ip1: IpAddress = [10, 0, 1, 3];
                     let dns_result = wifi.set_dns(ip1, None);
 
                     defmt::info!("set_dns result: {:?}", dns_result);
 
-                    defmt::info!("Sleeping for 5 seconds before disconnecting...");
-                    delay.delay_ms(5000);
+                    defmt::info!("Doing a DNS resolve for ambi.matrix.net");
+
+                    let ip = wifi.resolve("ambi.matrix.net");
+                    defmt::info!("Server IP: {:?}", ip);
 
                     wifi.leave().ok().unwrap();
                 } else if byte == 6 {

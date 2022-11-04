@@ -85,8 +85,12 @@ where
         self.common.get_connection_status()
     }
 
-    pub fn set_dns(&mut self, ip1: IpAddress, ip2: Option<IpAddress>) -> Result<(), Error> {
-        self.common.set_dns(ip1, ip2)
+    pub fn set_dns(&mut self, dns1: IpAddress, dns2: Option<IpAddress>) -> Result<(), Error> {
+        self.common.set_dns(dns1, dns2)
+    }
+
+    pub fn resolve(&mut self, hostname: &str) -> Result<IpAddress, Error> {
+        self.common.resolve(hostname)
     }
 }
 
@@ -152,7 +156,7 @@ where
 
     fn set_dns(&mut self, ip1: IpAddress, _ip2: Option<IpAddress>) -> Result<(), ProtocolError> {
         // FIXME: refactor Operation so it can take different NinaParam types
-        let operation = Operation::new(NinaCommand::SetDNSConfig, 3)
+        let operation = Operation::new(NinaCommand::SetDNSConfig, 1)
             // FIXME: first param should be able to be a NinaByteParam:
             .param(NinaSmallArrayParam::from_bytes(&[1]))
             .param(NinaSmallArrayParam::from_bytes(&ip1))
@@ -162,9 +166,22 @@ where
 
         let result = self.receive(&operation)?;
 
-        defmt::info!("result from DNS: {:?}", result);
-
         Ok(())
+    }
+
+    fn resolve(&mut self, hostname: &str) -> Result<IpAddress, ProtocolError> {
+        let operation = Operation::new(NinaCommand::GetHostByName, 1).param(NinaSmallArrayParam::new(hostname));
+
+        self.execute(&operation)?;
+
+        let result = self.receive(&operation)?;
+
+        defmt::debug!("DNS result: {:?}", result);
+        let (ip_slice, _) = result.split_at(4);
+        let mut ip_address: IpAddress = [0; 4];
+        ip_address.clone_from_slice(ip_slice);
+
+        Ok(ip_address)
     }
 }
 

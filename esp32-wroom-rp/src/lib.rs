@@ -201,8 +201,12 @@ where
         Ok(self.protocol_handler.get_conn_status()?)
     }
 
-    fn set_dns(&mut self, ip1: IpAddress, ip2: Option<IpAddress>) -> Result<(), Error> {
-        Ok(self.protocol_handler.set_dns(ip1, ip2)?)
+    fn set_dns(&mut self, dns1: IpAddress, dns2: Option<IpAddress>) -> Result<(), Error> {
+        Ok(self.protocol_handler.set_dns(dns1, dns2)?)
+    }
+
+    fn resolve(&mut self, hostname: &str) -> Result<IpAddress, Error> {
+        Ok(self.protocol_handler.resolve(hostname)?)
     }
 }
 
