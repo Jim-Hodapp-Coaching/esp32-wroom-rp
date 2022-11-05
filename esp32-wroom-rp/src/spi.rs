@@ -157,14 +157,14 @@ where
     fn set_dns_config(
         &mut self,
         ip1: IpAddress,
-        _ip2: Option<IpAddress>,
+        ip2: Option<IpAddress>,
     ) -> Result<(), ProtocolError> {
         // FIXME: refactor Operation so it can take different NinaParam types
         let operation = Operation::new(NinaCommand::SetDNSConfig, 1)
             // FIXME: first param should be able to be a NinaByteParam:
             .param(NinaSmallArrayParam::from_bytes(&[1]))
             .param(NinaSmallArrayParam::from_bytes(&ip1))
-            .param(NinaSmallArrayParam::from_bytes(&[0]));
+            .param(NinaSmallArrayParam::from_bytes(&ip2.unwrap_or_default()));
 
         self.execute(&operation)?;
 
@@ -183,11 +183,9 @@ where
 
         defmt::debug!("req_host_by_name result: {:?}", result);
 
-        // if result[0] != 1u8 {
-        //     // TODO: This should be an error describing a failed DNS lookup.
-        //     return Err(ProtocolError::CommunicationTimeout);
-        // }
-        
+        if result[0] != 1u8 {
+            return Err(ProtocolError::DnsResolveFailed);
+        }
 
         Ok(result[0])
     }
@@ -206,20 +204,20 @@ where
     fn resolve(&mut self, hostname: &str) -> Result<IpAddress, ProtocolError> {
         self.req_host_by_name(hostname)?;
 
-        let dummy = [255, 255, 255, 255];
+        let dummy: IpAddress = [255, 255, 255, 255];
 
-        loop {
-            let result = self.get_host_by_name()?;
+        let result = self.get_host_by_name()?;
 
-            defmt::debug!("get_host_by_name result: {:?}", result);
+        defmt::debug!("get_host_by_name result: {:?}", result);
 
-            let (ip_slice, _) = result.split_at(4);
-            let mut ip_address: IpAddress = [0; 4];
-            ip_address.clone_from_slice(ip_slice);
+        let (ip_slice, _) = result.split_at(4);
+        let mut ip_address: IpAddress = [0; 4];
+        ip_address.clone_from_slice(ip_slice);
 
-            if ip_address != dummy {
-                return Ok(ip_address)
-            }
+        if ip_address != dummy {
+            return Ok(ip_address);
+        } else {
+            return Err(ProtocolError::DnsResolveFailed);
         }
     }
 }

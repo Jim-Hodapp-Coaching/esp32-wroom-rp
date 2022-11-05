@@ -259,6 +259,8 @@ pub enum ProtocolError {
     InvalidCommand,
     InvalidNumberOfParameters,
     TooManyParameters,
+    
+    DnsResolveFailed,
 }
 
 impl Format for ProtocolError {
@@ -269,6 +271,8 @@ impl Format for ProtocolError {
             ProtocolError::InvalidCommand => write!(fmt, "Encountered an invalid command while communicating with ESP32 target."),
             ProtocolError::InvalidNumberOfParameters => write!(fmt, "Encountered an unexpected number of parameters for a NINA command while communicating with ESP32 target."),
             ProtocolError::TooManyParameters => write!(fmt, "Encountered too many parameters for a NINA command while communicating with ESP32 target."),
+
+            ProtocolError::DnsResolveFailed => write!(fmt, "Failed when trying to resolve a DNS hostname"),
         }
     }
 }

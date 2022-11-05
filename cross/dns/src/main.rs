@@ -1,8 +1,7 @@
 //! # ESP32-WROOM-RP Pico Wireless Example
 //!
-//! This application demonstrates how to use the ESP32-WROOM-RP crate to request that
-//! a remote ESP32 WiFi target connects to a particular SSID given a passphrase
-//! and then leaves (disconnects) that same network.
+//! This application demonstrates how to use the ESP32-WROOM-RP crate to perform
+//! a DNS hostname lookup after setting what DNS server to use.
 //!
 //! See the `Cargo.toml` file for Copyright and license details.
 
@@ -126,15 +125,23 @@ fn main() -> ! {
                 if byte == 3 {
                     defmt::info!("Connected to Network: {:?}", SSID);
 
-                    let ip1: IpAddress = [10, 0, 1, 3];
-                    let dns_result = wifi.set_dns(ip1, None);
+                    // The IPAddress of our DNS server to resolve hostnames with
+                    let ip1: IpAddress = [9, 9, 9, 9];
+                    let ip2: IpAddress = [8, 8, 8, 8];
+                    let dns_result = wifi.set_dns(ip1, Some(ip2));
 
                     defmt::info!("set_dns result: {:?}", dns_result);
 
-                    defmt::info!("Doing a DNS resolve for thecitybase.com");
+                    let hostname = "thecitybase.com";
+                    defmt::info!("Doing a DNS resolve for {}", hostname);
 
-                    let ip = wifi.resolve("thecitybase.com");
-                    defmt::info!("Server IP: {:?}", ip);
+                    match wifi.resolve(hostname) {
+                        Ok(ip) => { defmt::info!("Server IP: {:?}", ip); }
+                        Err(e) => {
+                            defmt::error!("Failed to resolve hostname {}", hostname);
+                            defmt::error!("Err: {}", e);
+                        }
+                    }
 
                     wifi.leave().ok().unwrap();
                 } else if byte == 6 {
