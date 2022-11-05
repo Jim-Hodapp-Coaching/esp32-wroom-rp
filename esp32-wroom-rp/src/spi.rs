@@ -154,7 +154,11 @@ where
         Ok(())
     }
 
-    fn set_dns(&mut self, ip1: IpAddress, _ip2: Option<IpAddress>) -> Result<(), ProtocolError> {
+    fn set_dns_config(
+        &mut self,
+        ip1: IpAddress,
+        _ip2: Option<IpAddress>,
+    ) -> Result<(), ProtocolError> {
         // FIXME: refactor Operation so it can take different NinaParam types
         let operation = Operation::new(NinaCommand::SetDNSConfig, 1)
             // FIXME: first param should be able to be a NinaByteParam:

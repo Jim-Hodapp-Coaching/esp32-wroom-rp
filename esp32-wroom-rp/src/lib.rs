@@ -202,7 +202,7 @@ where
     }
 
     fn set_dns(&mut self, dns1: IpAddress, dns2: Option<IpAddress>) -> Result<(), Error> {
-        Ok(self.protocol_handler.set_dns(dns1, dns2)?)
+        Ok(self.protocol_handler.set_dns_config(dns1, dns2)?)
     }
 
     fn resolve(&mut self, hostname: &str) -> Result<IpAddress, Error> {

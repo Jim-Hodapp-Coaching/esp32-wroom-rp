@@ -232,7 +232,11 @@ pub(crate) trait ProtocolInterface {
     fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), ProtocolError>;
     fn disconnect(&mut self) -> Result<(), ProtocolError>;
     fn get_conn_status(&mut self) -> Result<u8, ProtocolError>;
-    fn set_dns(&mut self, dns1: IpAddress, dns2: Option<IpAddress>) -> Result<(), ProtocolError>;
+    fn set_dns_config(
+        &mut self,
+        dns1: IpAddress,
+        dns2: Option<IpAddress>,
+    ) -> Result<(), ProtocolError>;
     fn req_host_by_name(&mut self, hostname: &str) -> Result<u8, ProtocolError>;
     fn get_host_by_name(&mut self) -> Result<[u8; 8], ProtocolError>;
     fn resolve(&mut self, hostname: &str) -> Result<IpAddress, ProtocolError>;
