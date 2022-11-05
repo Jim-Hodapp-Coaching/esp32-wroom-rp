@@ -169,12 +169,39 @@ where
         Ok(())
     }
 
-    fn resolve(&mut self, hostname: &str) -> Result<IpAddress, ProtocolError> {
-        let operation = Operation::new(NinaCommand::GetHostByName, 1).param(NinaSmallArrayParam::new(hostname));
+    fn req_host_by_name(&mut self, hostname: &str) -> Result<u8, ProtocolError> {
+        let operation =
+            Operation::new(NinaCommand::ReqHostByName, 1).param(NinaSmallArrayParam::new(hostname));
 
         self.execute(&operation)?;
 
         let result = self.receive(&operation)?;
+
+        defmt::debug!("req_host_by_name result: {:?}", result);
+
+        if result[0] != 1u8 {
+            // TODO: This should be an error describing a failed DNS lookup.
+            return Err(ProtocolError::CommunicationTimeout);
+        }
+
+        Ok(result[0])
+    }
+
+    fn get_host_by_name(&mut self) -> Result<[u8; 8], ProtocolError> {
+        let operation =
+            Operation::new(NinaCommand::GetHostByName, 1).with_no_params(NinaNoParams::new(""));
+
+        self.execute(&operation)?;
+
+        let result = self.receive(&operation)?;
+
+        Ok(result)
+    }
+
+    fn resolve(&mut self, hostname: &str) -> Result<IpAddress, ProtocolError> {
+        self.req_host_by_name(hostname)?;
+
+        let result = self.get_host_by_name()?;
 
         defmt::debug!("DNS result: {:?}", result);
         let (ip_slice, _) = result.split_at(4);

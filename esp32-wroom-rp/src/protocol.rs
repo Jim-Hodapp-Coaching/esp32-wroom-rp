@@ -18,7 +18,8 @@ pub(crate) enum NinaCommand {
     GetConnStatus = 0x20u8,
     Disconnect = 0x30u8,
     SetDNSConfig = 0x15u8,
-    GetHostByName = 0x35u8
+    ReqHostByName = 0x34u8,
+    GetHostByName = 0x35u8,
 }
 
 pub(crate) trait NinaParam {
@@ -232,6 +233,8 @@ pub(crate) trait ProtocolInterface {
     fn disconnect(&mut self) -> Result<(), ProtocolError>;
     fn get_conn_status(&mut self) -> Result<u8, ProtocolError>;
     fn set_dns(&mut self, dns1: IpAddress, dns2: Option<IpAddress>) -> Result<(), ProtocolError>;
+    fn req_host_by_name(&mut self, hostname: &str) -> Result<u8, ProtocolError>;
+    fn get_host_by_name(&mut self) -> Result<[u8; 8], ProtocolError>;
     fn resolve(&mut self, hostname: &str) -> Result<IpAddress, ProtocolError>;
 }
 
