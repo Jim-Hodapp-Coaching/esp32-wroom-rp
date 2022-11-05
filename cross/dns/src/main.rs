@@ -131,9 +131,9 @@ fn main() -> ! {
 
                     defmt::info!("set_dns result: {:?}", dns_result);
 
-                    defmt::info!("Doing a DNS resolve for ambi.matrix.net");
+                    defmt::info!("Doing a DNS resolve for thecitybase.com");
 
-                    let ip = wifi.resolve("ambi.matrix.net");
+                    let ip = wifi.resolve("thecitybase.com");
                     defmt::info!("Server IP: {:?}", ip);
 
                     wifi.leave().ok().unwrap();

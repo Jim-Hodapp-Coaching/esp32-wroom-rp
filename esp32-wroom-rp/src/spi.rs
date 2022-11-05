@@ -168,7 +168,7 @@ where
 
         self.execute(&operation)?;
 
-        let result = self.receive(&operation)?;
+        self.receive(&operation)?;
 
         Ok(())
     }
@@ -183,10 +183,11 @@ where
 
         defmt::debug!("req_host_by_name result: {:?}", result);
 
-        if result[0] != 1u8 {
-            // TODO: This should be an error describing a failed DNS lookup.
-            return Err(ProtocolError::CommunicationTimeout);
-        }
+        // if result[0] != 1u8 {
+        //     // TODO: This should be an error describing a failed DNS lookup.
+        //     return Err(ProtocolError::CommunicationTimeout);
+        // }
+        
 
         Ok(result[0])
     }
@@ -205,14 +206,21 @@ where
     fn resolve(&mut self, hostname: &str) -> Result<IpAddress, ProtocolError> {
         self.req_host_by_name(hostname)?;
 
-        let result = self.get_host_by_name()?;
+        let dummy = [255, 255, 255, 255];
 
-        defmt::debug!("DNS result: {:?}", result);
-        let (ip_slice, _) = result.split_at(4);
-        let mut ip_address: IpAddress = [0; 4];
-        ip_address.clone_from_slice(ip_slice);
+        loop {
+            let result = self.get_host_by_name()?;
 
-        Ok(ip_address)
+            defmt::debug!("get_host_by_name result: {:?}", result);
+
+            let (ip_slice, _) = result.split_at(4);
+            let mut ip_address: IpAddress = [0; 4];
+            ip_address.clone_from_slice(ip_slice);
+
+            if ip_address != dummy {
+                return Ok(ip_address)
+            }
+        }
     }
 }
 
