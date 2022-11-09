@@ -259,7 +259,7 @@ pub enum ProtocolError {
     InvalidCommand,
     InvalidNumberOfParameters,
     TooManyParameters,
-    
+
     DnsResolveFailed,
 }
 

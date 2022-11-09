@@ -376,7 +376,7 @@ where
     }
 
     fn pad_to_multiple_of_4(&mut self, mut command_size: u16) {
-        while command_size % 4 == 0 {
+        while command_size % 4 != 0 {
             self.get_byte().ok();
             command_size += 1;
         }
