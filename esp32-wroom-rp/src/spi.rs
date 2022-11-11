@@ -248,6 +248,7 @@ where
 
             // This is to make sure we align correctly
             // 4 (start byte, command byte, number of params, end byte) + 1 byte for each param + the sum of all param lengths
+            // See https://github.com/arduino/nina-fw/blob/master/main/CommandHandler.cpp#L2153 for the actual equation.
             let command_size: u16 = 4u16 + number_of_params as u16 + param_size;
             self.pad_to_multiple_of_4(command_size);
         }
