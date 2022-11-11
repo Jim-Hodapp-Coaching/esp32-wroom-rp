@@ -141,16 +141,16 @@ impl FirmwareVersion {
 
     // Takes in 8 bytes (e.g. 1.7.4) and returns a FirmwareVersion instance
     fn parse(version: [u8; ARRAY_LENGTH_PLACEHOLDER]) -> FirmwareVersion {
-        let major: u8;
-        let minor: u8;
-        let patch: u8;
+        let major_version: u8;
+        let minor_version: u8;
+        let patch_version: u8;
 
-        [major, _, minor, _, patch, _, _, _] = version;
+        [major_version, _, minor_version, _, patch_version, _, _, _] = version;
 
         FirmwareVersion {
-            major: major,
-            minor: minor,
-            patch: patch,
+            major: major_version,
+            minor: minor_version,
+            patch: patch_version,
         }
     }
 }
