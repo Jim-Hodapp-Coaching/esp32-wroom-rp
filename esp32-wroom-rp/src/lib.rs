@@ -99,7 +99,7 @@ use embedded_hal::blocking::delay::DelayMs;
 const ARRAY_LENGTH_PLACEHOLDER: usize = 8;
 
 /// Highest level error types for this crate.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum Error {
     /// SPI/I2C related communications error with the ESP32 WiFi target
     Bus,
@@ -127,7 +127,7 @@ impl From<protocol::ProtocolError> for Error {
 }
 
 /// A structured representation of a connected NINA firmware device's version number (e.g. 1.7.4).
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, Eq, PartialEq)]
 pub struct FirmwareVersion {
     major: u8,
     minor: u8,
