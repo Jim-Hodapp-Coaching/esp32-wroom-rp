@@ -136,7 +136,9 @@ fn main() -> ! {
                     defmt::info!("Doing a DNS resolve for {}", hostname);
 
                     match wifi.resolve(hostname) {
-                        Ok(ip) => { defmt::info!("Server IP: {:?}", ip); }
+                        Ok(ip) => {
+                            defmt::info!("Server IP: {:?}", ip);
+                        }
                         Err(e) => {
                             defmt::error!("Failed to resolve hostname {}", hostname);
                             defmt::error!("Err: {}", e);

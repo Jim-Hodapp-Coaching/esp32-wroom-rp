@@ -247,8 +247,8 @@ where
             self.send_end_cmd().ok();
 
             // This is to make sure we align correctly
-            // 4 (start byte, command byte, reply byte, end byte) + the sum of all param lengths
-            let command_size: u16 = 4u16 + param_size;
+            // 4 (start byte, command byte, number of params, end byte) + 1 byte for each param + the sum of all param lengths
+            let command_size: u16 = 4u16 + number_of_params as u16 + param_size;
             self.pad_to_multiple_of_4(command_size);
         }
         self.control_pins.esp_deselect();
