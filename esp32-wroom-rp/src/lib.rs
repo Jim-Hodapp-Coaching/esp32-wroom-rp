@@ -12,7 +12,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! esp32_wroom_rp = 0.1
+//! esp32_wroom_rp = 0.3
 //! ```
 //!
 //! Next:
@@ -60,7 +60,7 @@
 //! let spi = spi.init(
 //!     &mut pac.RESETS,
 //!     clocks.peripheral_clock.freq(),
-//!     8_000_000u32.Hz(),
+//!     8.MHz(),
 //!     &MODE_0,
 //! );
 //!
