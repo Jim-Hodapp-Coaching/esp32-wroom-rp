@@ -168,5 +168,6 @@ To get involved, please [request to join the community here on GitHub](https://r
 ## Project Team
 
 * Architect: [Caleb Bourg](https://github.com/calebbourg)
+* Rust Developer: [Dilyn Corner](https://github.com/dilyn-corner)
 * Rust Developer: [Glyn Matthews](https://github.com/glynos)
-* Project Oversight: [Jim Hodapp](https://github.com/jhodapp)
+* Project Oversight & Rust Developer: [Jim Hodapp](https://github.com/jhodapp)
