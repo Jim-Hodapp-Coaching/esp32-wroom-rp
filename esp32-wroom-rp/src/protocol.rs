@@ -241,7 +241,7 @@ pub(crate) struct NinaProtocolHandler<'a, B, C> {
 
 // TODO: look at Nina Firmware code to understand conditions
 // that lead to NinaProtocolVersionMismatch
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum ProtocolError {
     NinaProtocolVersionMismatch,
     CommunicationTimeout,
