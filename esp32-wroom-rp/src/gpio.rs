@@ -130,13 +130,13 @@ where
     }
 
     fn wait_for_esp_ready(&self) {
-        while self.get_esp_ready() != true {
+        while !self.get_esp_ready() {
             //cortex_m::asm::nop(); // Make sure rustc doesn't optimize this loop out
         }
     }
 
     fn wait_for_esp_ack(&self) {
-        while self.get_esp_ack() == false {
+        while !self.get_esp_ack() {
             //cortex_m::asm::nop(); // Make sure rustc doesn't optimize this loop out
         }
     }

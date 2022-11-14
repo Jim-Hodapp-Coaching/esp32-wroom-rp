@@ -17,12 +17,12 @@ impl<P> Operation<P> {
     // Initializes new Operation instance.
     //
     // `has_params` defaults to `true`
-    pub fn new(command: NinaCommand, number_of_params_to_receive: u8) -> Self {
+    pub fn new(nina_command: NinaCommand, number_of_nina_params_to_receive: u8) -> Self {
         Self {
             params: Vec::new(),
-            command: command,
+            command: nina_command,
             has_params: true,
-            number_of_params_to_receive: number_of_params_to_receive,
+            number_of_params_to_receive: number_of_nina_params_to_receive,
         }
     }
 

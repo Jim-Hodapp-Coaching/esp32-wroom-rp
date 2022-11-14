@@ -44,14 +44,14 @@ where
     /// Calling this function puts the connected ESP32-WROOM device in a known good state to accept commands.
     pub fn init<D: DelayMs<u16>>(
         spi: &'a mut S,
-        control_pins: &'a mut C,
+        esp32_control_pins: &'a mut C,
         delay: &mut D,
     ) -> Result<Wifi<'a, S, C>, Error> {
         let mut wifi = Wifi {
             common: WifiCommon {
                 protocol_handler: NinaProtocolHandler {
                     bus: spi,
-                    control_pins: control_pins,
+                    control_pins: esp32_control_pins,
                 },
             },
         };

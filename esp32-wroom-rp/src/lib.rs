@@ -12,7 +12,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! esp32_wroom_rp = 0.1
+//! esp32_wroom_rp = 0.3
 //! ```
 //!
 //! Next:
@@ -60,7 +60,7 @@
 //! let spi = spi.init(
 //!     &mut pac.RESETS,
 //!     clocks.peripheral_clock.freq(),
-//!     8_000_000u32.Hz(),
+//!     8.MHz(),
 //!     &MODE_0,
 //! );
 //!
@@ -99,7 +99,7 @@ use embedded_hal::blocking::delay::DelayMs;
 const ARRAY_LENGTH_PLACEHOLDER: usize = 8;
 
 /// Highest level error types for this crate.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum Error {
     /// SPI/I2C related communications error with the ESP32 WiFi target
     Bus,
@@ -127,7 +127,7 @@ impl From<protocol::ProtocolError> for Error {
 }
 
 /// A structured representation of a connected NINA firmware device's version number (e.g. 1.7.4).
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, Eq, PartialEq)]
 pub struct FirmwareVersion {
     major: u8,
     minor: u8,
@@ -141,16 +141,16 @@ impl FirmwareVersion {
 
     // Takes in 8 bytes (e.g. 1.7.4) and returns a FirmwareVersion instance
     fn parse(version: [u8; ARRAY_LENGTH_PLACEHOLDER]) -> FirmwareVersion {
-        let major: u8;
-        let minor: u8;
-        let patch: u8;
+        let major_version: u8;
+        let minor_version: u8;
+        let patch_version: u8;
 
-        [major, _, minor, _, patch, _, _, _] = version;
+        [major_version, _, minor_version, _, patch_version, _, _, _] = version;
 
         FirmwareVersion {
-            major: major,
-            minor: minor,
-            patch: patch,
+            major: major_version,
+            minor: minor_version,
+            patch: patch_version,
         }
     }
 }
