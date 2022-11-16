@@ -24,8 +24,7 @@ use panic_probe as _;
 use rp2040_hal as hal;
 
 use embedded_hal::spi::MODE_0;
-use embedded_time::fixed_point::FixedPoint;
-use embedded_time::rate::Extensions;
+use fugit::RateExtU32;
 use hal::clocks::Clock;
 use hal::pac;
 
@@ -67,7 +66,7 @@ fn main() -> ! {
     .ok()
     .unwrap();
 
-    let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().integer());
+    let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
 
     // The single-cycle I/O block controls our GPIO pins
     let sio = hal::Sio::new(pac.SIO);
@@ -93,7 +92,7 @@ fn main() -> ! {
     let mut spi = spi.init(
         &mut pac.RESETS,
         clocks.peripheral_clock.freq(),
-        8_000_000u32.Hz(),
+        8.MHz(),
         &MODE_0,
     );
 

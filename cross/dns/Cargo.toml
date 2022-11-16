@@ -22,12 +22,12 @@ defmt-rtt = "0.3.0"
 cortex-m = "0.7"
 cortex-m-rt = "0.7"
 embedded-hal = { version = "0.2", features=["unproven"] }
-embedded-time = "0.12"
 esp32-wroom-rp = { path = "../../esp32-wroom-rp" }
 panic-probe = { version = "0.3.0", features = ["print-rtt"] }
 
-rp2040-hal = { version = "0.5", features=["rt", "eh1_0_alpha"] }
+rp2040-hal = { version = "0.6", features=["rt", "eh1_0_alpha"] }
 rp2040-boot2 = { version = "0.2" }
+fugit = "0.3"
 
 [features]
 default = ['defmt-default']
