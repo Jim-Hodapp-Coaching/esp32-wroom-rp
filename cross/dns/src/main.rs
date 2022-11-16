@@ -132,7 +132,7 @@ fn main() -> ! {
 
                     defmt::info!("set_dns result: {:?}", dns_result);
 
-                    let hostname = "thecitybase.com";
+                    let hostname = "github.com";
                     defmt::info!("Doing a DNS resolve for {}", hostname);
 
                     match wifi.resolve(hostname) {

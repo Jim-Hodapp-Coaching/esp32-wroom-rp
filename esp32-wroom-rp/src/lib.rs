@@ -88,9 +88,12 @@ pub mod gpio;
 /// Fundamental interface for controlling a connected ESP32-WROOM NINA firmware-based Wifi board.
 pub mod wifi;
 
+pub mod network;
 pub mod protocol;
+
 mod spi;
 
+use network::NetworkError;
 use protocol::{ProtocolError, ProtocolInterface};
 
 use defmt::{write, Format, Formatter};
@@ -107,6 +110,9 @@ pub enum Error {
     Bus,
     /// Protocol error in communicating with the ESP32 WiFi target
     Protocol(ProtocolError),
+
+    /// Network related error
+    Network(NetworkError),
 }
 
 impl Format for Error {
@@ -118,6 +124,7 @@ impl Format for Error {
                 "Communication protocol error with ESP32 WiFi target: {}",
                 e
             ),
+            Error::Network(e) => write!(fmt, "Network error: {}", e),
         }
     }
 }
@@ -125,6 +132,12 @@ impl Format for Error {
 impl From<protocol::ProtocolError> for Error {
     fn from(err: protocol::ProtocolError) -> Self {
         Error::Protocol(err)
+    }
+}
+
+impl From<network::NetworkError> for Error {
+    fn from(err: network::NetworkError) -> Self {
+        Error::Network(err)
     }
 }
 
