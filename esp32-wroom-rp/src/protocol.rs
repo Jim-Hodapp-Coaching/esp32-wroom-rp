@@ -248,12 +248,19 @@ pub(crate) struct NinaProtocolHandler<'a, B, C> {
 
 // TODO: look at Nina Firmware code to understand conditions
 // that lead to NinaProtocolVersionMismatch
+/// Errors related to communication with NINA firmware
 #[derive(Debug, Eq, PartialEq)]
 pub enum ProtocolError {
+    /// TODO: look at Nina Firmware code to understand conditions
+    /// that lead to NinaProtocolVersionMismatch
     NinaProtocolVersionMismatch,
+    /// A timeout occurred.
     CommunicationTimeout,
+    /// An invalid NINA command has been sent over the data bus.
     InvalidCommand,
+    /// An invalid number of parameters sent over the data bus.
     InvalidNumberOfParameters,
+    /// Too many parameters sent over the data bus.
     TooManyParameters,
 }
 

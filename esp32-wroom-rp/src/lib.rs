@@ -88,7 +88,9 @@ pub mod gpio;
 /// Fundamental interface for controlling a connected ESP32-WROOM NINA firmware-based Wifi board.
 pub mod wifi;
 
+/// Responsible for interactions over a WiFi network.
 pub mod network;
+/// Responsible for interactions with NINA firmware over a data bus.
 pub mod protocol;
 
 mod spi;
@@ -101,6 +103,7 @@ use embedded_hal::blocking::delay::DelayMs;
 
 const ARRAY_LENGTH_PLACEHOLDER: usize = 8;
 
+/// A four byte array type alias representing an IP address.
 pub type IpAddress = [u8; 4];
 
 /// Highest level error types for this crate.
