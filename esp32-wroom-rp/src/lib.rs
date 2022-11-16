@@ -95,16 +95,13 @@ pub mod protocol;
 
 mod spi;
 
-use network::NetworkError;
+use network::{IpAddress, NetworkError};
 use protocol::{ProtocolError, ProtocolInterface};
 
 use defmt::{write, Format, Formatter};
 use embedded_hal::blocking::delay::DelayMs;
 
 const ARRAY_LENGTH_PLACEHOLDER: usize = 8;
-
-/// A four byte array type alias representing an IP address.
-pub type IpAddress = [u8; 4];
 
 /// Highest level error types for this crate.
 #[derive(Debug, Eq, PartialEq)]

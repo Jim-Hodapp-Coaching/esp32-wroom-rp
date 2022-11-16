@@ -1,5 +1,8 @@
 use defmt::{write, Format, Formatter};
 
+/// A four byte array type alias representing an IP address.
+pub type IpAddress = [u8; 4];
+
 /// Errors that occur due to issues involving communication over
 /// WiFi network.
 #[derive(PartialEq, Eq, Debug)]

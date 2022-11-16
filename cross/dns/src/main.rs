@@ -28,7 +28,7 @@ use fugit::RateExtU32;
 use hal::clocks::Clock;
 use hal::pac;
 
-use esp32_wroom_rp::IpAddress;
+use esp32_wroom_rp::network::IpAddress;
 
 /// The linker will place this boot block at the start of our program image. We
 /// need this to help the ROM bootloader get our code up and running.
