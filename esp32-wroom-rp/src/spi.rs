@@ -210,9 +210,9 @@ where
         ip_address.clone_from_slice(ip_slice);
 
         if ip_address != dummy {
-            return Ok(ip_address);
+            Ok(ip_address)
         } else {
-            return Err(NetworkError::DnsResolveFailed.into());
+            Err(NetworkError::DnsResolveFailed.into())
         }
     }
 }

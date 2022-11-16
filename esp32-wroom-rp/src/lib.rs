@@ -202,27 +202,27 @@ where
     }
 
     fn firmware_version(&mut self) -> Result<FirmwareVersion, Error> {
-        Ok(self.protocol_handler.get_fw_version()?)
+        self.protocol_handler.get_fw_version()
     }
 
     fn join(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error> {
-        Ok(self.protocol_handler.set_passphrase(ssid, passphrase)?)
+        self.protocol_handler.set_passphrase(ssid, passphrase)
     }
 
     fn leave(&mut self) -> Result<(), Error> {
-        Ok(self.protocol_handler.disconnect()?)
+        self.protocol_handler.disconnect()
     }
 
     fn get_connection_status(&mut self) -> Result<u8, Error> {
-        Ok(self.protocol_handler.get_conn_status()?)
+        self.protocol_handler.get_conn_status()
     }
 
     fn set_dns(&mut self, dns1: IpAddress, dns2: Option<IpAddress>) -> Result<(), Error> {
-        Ok(self.protocol_handler.set_dns_config(dns1, dns2)?)
+        self.protocol_handler.set_dns_config(dns1, dns2)
     }
 
     fn resolve(&mut self, hostname: &str) -> Result<IpAddress, Error> {
-        Ok(self.protocol_handler.resolve(hostname)?)
+        self.protocol_handler.resolve(hostname)
     }
 }
 
