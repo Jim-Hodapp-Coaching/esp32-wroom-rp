@@ -124,7 +124,8 @@ fn main() -> ! {
                 if byte == 3 {
                     defmt::info!("Connected to Network: {:?}", SSID);
 
-                    // The IPAddress of our DNS server to resolve hostnames with
+                    // The IPAddresses of two DNS servers to resolve hostnames with.
+                    // Note that failover from ip1 to ip2 is fully functional.
                     let ip1: IpAddress = [9, 9, 9, 9];
                     let ip2: IpAddress = [8, 8, 8, 8];
                     let dns_result = wifi.set_dns(ip1, Some(ip2));
