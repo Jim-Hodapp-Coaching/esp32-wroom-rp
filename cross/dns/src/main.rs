@@ -79,7 +79,7 @@ fn main() -> ! {
         &mut pac.RESETS,
     );
 
-    defmt::info!("ESP32-WROOM-RP join/leave WiFi network");
+    defmt::info!("ESP32-WROOM-RP DNS resolve example");
 
     // These are implicitly used by the spi driver if they are in the correct mode
     let _spi_miso = pins.gpio16.into_mode::<hal::gpio::FunctionSpi>();
