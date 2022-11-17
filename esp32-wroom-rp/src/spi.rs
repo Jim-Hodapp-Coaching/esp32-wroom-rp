@@ -86,7 +86,7 @@ where
         self.common.get_connection_status()
     }
 
-    /// Sets 1 or 2 DNS servers that will be contacted for hostname resolution.
+    /// Sets 1 or 2 DNS servers that are used for network hostname resolution.
     pub fn set_dns(&mut self, dns1: IpAddress, dns2: Option<IpAddress>) -> Result<(), Error> {
         self.common.set_dns(dns1, dns2)
     }
