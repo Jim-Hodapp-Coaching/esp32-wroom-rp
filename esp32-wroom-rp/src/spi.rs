@@ -91,7 +91,7 @@ where
         self.common.set_dns(dns1, dns2)
     }
 
-    /// Attempts the given hostname to an IP address using server(s) set by [set_dns].
+    /// Queries the DNS server(s) provided via [set_dns] for the associated IP address to the provided hostname.
     pub fn resolve(&mut self, hostname: &str) -> Result<IpAddress, Error> {
         self.common.resolve(hostname)
     }
