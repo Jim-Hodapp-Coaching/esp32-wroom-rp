@@ -7,7 +7,7 @@ pub type IpAddress = [u8; 4];
 /// WiFi network.
 #[derive(PartialEq, Eq, Debug)]
 pub enum NetworkError {
-    /// Failure to resolve a hostname to an IP address.
+    /// Failed to resolve a hostname for the provided IP address.
     DnsResolveFailed,
 }
 
