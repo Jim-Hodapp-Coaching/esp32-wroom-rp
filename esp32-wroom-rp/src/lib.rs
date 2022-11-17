@@ -88,7 +88,7 @@ pub mod gpio;
 /// Fundamental interface for controlling a connected ESP32-WROOM NINA firmware-based Wifi board.
 pub mod wifi;
 
-/// Responsible for interactions over a WiFi network.
+/// Responsible for interactions over a WiFi network and also contains related types.
 pub mod network;
 /// Responsible for interactions with NINA firmware over a data bus.
 pub mod protocol;
