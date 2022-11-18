@@ -88,9 +88,14 @@ pub mod gpio;
 /// Fundamental interface for controlling a connected ESP32-WROOM NINA firmware-based Wifi board.
 pub mod wifi;
 
+/// Responsible for interactions over a WiFi network and also contains related types.
+pub mod network;
+/// Responsible for interactions with NINA firmware over a data bus.
 pub mod protocol;
+
 mod spi;
 
+use network::{IpAddress, NetworkError};
 use protocol::{ProtocolError, ProtocolInterface};
 
 use defmt::{write, Format, Formatter};
@@ -105,6 +110,9 @@ pub enum Error {
     Bus,
     /// Protocol error in communicating with the ESP32 WiFi target
     Protocol(ProtocolError),
+
+    /// Network related error
+    Network(NetworkError),
 }
 
 impl Format for Error {
@@ -116,6 +124,7 @@ impl Format for Error {
                 "Communication protocol error with ESP32 WiFi target: {}",
                 e
             ),
+            Error::Network(e) => write!(fmt, "Network error: {}", e),
         }
     }
 }
@@ -123,6 +132,12 @@ impl Format for Error {
 impl From<protocol::ProtocolError> for Error {
     fn from(err: protocol::ProtocolError) -> Self {
         Error::Protocol(err)
+    }
+}
+
+impl From<network::NetworkError> for Error {
+    fn from(err: network::NetworkError) -> Self {
+        Error::Network(err)
     }
 }
 
@@ -184,19 +199,27 @@ where
     }
 
     fn firmware_version(&mut self) -> Result<FirmwareVersion, Error> {
-        Ok(self.protocol_handler.get_fw_version()?)
+        self.protocol_handler.get_fw_version()
     }
 
     fn join(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error> {
-        Ok(self.protocol_handler.set_passphrase(ssid, passphrase)?)
+        self.protocol_handler.set_passphrase(ssid, passphrase)
     }
 
     fn leave(&mut self) -> Result<(), Error> {
-        Ok(self.protocol_handler.disconnect()?)
+        self.protocol_handler.disconnect()
     }
 
     fn get_connection_status(&mut self) -> Result<u8, Error> {
-        Ok(self.protocol_handler.get_conn_status()?)
+        self.protocol_handler.get_conn_status()
+    }
+
+    fn set_dns(&mut self, dns1: IpAddress, dns2: Option<IpAddress>) -> Result<(), Error> {
+        self.protocol_handler.set_dns_config(dns1, dns2)
+    }
+
+    fn resolve(&mut self, hostname: &str) -> Result<IpAddress, Error> {
+        self.protocol_handler.resolve(hostname)
     }
 }
 

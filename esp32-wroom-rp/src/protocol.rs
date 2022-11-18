@@ -17,6 +17,9 @@ pub(crate) enum NinaCommand {
     SetPassphrase = 0x11u8,
     GetConnStatus = 0x20u8,
     Disconnect = 0x30u8,
+    SetDNSConfig = 0x15u8,
+    ReqHostByName = 0x34u8,
+    GetHostByName = 0x35u8,
 }
 
 pub(crate) trait NinaParam {
@@ -225,10 +228,14 @@ impl NinaParam for NinaLargeArrayParam {
 pub(crate) trait ProtocolInterface {
     fn init(&mut self);
     fn reset<D: DelayMs<u16>>(&mut self, delay: &mut D);
-    fn get_fw_version(&mut self) -> Result<FirmwareVersion, ProtocolError>;
-    fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), ProtocolError>;
-    fn disconnect(&mut self) -> Result<(), ProtocolError>;
-    fn get_conn_status(&mut self) -> Result<u8, ProtocolError>;
+    fn get_fw_version(&mut self) -> Result<FirmwareVersion, Error>;
+    fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error>;
+    fn disconnect(&mut self) -> Result<(), Error>;
+    fn get_conn_status(&mut self) -> Result<u8, Error>;
+    fn set_dns_config(&mut self, dns1: IpAddress, dns2: Option<IpAddress>) -> Result<(), Error>;
+    fn req_host_by_name(&mut self, hostname: &str) -> Result<u8, Error>;
+    fn get_host_by_name(&mut self) -> Result<[u8; 8], Error>;
+    fn resolve(&mut self, hostname: &str) -> Result<IpAddress, Error>;
 }
 
 #[derive(Debug)]
@@ -241,12 +248,19 @@ pub(crate) struct NinaProtocolHandler<'a, B, C> {
 
 // TODO: look at Nina Firmware code to understand conditions
 // that lead to NinaProtocolVersionMismatch
+/// Errors related to communication with NINA firmware
 #[derive(Debug, Eq, PartialEq)]
 pub enum ProtocolError {
+    /// TODO: look at Nina Firmware code to understand conditions
+    /// that lead to NinaProtocolVersionMismatch
     NinaProtocolVersionMismatch,
+    /// A timeout occurred.
     CommunicationTimeout,
+    /// An invalid NINA command has been sent over the data bus.
     InvalidCommand,
+    /// An invalid number of parameters sent over the data bus.
     InvalidNumberOfParameters,
+    /// Too many parameters sent over the data bus.
     TooManyParameters,
 }
 
@@ -257,7 +271,7 @@ impl Format for ProtocolError {
             ProtocolError::CommunicationTimeout => write!(fmt, "Communication with ESP32 target timed out."),
             ProtocolError::InvalidCommand => write!(fmt, "Encountered an invalid command while communicating with ESP32 target."),
             ProtocolError::InvalidNumberOfParameters => write!(fmt, "Encountered an unexpected number of parameters for a NINA command while communicating with ESP32 target."),
-            ProtocolError::TooManyParameters => write!(fmt, "Encountered too many parameters for a NINA command while communicating with ESP32 target."),
+            ProtocolError::TooManyParameters => write!(fmt, "Encountered too many parameters for a NINA command while communicating with ESP32 target.")
         }
     }
 }
