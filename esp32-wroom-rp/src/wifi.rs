@@ -1,11 +1,10 @@
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::spi::Transfer;
 
-use super::WifiCommon;
 use super::{Error, FirmwareVersion};
 
 use super::gpio::EspControlInterface;
-use super::protocol::NinaProtocolHandler;
+use super::protocol::{NinaProtocolHandler, ProtocolInterface};
 
 use super::IpAddress;
 
@@ -71,5 +70,48 @@ where
     /// Queries the DNS server(s) provided via [set_dns] for the associated IP address to the provided hostname.
     pub fn resolve(&mut self, hostname: &str) -> Result<IpAddress, Error> {
         self.common.resolve(hostname)
+    }
+}
+
+#[derive(Debug)]
+struct WifiCommon<PH> {
+    protocol_handler: PH,
+}
+
+impl<PH> WifiCommon<PH>
+where
+    PH: ProtocolInterface,
+{
+    fn init<D: DelayMs<u16>>(&mut self, delay: &mut D) {
+        self.protocol_handler.init();
+        self.reset(delay);
+    }
+
+    fn reset<D: DelayMs<u16>>(&mut self, delay: &mut D) {
+        self.protocol_handler.reset(delay)
+    }
+
+    fn firmware_version(&mut self) -> Result<FirmwareVersion, Error> {
+        self.protocol_handler.get_fw_version()
+    }
+
+    fn join(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error> {
+        self.protocol_handler.set_passphrase(ssid, passphrase)
+    }
+
+    fn leave(&mut self) -> Result<(), Error> {
+        self.protocol_handler.disconnect()
+    }
+
+    fn get_connection_status(&mut self) -> Result<u8, Error> {
+        self.protocol_handler.get_conn_status()
+    }
+
+    fn set_dns(&mut self, dns1: IpAddress, dns2: Option<IpAddress>) -> Result<(), Error> {
+        self.protocol_handler.set_dns_config(dns1, dns2)
+    }
+
+    fn resolve(&mut self, hostname: &str) -> Result<IpAddress, Error> {
+        self.protocol_handler.resolve(hostname)
     }
 }
