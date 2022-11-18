@@ -108,6 +108,7 @@ use super::{Error, FirmwareVersion};
 
 use super::gpio::EspControlInterface;
 use super::protocol::{NinaProtocolHandler, ProtocolInterface};
+use super::tcp_client::{TcpClient, TcpClientCommon};
 
 use super::IpAddress;
 
@@ -173,6 +174,16 @@ where
     /// Queries the DNS server(s) provided via [set_dns] for the associated IP address to the provided hostname.
     pub fn resolve(&mut self, hostname: &str) -> Result<IpAddress, Error> {
         self.common.resolve(hostname)
+    }
+
+    pub fn build_tcp_client(&self) -> TcpClient<S, C> {
+        TcpClient {
+            common: TcpClientCommon {
+                protocol_handler: &self.common.protocol_handler
+            },
+            server_ip_address: None,
+            server_hostname: None
+        }
     }
 }
 
