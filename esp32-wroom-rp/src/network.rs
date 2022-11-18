@@ -15,7 +15,10 @@ impl Format for NetworkError {
     fn format(&self, fmt: Formatter) {
         match self {
             NetworkError::DnsResolveFailed => {
-                write!(fmt, "Failed to resolve a hostname for the provided IP address")
+                write!(
+                    fmt,
+                    "Failed to resolve a hostname for the provided IP address"
+                )
             }
         }
     }
