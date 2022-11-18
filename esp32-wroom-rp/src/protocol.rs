@@ -1,12 +1,13 @@
 pub(crate) mod operation;
 
-use super::*;
-
 use embedded_hal::blocking::delay::DelayMs;
 
 use defmt::{write, Format, Formatter};
 
 use heapless::{String, Vec};
+
+use super::network::{IpAddress, Socket};
+use super::{Error, FirmwareVersion};
 
 pub(crate) const MAX_NINA_PARAM_LENGTH: usize = 255;
 
@@ -20,6 +21,7 @@ pub(crate) enum NinaCommand {
     SetDNSConfig = 0x15u8,
     ReqHostByName = 0x34u8,
     GetHostByName = 0x35u8,
+    GetSocket = 0x3fu8,
 }
 
 pub(crate) trait NinaParam {
@@ -236,6 +238,7 @@ pub(crate) trait ProtocolInterface {
     fn req_host_by_name(&mut self, hostname: &str) -> Result<u8, Error>;
     fn get_host_by_name(&mut self) -> Result<[u8; 8], Error>;
     fn resolve(&mut self, hostname: &str) -> Result<IpAddress, Error>;
+    fn get_socket(&mut self) -> Result<Socket, Error>;
 }
 
 #[derive(Debug)]
