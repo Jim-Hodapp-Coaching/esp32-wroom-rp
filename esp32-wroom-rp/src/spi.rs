@@ -6,12 +6,10 @@ use super::protocol::{
     ProtocolInterface,
 };
 
-use super::network::NetworkError;
+use super::network::{IpAddress, NetworkError, Socket};
 use super::protocol::operation::Operation;
 use super::protocol::ProtocolError;
 use super::{Error, FirmwareVersion, ARRAY_LENGTH_PLACEHOLDER};
-
-use super::IpAddress;
 
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::spi::Transfer;
@@ -148,6 +146,17 @@ where
         } else {
             Err(NetworkError::DnsResolveFailed.into())
         }
+    }
+
+    fn get_socket(&mut self) -> Result<Socket, Error> {
+        let operation =
+            Operation::new(NinaCommand::GetSocket, 1).with_no_params(NinaNoParams::new(""));
+
+        self.execute(&operation)?;
+
+        let result = self.receive(&operation)?;
+
+        Ok(result[0])
     }
 }
 

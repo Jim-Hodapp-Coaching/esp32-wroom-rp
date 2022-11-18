@@ -176,13 +176,13 @@ where
         self.common.resolve(hostname)
     }
 
-    pub fn build_tcp_client(&self) -> TcpClient<S, C> {
+    pub fn build_tcp_client(&'a mut self) -> TcpClient<S, C> {
         TcpClient {
             common: TcpClientCommon {
-                protocol_handler: &self.common.protocol_handler
+                protocol_handler: &mut self.common.protocol_handler,
             },
             server_ip_address: None,
-            server_hostname: None
+            server_hostname: None,
         }
     }
 }
