@@ -96,10 +96,9 @@ pub mod protocol;
 mod spi;
 
 use network::{IpAddress, NetworkError};
-use protocol::{ProtocolError, ProtocolInterface};
+use protocol::ProtocolError;
 
 use defmt::{write, Format, Formatter};
-use embedded_hal::blocking::delay::DelayMs;
 
 use self::wifi::ConnectionStatus;
 
@@ -181,50 +180,6 @@ impl Format for FirmwareVersion {
         );
     }
 }
-
-#[derive(Debug)]
-struct WifiCommon<PH> {
-    protocol_handler: PH,
-}
-
-impl<PH> WifiCommon<PH>
-where
-    PH: ProtocolInterface,
-{
-    fn init<D: DelayMs<u16>>(&mut self, delay: &mut D) {
-        self.protocol_handler.init();
-        self.reset(delay);
-    }
-
-    fn reset<D: DelayMs<u16>>(&mut self, delay: &mut D) {
-        self.protocol_handler.reset(delay)
-    }
-
-    fn firmware_version(&mut self) -> Result<FirmwareVersion, Error> {
-        self.protocol_handler.get_fw_version()
-    }
-
-    fn join(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error> {
-        self.protocol_handler.set_passphrase(ssid, passphrase)
-    }
-
-    fn leave(&mut self) -> Result<(), Error> {
-        self.protocol_handler.disconnect()
-    }
-
-    fn get_connection_status(&mut self) -> Result<ConnectionStatus, Error> {
-        self.protocol_handler.get_conn_status()
-    }
-
-    fn set_dns(&mut self, dns1: IpAddress, dns2: Option<IpAddress>) -> Result<(), Error> {
-        self.protocol_handler.set_dns_config(dns1, dns2)
-    }
-
-    fn resolve(&mut self, hostname: &str) -> Result<IpAddress, Error> {
-        self.protocol_handler.resolve(hostname)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
