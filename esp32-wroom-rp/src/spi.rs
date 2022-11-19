@@ -74,8 +74,7 @@ where
 
         let result = self.receive(&operation)?;
 
-        // TODO:
-        Ok(ConnectionStatus::Connected)
+        Ok(ConnectionStatus::from(result[0]))
     }
 
     fn disconnect(&mut self) -> Result<(), Error> {
