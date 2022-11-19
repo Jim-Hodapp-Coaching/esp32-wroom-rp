@@ -16,3 +16,22 @@ pub enum ConnectionStatus {
     ApConnected,
     ApFailed, // Not in the Reference Library
 }
+
+impl From<u8> for ConnectionStatus {
+    fn from(status: u8) -> ConnectionStatus {
+        match status {
+            0 => ConnectionStatus::Idle,
+            1 => ConnectionStatus::NoActiveSsid,
+            2 => ConnectionStatus::ScanCompleted,
+            3 => ConnectionStatus::Connected,
+            4 => ConnectionStatus::Failed,
+            5 => ConnectionStatus::Lost,
+            6 => ConnectionStatus::Disconnected,
+            7 => ConnectionStatus::ApListening,
+            8 => ConnectionStatus::ApConnected,
+            9 => ConnectionStatus::ApFailed,
+            255 => ConnectionStatus::NoEsp32,
+            _ => panic!("Unexpected value: {}", status),
+        }
+    }
+}
