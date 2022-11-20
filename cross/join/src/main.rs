@@ -113,11 +113,11 @@ fn main() -> ! {
 
     defmt::info!("Entering main loop");
 
+    let mut sleep: u32 = 1500;
     loop {
         match wifi.get_connection_status() {
             Ok(byte) => {
                 defmt::info!("Get Connection Result: {:?}", byte);
-                let sleep: u32 = 1500;
                 delay.delay_ms(sleep);
 
                 if byte == 3 {
@@ -129,6 +129,7 @@ fn main() -> ! {
                     wifi.leave().ok().unwrap();
                 } else if byte == 6 {
                     defmt::info!("Disconnected from Network: {:?}", SSID);
+                    sleep = 20000; // No need to loop as often after disconnecting
                 }
             }
             Err(e) => {
