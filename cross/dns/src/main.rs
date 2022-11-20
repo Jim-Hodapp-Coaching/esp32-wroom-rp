@@ -115,6 +115,7 @@ fn main() -> ! {
 
     defmt::info!("Entering main loop");
 
+    let mut sleep: u32 = 1500;
     loop {
         match wifi.get_connection_status() {
             Ok(status) => {
@@ -149,6 +150,7 @@ fn main() -> ! {
                     wifi.leave().ok().unwrap();
                 } else if status == ConnectionStatus::Disconnected {
                     defmt::info!("Disconnected from Network: {:?}", SSID);
+                    sleep = 20000; // No need to loop as often after disconnecting
                 }
             }
             Err(e) => {
