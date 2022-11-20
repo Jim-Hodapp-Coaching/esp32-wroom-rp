@@ -1,8 +1,9 @@
 [workspace]
 members = [
+  "dns",
   "get_fw_version",
   "join",
-  "dns"
+  "send_data_tcp"
 ]
 
 [profile.dev]
