@@ -133,6 +133,7 @@ fn main() -> ! {
                     sleep = 20000; // No need to loop as often after disconnecting
                 } else {
                     defmt::info!("Unhandled WiFi connection status: {:?}", status);
+                    sleep = 20000; // No need to loop as often after disconnecting
                 }
             }
             Err(e) => {
