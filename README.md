@@ -10,12 +10,18 @@ Future implementations will support the [ESP32-WROOM-DA](https://www.espressif.c
 ## Usage
 
 ```rust
-use esp32_wroom_rp::wifi;
+use rp2040_hal as hal;
+
+use esp32_wroom_rp::{wifi::Wifi, gpio::EspControlPins};
 use embedded_hal::blocking::delay::DelayMs;
 
-let spi_miso = pins.gpio16.into_mode::<hal::gpio::FunctionSpi>();
-let spi_sclk = pins.gpio18.into_mode::<hal::gpio::FunctionSpi>();
-let spi_mosi = pins.gpio19.into_mode::<hal::gpio::FunctionSpi>();
+use embedded_hal::spi::MODE_0;
+use fugit::RateExtU32;
+use hal::{clocks::Clock, pac};
+
+let _spi_miso = pins.gpio16.into_mode::<hal::gpio::FunctionSpi>();
+let _spi_sclk = pins.gpio18.into_mode::<hal::gpio::FunctionSpi>();
+let _spi_mosi = pins.gpio19.into_mode::<hal::gpio::FunctionSpi>();
 
 let spi = hal::Spi::<_, _, 8>::new(pac.SPI0);
 
@@ -27,7 +33,7 @@ let spi = spi.init(
     &MODE_0,
 );
 
-let esp_pins = esp32_wroom_rp::gpio::EspControlPins {
+let esp_pins = EspControlPins {
     // CS on pin x (GPIO7)
     cs: pins.gpio7.into_mode::<hal::gpio::PushPullOutput>(),
     // GPIO0 on pin x (GPIO2)
@@ -38,7 +44,7 @@ let esp_pins = esp32_wroom_rp::gpio::EspControlPins {
     ack: pins.gpio10.into_mode::<hal::gpio::FloatingInput>(),
 };
 
-let mut wifi = esp32_wroom_rp::wifi::Wifi::init(spi, esp_pins, &mut delay).unwrap();
+let wifi = Wifi::init(spi, esp_pins, &mut delay).unwrap();
 let version = wifi.firmware_version();
 ```
 
