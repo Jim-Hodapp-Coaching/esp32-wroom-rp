@@ -10,7 +10,7 @@
 
 extern crate esp32_wroom_rp;
 
-include!("secrets/secrets.rs");
+include!("../../secrets/secrets.rs");
 
 // The macro for our start-up function
 use cortex_m_rt::entry;
