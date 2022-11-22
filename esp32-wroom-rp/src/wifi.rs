@@ -114,6 +114,8 @@ use super::tcp_client::{TcpClient, TcpClientCommon};
 
 use super::IpAddress;
 
+use defmt::{write, Format, Formatter};
+
 /// An enumerated type that represents the current WiFi network connection status.
 #[repr(u8)]
 #[derive(Eq, PartialEq, PartialOrd, Debug)]
