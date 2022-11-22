@@ -1,5 +1,7 @@
 pub use crate::spi::Wifi;
 
+use defmt::{write, Format, Formatter};
+
 /// An enumerated type that represents the current WiFi network connection status.
 #[repr(u8)]
 #[derive(Eq, PartialEq, PartialOrd, Debug)]
@@ -45,6 +47,60 @@ impl From<u8> for ConnectionStatus {
             9   => ConnectionStatus::ApFailed,
             255 => ConnectionStatus::NoEsp32,
             _   => ConnectionStatus::Invalid,
+        }
+    }
+}
+
+impl Format for ConnectionStatus {
+    fn format(&self, fmt: Formatter) {
+        match self {
+            ConnectionStatus::NoEsp32 => write!(
+                fmt,"No device is connected to hardware"
+                ),
+            ConnectionStatus::Idle => write!(
+                fmt,
+                "Temporary status while attempting to connect to WiFi network"
+                ),
+            ConnectionStatus::NoActiveSsid => write!(
+                fmt,
+                "No SSID is available"
+                ),
+            ConnectionStatus::ScanCompleted => write!(
+                fmt,
+                "WiFi network scan has finished"
+                ),
+            ConnectionStatus::Connected => write!(
+                fmt,
+                "Device is connected to WiFi network"
+                ),
+            ConnectionStatus::Failed => write!(
+                fmt,
+                "Device failed to connect to WiFi network"
+                ),
+            ConnectionStatus::Lost => write!(
+                fmt,
+                "Device lost connection to WiFi network"
+                ),
+            ConnectionStatus::Disconnected => write!(
+                fmt,
+                "Device disconnected from WiFi network"
+                ),
+            ConnectionStatus::ApListening => write!(
+                fmt,
+                "Device is lstening for connections in Access Point mode"
+                ),
+            ConnectionStatus::ApConnected => write!(
+                fmt,
+                "Device is connected in Access Point mode"
+                ),
+            ConnectionStatus::ApFailed => write!(
+                fmt,
+                "Device failed to make connection in Access Point mode"
+                ),
+            ConnectionStatus::Invalid => write!(
+                fmt,
+                "Unexpected value returned from device, reset may be required"
+                ),
         }
     }
 }
