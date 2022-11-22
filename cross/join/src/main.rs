@@ -119,6 +119,7 @@ fn main() -> ! {
         match wifi.get_connection_status() {
             Ok(status) => {
                 defmt::info!("Get Connection Result: {:?}", status);
+
                 let sleep: u32 = 1500;
                 delay.delay_ms(sleep);
 
@@ -132,6 +133,8 @@ fn main() -> ! {
                 } else if status == ConnectionStatus::Disconnected {
                     defmt::info!("Disconnected from Network: {:?}", SSID);
                     sleep = 20000; // No need to loop as often after disconnecting
+                } else {
+                    defmt::info!("Unhandled WiFi connection status: {:?}", status);
                 }
             }
             Err(e) => {

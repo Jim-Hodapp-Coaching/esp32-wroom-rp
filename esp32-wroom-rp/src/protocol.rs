@@ -6,11 +6,12 @@ use defmt::{write, Format, Formatter};
 
 use heapless::{String, Vec};
 
-
 use super::wifi::ConnectionStatus;
 
 use super::network::{IpAddress, Socket};
 use super::{Error, FirmwareVersion};
+use super::network::{IpAddress, Socket};
+use super::wifi::ConnectionStatus;
 
 pub(crate) const MAX_NINA_PARAM_LENGTH: usize = 255;
 

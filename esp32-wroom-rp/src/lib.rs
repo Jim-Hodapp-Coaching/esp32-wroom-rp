@@ -183,6 +183,7 @@ impl Format for FirmwareVersion {
         );
     }
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -6,10 +6,11 @@ use super::protocol::{
     ProtocolInterface,
 };
 
+use super::{Error, FirmwareVersion, ARRAY_LENGTH_PLACEHOLDER};
 use super::network::{IpAddress, NetworkError, Socket};
 use super::protocol::operation::Operation;
 use super::protocol::ProtocolError;
-use super::{Error, FirmwareVersion, ARRAY_LENGTH_PLACEHOLDER};
+use super::wifi::ConnectionStatus;
 
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::spi::Transfer;
