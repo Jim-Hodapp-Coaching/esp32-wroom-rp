@@ -6,10 +6,11 @@ use super::protocol::{
     ProtocolInterface,
 };
 
+use super::{Error, FirmwareVersion, ARRAY_LENGTH_PLACEHOLDER};
 use super::network::{IpAddress, NetworkError, Socket};
 use super::protocol::operation::Operation;
 use super::protocol::ProtocolError;
-use super::{Error, FirmwareVersion, ARRAY_LENGTH_PLACEHOLDER};
+use super::wifi::ConnectionStatus;
 
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::spi::Transfer;
@@ -65,7 +66,7 @@ where
         Ok(())
     }
 
-    fn get_conn_status(&mut self) -> Result<u8, Error> {
+    fn get_conn_status(&mut self) -> Result<ConnectionStatus, Error> {
         let operation =
             Operation::new(NinaCommand::GetConnStatus, 1).with_no_params(NinaNoParams::new(""));
 
@@ -73,7 +74,8 @@ where
 
         let result = self.receive(&operation)?;
 
-        Ok(result[0])
+        // TODO:
+        Ok(ConnectionStatus::Connected)
     }
 
     fn disconnect(&mut self) -> Result<(), Error> {

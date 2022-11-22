@@ -6,8 +6,9 @@ use defmt::{write, Format, Formatter};
 
 use heapless::{String, Vec};
 
-use super::network::{IpAddress, Socket};
 use super::{Error, FirmwareVersion};
+use super::network::{IpAddress, Socket};
+use super::wifi::ConnectionStatus;
 
 pub(crate) const MAX_NINA_PARAM_LENGTH: usize = 255;
 
@@ -233,7 +234,7 @@ pub(crate) trait ProtocolInterface {
     fn get_fw_version(&mut self) -> Result<FirmwareVersion, Error>;
     fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error>;
     fn disconnect(&mut self) -> Result<(), Error>;
-    fn get_conn_status(&mut self) -> Result<u8, Error>;
+    fn get_conn_status(&mut self) -> Result<ConnectionStatus, Error>;
     fn set_dns_config(&mut self, dns1: IpAddress, dns2: Option<IpAddress>) -> Result<(), Error>;
     fn req_host_by_name(&mut self, hostname: &str) -> Result<u8, Error>;
     fn get_host_by_name(&mut self) -> Result<[u8; 8], Error>;

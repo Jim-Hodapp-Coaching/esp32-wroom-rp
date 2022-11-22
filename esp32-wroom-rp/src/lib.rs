@@ -103,6 +103,8 @@ use protocol::ProtocolError;
 
 use defmt::{write, Format, Formatter};
 
+use self::wifi::ConnectionStatus;
+
 const ARRAY_LENGTH_PLACEHOLDER: usize = 8;
 
 /// Highest level error types for this crate.
@@ -181,6 +183,7 @@ impl Format for FirmwareVersion {
         );
     }
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;

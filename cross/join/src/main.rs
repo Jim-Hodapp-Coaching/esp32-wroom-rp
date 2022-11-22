@@ -10,6 +10,7 @@
 #![no_main]
 
 extern crate esp32_wroom_rp;
+use esp32_wroom_rp::wifi::ConnectionStatus;
 
 include!("../../secrets/secrets.rs");
 
@@ -116,20 +117,22 @@ fn main() -> ! {
     let mut sleep: u32 = 1500;
     loop {
         match wifi.get_connection_status() {
-            Ok(byte) => {
-                defmt::info!("Get Connection Result: {:?}", byte);
+            Ok(status) => {
+                defmt::info!("Get Connection Result: {:?}", status);
                 delay.delay_ms(sleep);
 
-                if byte == 3 {
+                if status == ConnectionStatus::Connected {
                     defmt::info!("Connected to Network: {:?}", SSID);
 
                     defmt::info!("Sleeping for 5 seconds before disconnecting...");
                     delay.delay_ms(5000);
 
                     wifi.leave().ok().unwrap();
-                } else if byte == 6 {
+                } else if status == ConnectionStatus::Disconnected {
                     defmt::info!("Disconnected from Network: {:?}", SSID);
                     sleep = 20000; // No need to loop as often after disconnecting
+                } else {
+                    defmt::info!("Unhandled WiFi connection status: {:?}", status);
                 }
             }
             Err(e) => {
