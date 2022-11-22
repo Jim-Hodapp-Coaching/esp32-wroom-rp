@@ -18,6 +18,8 @@ use embedded_hal::blocking::spi::Transfer;
 
 use core::convert::Infallible;
 
+use super::wifi::ConnectionStatus;
+
 // FIXME: remove before commit
 //use defmt_rtt as _;
 
@@ -82,7 +84,7 @@ where
     ///
     /// NOTE: A future version will provide a enumerated type instead of the raw integer values
     /// from the NINA firmware.
-    pub fn get_connection_status(&mut self) -> Result<u8, Error> {
+    pub fn get_connection_status(&mut self) -> Result<ConnectionStatus, Error> {
         self.common.get_connection_status()
     }
 
@@ -135,7 +137,7 @@ where
         Ok(())
     }
 
-    fn get_conn_status(&mut self) -> Result<u8, Error> {
+    fn get_conn_status(&mut self) -> Result<ConnectionStatus, Error> {
         let operation =
             Operation::new(NinaCommand::GetConnStatus, 1).with_no_params(NinaNoParams::new(""));
 
@@ -143,7 +145,8 @@ where
 
         let result = self.receive(&operation)?;
 
-        Ok(result[0])
+        // TODO:
+        Ok(ConnectionStatus::Connected)
     }
 
     fn disconnect(&mut self) -> Result<(), Error> {

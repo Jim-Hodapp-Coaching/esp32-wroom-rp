@@ -101,6 +101,8 @@ use protocol::{ProtocolError, ProtocolInterface};
 use defmt::{write, Format, Formatter};
 use embedded_hal::blocking::delay::DelayMs;
 
+use self::wifi::ConnectionStatus;
+
 const ARRAY_LENGTH_PLACEHOLDER: usize = 8;
 
 /// Highest level error types for this crate.
@@ -210,7 +212,7 @@ where
         self.protocol_handler.disconnect()
     }
 
-    fn get_connection_status(&mut self) -> Result<u8, Error> {
+    fn get_connection_status(&mut self) -> Result<ConnectionStatus, Error> {
         self.protocol_handler.get_conn_status()
     }
 
