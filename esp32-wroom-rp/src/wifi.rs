@@ -7,7 +7,7 @@ pub enum ConnectionStatus {
     /// No device is connected to hardware
     NoEsp32 = 255,
     /// Temporary status while attempting to connect to WiFi network
-    Idle = 0, // Assigned by WiFi.begin() in the Reference Library, is this relevant?
+    Idle = 0,
     /// No SSID is available
     NoActiveSsid,
     /// WiFi network scan has finished
@@ -25,7 +25,7 @@ pub enum ConnectionStatus {
     /// Device is connected in Access Point mode
     ApConnected,
     /// Device failed to make connection in Access Point mode
-    ApFailed, // Not in the Reference Library
+    ApFailed,
     /// Unexpected value returned from device, reset may be required
     Invalid,
 }
