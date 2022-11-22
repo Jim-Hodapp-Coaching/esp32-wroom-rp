@@ -1,20 +1,32 @@
 pub use crate::spi::Wifi;
 
-/// Defines the WiFi network connection status
+/// An enumerated type that represents the current WiFi network connection status.
 #[repr(u8)]
 #[derive(Eq, PartialEq, PartialOrd, Debug)]
 pub enum ConnectionStatus {
+    /// No device is connected to hardware
     NoEsp32 = 255,
+    /// Temporary status while attempting to connect to WiFi network
     Idle = 0, // Assigned by WiFi.begin() in the Reference Library, is this relevant?
+    /// No SSID is available
     NoActiveSsid,
+    /// WiFi network scan has finished
     ScanCompleted,
+    /// Device is connected to WiFi network
     Connected,
+    /// Device failed to connect to WiFi network
     Failed,
+    /// Device lost connection to WiFi network
     Lost,
+    /// Device disconnected from WiFi network
     Disconnected,
+    /// Device is listening for connections in Access Point mode
     ApListening,
+    /// Device is connected in Access Point mode
     ApConnected,
+    /// Device failed to make connection in Access Point mode
     ApFailed, // Not in the Reference Library
+    /// Unexpected value returned from device, reset may be required
     Invalid,
 }
 
