@@ -142,9 +142,15 @@ fn main() -> ! {
 
                     defmt::info!("set_dns result: {:?}", dns_result);
 
-                    let _hostname = "github.com";
+                    let hostname = "github.com";
 
-                    let _result = send_http_get(&wifi);
+                    let mut tcp = wifi.promote_to_transport();
+
+                    let socket_result = tcp.get_socket();
+
+                    defmt::info!("get_socket result: {:?}", socket_result);
+
+                    wifi = tcp.demote_to_network();
 
                     wifi.leave().ok();
                 } else if byte == 6 {

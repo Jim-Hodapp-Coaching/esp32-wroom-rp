@@ -4,17 +4,19 @@ use super::protocol::NinaProtocolHandler;
 use crate::gpio::EspControlInterface;
 use crate::protocol::ProtocolInterface;
 
+use crate::wifi::Wifi;
+
 use super::network::{IpAddress, Socket};
 
 use embedded_hal::blocking::spi::Transfer;
 
-pub struct TcpClient<'a, 'b, B, C> {
-    pub(crate) common: TcpClientCommon<'a, NinaProtocolHandler<'a, B, C>>,
+pub struct Tcp<'a, 'b, B, C> {
+    pub(crate) inner: TcpInner<NinaProtocolHandler<'a, B, C>>,
     pub(crate) server_ip_address: Option<IpAddress>,
     pub(crate) server_hostname: Option<&'b str>,
 }
 
-impl<'a, 'b, B, C> TcpClient<'a, 'b, B, C>
+impl<'a, 'b, B, C> Tcp<'a, 'b, B, C>
 where
     B: Transfer<u8>,
     C: EspControlInterface,
@@ -29,16 +31,20 @@ where
         self
     }
 
-    fn get_socket(&mut self) -> Result<Socket, Error> {
-        self.common.get_socket()
+    pub fn get_socket(&mut self) -> Result<Socket, Error> {
+        self.inner.get_socket()
+    }
+
+    pub fn demote_to_network(self) -> Wifi<'a, B, C> {
+      Wifi::build(self.inner.protocol_handler)
     }
 }
 
-pub(crate) struct TcpClientCommon<'a, PH> {
-    pub(crate) protocol_handler: &'a mut PH,
+pub(crate) struct TcpInner<PH> {
+    pub(crate) protocol_handler: PH,
 }
 
-impl<'a, PH> TcpClientCommon<'a, PH>
+impl<'a, PH> TcpInner<PH>
 where
     PH: ProtocolInterface,
 {
