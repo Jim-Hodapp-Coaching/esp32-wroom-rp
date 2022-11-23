@@ -5,7 +5,7 @@ use super::{Error, FirmwareVersion};
 
 use super::gpio::EspControlInterface;
 use super::protocol::{NinaProtocolHandler, ProtocolInterface};
-use super::tcp_client::{Tcp, TcpInner};
+use super::tcp::{Tcp, TcpInner};
 
 use super::IpAddress;
 
@@ -41,11 +41,11 @@ where
     }
 
     pub(crate) fn build(protocol_handler: NinaProtocolHandler<'a, S, C>) -> Self {
-      Self {
-        common: WifiCommon {
-            protocol_handler: protocol_handler
+        Self {
+            common: WifiCommon {
+                protocol_handler: protocol_handler,
+            },
         }
-      }
     }
 
     /// Retrieves the NINA firmware version contained on the connected ESP32-WROOM device (e.g. 1.7.4).
@@ -81,7 +81,7 @@ where
         self.common.resolve(hostname)
     }
 
-    pub fn promote_to_transport(self) -> Tcp<'a, 'b,  S, C> {
+    pub fn promote_to_transport(self) -> Tcp<'a, 'b, S, C> {
         Tcp {
             inner: TcpInner {
                 protocol_handler: self.common.protocol_handler,

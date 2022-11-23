@@ -36,7 +36,7 @@ where
     }
 
     pub fn demote_to_network(self) -> Wifi<'a, B, C> {
-      Wifi::build(self.inner.protocol_handler)
+        Wifi::build(self.inner.protocol_handler)
     }
 }
 

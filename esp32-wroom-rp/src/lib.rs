@@ -85,7 +85,7 @@
 #![cfg_attr(not(test), no_std)]
 
 /// Fundamental interface for creating and send/receiving data to/from a TCP server.
-pub mod tcp_client;
+pub mod tcp;
 
 pub mod gpio;
 /// Fundamental interface for controlling a connected ESP32-WROOM NINA firmware-based Wifi board.
