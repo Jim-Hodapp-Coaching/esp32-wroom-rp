@@ -30,7 +30,13 @@ use hal::gpio::{
 };
 use hal::{clocks::Clock, pac, spi::Enabled};
 
-use esp32_wroom_rp::{gpio::EspControlPins, network::IpAddress, wifi::Wifi, Error};
+use esp32_wroom_rp::{
+    Error,
+    gpio::EspControlPins,
+    network::IpAddress,
+    wifi::ConnectionStatus,
+    wifi::Wifi
+};
 
 /// The linker will place this boot block at the start of our program image. We
 /// need this to help the ROM bootloader get our code up and running.
@@ -127,11 +133,11 @@ fn main() -> ! {
     let mut sleep: u32 = 1500;
     loop {
         match wifi.get_connection_status() {
-            Ok(byte) => {
-                defmt::info!("Get Connection Result: {:?}", byte);
+            Ok(status) => {
+                defmt::info!("Get Connection Result: {:?}", status);
                 delay.delay_ms(sleep);
 
-                if byte == 3 {
+                if status == ConnectionStatus::Connected {
                     defmt::info!("Connected to Network: {:?}", SSID);
 
                     // The IPAddresses of two DNS servers to resolve hostnames with.
@@ -147,7 +153,7 @@ fn main() -> ! {
                     let _result = send_http_get(&wifi);
 
                     wifi.leave().ok();
-                } else if byte == 6 {
+                } else if status == ConnectionStatus::Disconnected {
                     defmt::info!("Disconnected from Network: {:?}", SSID);
                     sleep = 20000; // No need to loop as often after disconnecting
                 }
