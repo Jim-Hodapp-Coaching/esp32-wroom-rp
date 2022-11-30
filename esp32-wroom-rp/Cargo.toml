@@ -22,6 +22,8 @@ cortex-m = "0.7"
 cortex-m-rt = "0.7"
 cortex-m-semihosting = "0.5"
 embedded-hal = { version = "0.2", features=["unproven"] }
+rp2040-hal = { version = "0.6", features=["rt", "eh1_0_alpha"] }
+
 
 defmt = "0.3"
 defmt-rtt = "0.3"

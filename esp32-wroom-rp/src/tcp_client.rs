@@ -3,10 +3,13 @@ use super::Error;
 use super::protocol::NinaProtocolHandler;
 use crate::gpio::EspControlInterface;
 use crate::protocol::ProtocolInterface;
+use crate::wifi::SPI_PROTOCOL_HANDLER;
 
 use super::network::{IpAddress, Socket};
 
 use embedded_hal::blocking::spi::Transfer;
+
+use cortex_m::interrupt;
 
 pub struct TcpClient<'a, 'b, B, C> {
     pub(crate) common: TcpClientCommon<'a, NinaProtocolHandler<'a, B, C>>,
@@ -19,6 +22,17 @@ where
     B: Transfer<u8>,
     C: EspControlInterface,
 {
+    fn new() -> Self {
+        Self {
+            common: TcpClientCommon {
+                // This is where we take a mutable reference via Mutex/RefCell
+                protocol_handler: interrupt::free(|cs| SPI_PROTOCOL_HANDLER.borrow(cs)).borrow_mut().unwrap()
+            },
+            server_ip_address: None,
+            server_hostname: None,
+        }
+    }
+
     fn server_ip_address(mut self, ip: IpAddress) -> Self {
         self.server_ip_address = Some(ip);
         self
