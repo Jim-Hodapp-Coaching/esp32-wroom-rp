@@ -31,6 +31,9 @@ panic-probe = { version = "0.3", features = ["print-rtt"] }
 [dev-dependencies]
 embedded-hal-mock = "0.8.0"
 
+[target.'cfg(target_os = "none")'.dependencies]
+rp2040-hal = { version = "0.6", features=["rt", "eh1_0_alpha"] }
+
 [features]
 default = [
     "defmt-default",

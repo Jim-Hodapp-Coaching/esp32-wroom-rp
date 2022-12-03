@@ -1,23 +1,20 @@
 use super::Error;
 
 use super::protocol::NinaProtocolHandler;
-use crate::gpio::EspControlInterface;
-use crate::protocol::ProtocolInterface;
+use super::protocol::ProtocolInterface;
 
 use super::network::{IpAddress, Socket};
 
-use embedded_hal::blocking::spi::Transfer;
+use crate::wifi::SPI_PROTOCOL_HANDLER;
+use cortex_m::interrupt;
 
-pub struct TcpClient<'a, 'b, B, C> {
-    pub(crate) common: TcpClientCommon<'a, NinaProtocolHandler<'a, B, C>>,
+pub struct TcpClient<'b> {
+    pub(crate) common: TcpClientCommon,
     pub(crate) server_ip_address: Option<IpAddress>,
     pub(crate) server_hostname: Option<&'b str>,
 }
 
-impl<'a, 'b, B, C> TcpClient<'a, 'b, B, C>
-where
-    B: Transfer<u8>,
-    C: EspControlInterface,
+impl<'b> TcpClient<'b>
 {
     fn server_ip_address(mut self, ip: IpAddress) -> Self {
         self.server_ip_address = Some(ip);
@@ -34,15 +31,21 @@ where
     }
 }
 
-pub(crate) struct TcpClientCommon<'a, PH> {
-    pub(crate) protocol_handler: &'a mut PH,
+pub(crate) struct TcpClientCommon {
+    //pub(crate) protocol_handler: &'a mut PH,
 }
 
-impl<'a, PH> TcpClientCommon<'a, PH>
-where
-    PH: ProtocolInterface,
+impl TcpClientCommon
+//where
+//    PH: ProtocolInterface,
 {
     fn get_socket(&mut self) -> Result<Socket, Error> {
-        self.protocol_handler.get_socket()
+        let mut result= Ok(0);
+        interrupt::free(|cs| {
+            let mut protocol_handler = SPI_PROTOCOL_HANDLER.borrow(cs).borrow_mut();
+            result = protocol_handler.as_mut().unwrap().get_socket();
+        });
+        result
+        //self.protocol_handler.get_socket()
     }
 }

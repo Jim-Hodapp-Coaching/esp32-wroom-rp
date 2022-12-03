@@ -5,11 +5,36 @@ use defmt::{write, Format, Formatter};
 
 use super::{Error, FirmwareVersion};
 
-use super::gpio::EspControlInterface;
+use super::gpio::{EspControlInterface, EspControlPins};
 use super::protocol::{NinaProtocolHandler, ProtocolInterface};
 use super::tcp_client::{TcpClient, TcpClientCommon};
 
 use super::IpAddress;
+
+use core::cell::{RefCell};
+use core::marker::PhantomData;
+use cortex_m::interrupt::{self, Mutex};
+
+#[cfg(all(target_arch = "arm", target_os = "none"))]
+use rp2040_hal as hal;
+#[cfg(all(target_arch = "arm", target_os = "none"))]
+use hal::gpio::{
+    bank0::Gpio10, bank0::Gpio11, bank0::Gpio2, bank0::Gpio7, FloatingInput, Pin, PushPullOutput,
+};
+#[cfg(all(target_arch = "arm", target_os = "none"))]
+use hal::{pac, spi::Enabled};
+#[cfg(all(target_arch = "arm", target_os = "none"))]
+type Spi = hal::Spi<Enabled, pac::SPI0, 8>;
+#[cfg(all(target_arch = "arm", target_os = "none"))]
+type Pins = EspControlPins<
+    Pin<Gpio7, PushPullOutput>,
+    Pin<Gpio2, PushPullOutput>,
+    Pin<Gpio11, PushPullOutput>,
+    Pin<Gpio10, FloatingInput>,
+>;
+
+pub(crate) static SPI_PROTOCOL_HANDLER: Mutex<RefCell<Option<NinaProtocolHandler<Spi, Pins>>>> =
+    Mutex::new(RefCell::new(None));
 
 /// An enumerated type that represents the current WiFi network connection status.
 #[repr(u8)]
@@ -117,13 +142,19 @@ impl Format for ConnectionStatus {
 /// Fundamental struct for controlling a connected ESP32-WROOM NINA firmware-based Wifi board.
 #[derive(Debug)]
 pub struct Wifi<'a, B, C> {
-    common: WifiCommon<NinaProtocolHandler<'a, B, C>>,
+    //common: WifiCommon<RefMut<'a, Option<NinaProtocolHandler<'a, B, C>>>>,
+    common: WifiCommon,
+    bus: PhantomData<&'a B>,
+    pins: PhantomData<&'a C>,
 }
 
 impl<'a, S, C> Wifi<'a, S, C>
 where
     S: Transfer<u8>,
     C: EspControlInterface,
+    &'static mut Spi: From<&'a mut S>,
+    &'a mut Pins: From<&'a mut C>,
+    Wifi<'a, S, C>: From<Wifi<'a, Spi, Pins>>
 {
     /// Initializes the ESP32-WROOM Wifi device.
     /// Calling this function puts the connected ESP32-WROOM device in a known good state to accept commands.
@@ -132,17 +163,33 @@ where
         esp32_control_pins: &'a mut C,
         delay: &mut D,
     ) -> Result<Wifi<'a, S, C>, Error> {
+        // let mut wifi = Wifi {
+        //     common: WifiCommon {
+        //         protocol_handler: NinaProtocolHandler {
+        //             bus: spi,
+        //             control_pins: esp32_control_pins,
+        //         },
+        //     },
+        // };
+
+        // This is where we replace the static memory space with what we actually want at runtime
+        interrupt::free(|cs| SPI_PROTOCOL_HANDLER.borrow(cs).replace(Some(
+            NinaProtocolHandler {
+                bus: spi.into(),
+                control_pins: esp32_control_pins.into()
+            }
+        )));
         let mut wifi = Wifi {
             common: WifiCommon {
-                protocol_handler: NinaProtocolHandler {
-                    bus: spi,
-                    control_pins: esp32_control_pins,
-                },
+                // This is where we take a mutable reference via Mutex/RefCell
+                //protocol_handler: interrupt::free(|cs| SPI_PROTOCOL_HANDLER.borrow(cs)).borrow_mut()
             },
+            bus: PhantomData,
+            pins: PhantomData,
         };
 
         wifi.common.init(delay);
-        Ok(wifi)
+        Ok(wifi.into())
     }
 
     /// Retrieves the NINA firmware version contained on the connected ESP32-WROOM device (e.g. 1.7.4).
@@ -178,10 +225,10 @@ where
         self.common.resolve(hostname)
     }
 
-    pub fn build_tcp_client(&'a mut self) -> TcpClient<S, C> {
+    pub fn build_tcp_client(&'a mut self) -> TcpClient {
         TcpClient {
             common: TcpClientCommon {
-                protocol_handler: &mut self.common.protocol_handler,
+                //protocol_handler: &mut self.common.protocol_handler,
             },
             server_ip_address: None,
             server_hostname: None,
@@ -190,44 +237,88 @@ where
 }
 
 #[derive(Debug)]
-struct WifiCommon<PH> {
-    protocol_handler: PH,
+struct WifiCommon {
+    // protocol_handler: PH,
 }
 
-impl<PH> WifiCommon<PH>
-where
-    PH: ProtocolInterface,
+impl WifiCommon
+//where
+//    PH: ProtocolInterface,
 {
     fn init<D: DelayMs<u16>>(&mut self, delay: &mut D) {
-        self.protocol_handler.init();
+        interrupt::free(|cs| {
+            let mut protocol_handler = SPI_PROTOCOL_HANDLER.borrow(cs).borrow_mut();
+            protocol_handler.as_mut().unwrap().init();
+        });
+        //self.protocol_handler.init();
         self.reset(delay);
     }
 
     fn reset<D: DelayMs<u16>>(&mut self, delay: &mut D) {
-        self.protocol_handler.reset(delay)
+        interrupt::free(|cs| {
+            let mut protocol_handler = SPI_PROTOCOL_HANDLER.borrow(cs).borrow_mut();
+            protocol_handler.as_mut().unwrap().reset(delay);
+        });
+        //self.protocol_handler.reset(delay)
     }
 
     fn firmware_version(&mut self) -> Result<FirmwareVersion, Error> {
-        self.protocol_handler.get_fw_version()
+        let mut result = Ok(FirmwareVersion::default());
+        interrupt::free(|cs| {
+            let mut protocol_handler = SPI_PROTOCOL_HANDLER.borrow(cs).borrow_mut();
+            result = protocol_handler.as_mut().unwrap().get_fw_version();
+        });
+        result
+        //self.protocol_handler.get_fw_version()
     }
 
     fn join(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error> {
-        self.protocol_handler.set_passphrase(ssid, passphrase)
+        let mut result = Ok(());
+        interrupt::free(|cs| {
+            let mut protocol_handler = SPI_PROTOCOL_HANDLER.borrow(cs).borrow_mut();
+            result = protocol_handler.as_mut().unwrap().set_passphrase(ssid, passphrase);
+        });
+        result
+        //self.protocol_handler.set_passphrase(ssid, passphrase)
     }
 
     fn leave(&mut self) -> Result<(), Error> {
-        self.protocol_handler.disconnect()
+        let mut result = Ok(());
+        interrupt::free(|cs| {
+            let mut protocol_handler = SPI_PROTOCOL_HANDLER.borrow(cs).borrow_mut();
+            result = protocol_handler.as_mut().unwrap().disconnect();
+        });
+        result
+        //self.protocol_handler.disconnect()
     }
 
     fn get_connection_status(&mut self) -> Result<ConnectionStatus, Error> {
-        self.protocol_handler.get_conn_status()
+        let mut result = Ok(ConnectionStatus::Idle);
+        interrupt::free(|cs| {
+            let mut protocol_handler = SPI_PROTOCOL_HANDLER.borrow(cs).borrow_mut();
+            result = protocol_handler.as_mut().unwrap().get_conn_status();
+        });
+        result
+        //self.protocol_handler.get_conn_status()
     }
 
     fn set_dns(&mut self, dns1: IpAddress, dns2: Option<IpAddress>) -> Result<(), Error> {
-        self.protocol_handler.set_dns_config(dns1, dns2)
+        let mut result = Ok(());
+        interrupt::free(|cs| {
+            let mut protocol_handler = SPI_PROTOCOL_HANDLER.borrow(cs).borrow_mut();
+            result = protocol_handler.as_mut().unwrap().set_dns_config(dns1, dns2);
+        });
+        result
+        //self.protocol_handler.set_dns_config(dns1, dns2)
     }
 
     fn resolve(&mut self, hostname: &str) -> Result<IpAddress, Error> {
-        self.protocol_handler.resolve(hostname)
+        let mut result = Ok(IpAddress::default());
+        interrupt::free(|cs| {
+            let mut protocol_handler = SPI_PROTOCOL_HANDLER.borrow(cs).borrow_mut();
+            result = protocol_handler.as_mut().unwrap().resolve(hostname);
+        });
+        result
+        //self.protocol_handler.resolve(hostname)
     }
 }

@@ -23,7 +23,7 @@ defmt-rtt = "0.3.0"
 cortex-m = "0.7"
 cortex-m-rt = "0.7"
 embedded-hal = { version = "0.2", features=["unproven"] }
-esp32-wroom-rp = { path = "../../esp32-wroom-rp" }
+esp32-wroom-rp = { path = "../../esp32-wroom-rp", target_os = "none" }
 panic-probe = { version = "0.3.0", features = ["print-rtt"] }
 
 rp2040-hal = { version = "0.6", features=["rt", "eh1_0_alpha"] }
