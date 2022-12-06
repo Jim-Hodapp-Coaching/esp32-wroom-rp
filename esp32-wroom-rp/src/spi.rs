@@ -219,7 +219,7 @@ where
 
         for byte in buf {
             let write_buf = &mut [byte];
-            self.bus.transfer(write_buf).ok();
+            self.bus.borrow_mut().transfer(write_buf).ok();
         }
 
         if num_params == 0 {
@@ -266,13 +266,13 @@ where
 
     fn send_end_cmd(&mut self) -> Result<(), Infallible> {
         let end_command: &mut [u8] = &mut [ControlByte::End as u8];
-        self.bus.transfer(end_command).ok();
+        self.bus.borrow_mut().transfer(end_command).ok();
         Ok(())
     }
 
     fn get_byte(&mut self) -> Result<u8, Infallible> {
         let word_out = &mut [ControlByte::Dummy as u8];
-        let word = self.bus.transfer(word_out).ok().unwrap();
+        let word = self.bus.borrow_mut().transfer(word_out).ok().unwrap();
         Ok(word[0] as u8)
     }
 
@@ -303,14 +303,14 @@ where
         self.send_param_length(param)?;
 
         for byte in param.data().iter() {
-            self.bus.transfer(&mut [*byte]).ok();
+            self.bus.borrow_mut().transfer(&mut [*byte]).ok();
         }
         Ok(())
     }
 
     fn send_param_length<P: NinaParam>(&mut self, param: &P) -> Result<(), Infallible> {
         for byte in param.length_as_bytes().into_iter() {
-            self.bus.transfer(&mut [byte]).ok();
+            self.bus.borrow_mut().transfer(&mut [byte]).ok();
         }
         Ok(())
     }

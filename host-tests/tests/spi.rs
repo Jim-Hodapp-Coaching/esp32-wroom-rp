@@ -50,9 +50,9 @@ fn too_many_parameters_error() {
 
     let mut delay = MockNoop::new();
 
-    let mut pins = EspControlMock {};
+    let pins = EspControlMock {};
 
-    let mut wifi = Wifi::init(&mut spi, &mut pins, &mut delay).ok().unwrap();
+    let mut wifi = Wifi::init(&mut spi, pins, &mut delay).ok().unwrap();
     let f = wifi.firmware_version();
 
     assert_eq!(
@@ -80,9 +80,9 @@ fn invalid_number_of_parameters_error() {
 
     let mut delay = MockNoop::new();
 
-    let mut pins = EspControlMock {};
+    let pins = EspControlMock {};
 
-    let mut wifi = Wifi::init(&mut spi, &mut pins, &mut delay).ok().unwrap();
+    let mut wifi = Wifi::init(&mut spi, pins, &mut delay).ok().unwrap();
     let f = wifi.firmware_version();
 
     assert_eq!(
@@ -111,9 +111,9 @@ fn invalid_command_induces_invalid_command_error() {
 
     let mut delay = MockNoop::new();
 
-    let mut pins = EspControlMock {};
+    let pins = EspControlMock {};
 
-    let mut wifi = Wifi::init(&mut spi, &mut pins, &mut delay).ok().unwrap();
+    let mut wifi = Wifi::init(&mut spi, pins, &mut delay).ok().unwrap();
     let f = wifi.firmware_version();
 
     assert_eq!(
@@ -143,9 +143,9 @@ fn timeout_induces_communication_timeout_error() {
 
     let mut delay = MockNoop::new();
 
-    let mut pins = EspControlMock {};
+    let pins = EspControlMock {};
 
-    let mut wifi = Wifi::init(&mut spi, &mut pins, &mut delay).ok().unwrap();
+    let mut wifi = Wifi::init(&mut spi, pins, &mut delay).ok().unwrap();
     let f = wifi.firmware_version();
 
     assert_eq!(
@@ -173,9 +173,9 @@ fn invalid_command_induces_nina_protocol_version_mismatch_error() {
 
     let mut delay = MockNoop::new();
 
-    let mut pins = EspControlMock {};
+    let pins = EspControlMock {};
 
-    let mut wifi = Wifi::init(&mut spi, &mut pins, &mut delay).ok().unwrap();
+    let mut wifi = Wifi::init(&mut spi, pins, &mut delay).ok().unwrap();
     let f = wifi.firmware_version();
 
     assert_eq!(
