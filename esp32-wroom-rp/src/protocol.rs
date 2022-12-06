@@ -10,6 +10,8 @@ use super::network::{IpAddress, Socket};
 use super::wifi::ConnectionStatus;
 use super::{Error, FirmwareVersion};
 
+use core::cell::RefCell;
+
 pub(crate) const MAX_NINA_PARAM_LENGTH: usize = 255;
 
 #[repr(u8)]
@@ -245,9 +247,9 @@ pub(crate) trait ProtocolInterface {
 #[derive(Debug)]
 pub(crate) struct NinaProtocolHandler<'a, B, C> {
     /// A Spi or I2c instance
-    pub bus: &'a mut B,
+    pub bus: RefCell<&'a mut B>,
     /// An EspControlPins instance
-    pub control_pins: &'a mut C,
+    pub control_pins: C,
 }
 
 // TODO: look at Nina Firmware code to understand conditions

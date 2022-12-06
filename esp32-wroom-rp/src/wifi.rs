@@ -9,6 +9,8 @@ use super::gpio::EspControlInterface;
 use super::protocol::{NinaProtocolHandler, ProtocolInterface};
 use super::tcp_client::{TcpClient, TcpClientCommon};
 
+use core::cell::RefCell;
+
 use super::IpAddress;
 
 /// An enumerated type that represents the current WiFi network connection status.
@@ -107,12 +109,12 @@ where
     /// Calling this function puts the connected ESP32-WROOM device in a known good state to accept commands.
     pub fn init<D: DelayMs<u16>>(
         spi: &'a mut S,
-        esp32_control_pins: &'a mut C,
+        esp32_control_pins: C,
         delay: &mut D,
     ) -> Result<Wifi<'a, S, C>, Error> {
         let mut wifi = Wifi {
             protocol_handler: NinaProtocolHandler {
-                bus: spi,
+                bus: RefCell::new(spi),
                 control_pins: esp32_control_pins,
             },
         };

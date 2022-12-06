@@ -112,7 +112,7 @@ fn main() -> ! {
         &MODE_0,
     );
 
-    let mut esp_pins = EspControlPins {
+    let esp_pins = EspControlPins {
         // CS on pin x (GPIO7)
         cs: pins.gpio7.into_mode::<PushPullOutput>(),
         // GPIO0 on pin x (GPIO2)
@@ -123,7 +123,7 @@ fn main() -> ! {
         ack: pins.gpio10.into_mode::<FloatingInput>(),
     };
 
-    let mut wifi = Wifi::init(&mut spi, &mut esp_pins, &mut delay).unwrap();
+    let mut wifi = Wifi::init(&mut spi, esp_pins, &mut delay).unwrap();
 
     let result = wifi.join(SSID, PASSPHRASE);
     defmt::info!("Join Result: {:?}", result);
