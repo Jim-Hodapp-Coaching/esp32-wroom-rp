@@ -97,7 +97,7 @@ fn main() -> ! {
         &MODE_0,
     );
 
-    let mut esp_pins = esp32_wroom_rp::gpio::EspControlPins {
+    let esp_pins = esp32_wroom_rp::gpio::EspControlPins {
         // CS on pin x (GPIO7)
         cs: pins.gpio7.into_mode::<hal::gpio::PushPullOutput>(),
         // GPIO0 on pin x (GPIO2)
@@ -108,7 +108,7 @@ fn main() -> ! {
         ack: pins.gpio10.into_mode::<hal::gpio::FloatingInput>(),
     };
 
-    let mut wifi = esp32_wroom_rp::wifi::Wifi::init(&mut spi, &mut esp_pins, &mut delay).unwrap();
+    let mut wifi = esp32_wroom_rp::wifi::Wifi::init(&mut spi, esp_pins, &mut delay).unwrap();
 
     let result = wifi.join(SSID, PASSPHRASE);
     defmt::info!("Join Result: {:?}", result);
