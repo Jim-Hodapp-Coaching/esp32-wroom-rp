@@ -9,7 +9,7 @@ use super::network::{IpAddress, Socket};
 use embedded_hal::blocking::spi::Transfer;
 
 pub struct TcpClient<'a, 'b, B, C> {
-    pub(crate) common: TcpClientCommon<'a, NinaProtocolHandler<'a, B, C>>,
+    pub(crate) protocol_handler: &'a mut NinaProtocolHandler<'a, B, C>,
     pub(crate) server_ip_address: Option<IpAddress>,
     pub(crate) server_hostname: Option<&'b str>,
 }
@@ -29,20 +29,7 @@ where
         self
     }
 
-    fn get_socket(&mut self) -> Result<Socket, Error> {
-        self.common.get_socket()
-    }
-}
-
-pub(crate) struct TcpClientCommon<'a, PH> {
-    pub(crate) protocol_handler: &'a mut PH,
-}
-
-impl<'a, PH> TcpClientCommon<'a, PH>
-where
-    PH: ProtocolInterface,
-{
-    fn get_socket(&mut self) -> Result<Socket, Error> {
+    pub fn get_socket(&mut self) -> Result<Socket, Error> {
         self.protocol_handler.get_socket()
     }
 }

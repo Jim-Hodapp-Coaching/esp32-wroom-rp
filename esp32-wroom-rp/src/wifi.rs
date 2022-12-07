@@ -7,7 +7,7 @@ use super::{Error, FirmwareVersion};
 
 use super::gpio::EspControlInterface;
 use super::protocol::{NinaProtocolHandler, ProtocolInterface};
-use super::tcp_client::{TcpClient, TcpClientCommon};
+use super::tcp_client::TcpClient;
 
 use core::cell::RefCell;
 
@@ -159,9 +159,7 @@ where
 
     pub fn build_tcp_client(&'a mut self) -> TcpClient<S, C> {
         TcpClient {
-            common: TcpClientCommon {
-                protocol_handler: &mut self.protocol_handler,
-            },
+            protocol_handler: &mut self.protocol_handler,
             server_ip_address: None,
             server_hostname: None,
         }
