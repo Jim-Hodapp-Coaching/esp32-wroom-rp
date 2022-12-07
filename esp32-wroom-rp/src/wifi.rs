@@ -200,7 +200,7 @@ impl Format for ConnectionStatus {
 /// Fundamental struct for controlling a connected ESP32-WROOM NINA firmware-based Wifi board.
 #[derive(Debug)]
 pub struct Wifi<B, C> {
-    protocol_handler: NinaProtocolHandler<B, C>,
+    protocol_handler: RefCell<NinaProtocolHandler<B, C>>,
 }
 
 impl<'a, S, C> Wifi<S, C>
@@ -215,31 +215,33 @@ where
         esp32_control_pins: C,
         delay: &mut D,
     ) -> Result<Wifi<S, C>, Error> {
-        let mut wifi = Wifi {
-            protocol_handler: NinaProtocolHandler {
+        let wifi = Wifi {
+            protocol_handler: RefCell::new(NinaProtocolHandler {
                 bus: RefCell::new(spi),
                 control_pins: esp32_control_pins,
-            },
+            }),
         };
 
-        wifi.protocol_handler.init();
-        wifi.protocol_handler.reset(delay);
+        wifi.protocol_handler.borrow_mut().init();
+        wifi.protocol_handler.borrow_mut().reset(delay);
         Ok(wifi)
     }
 
     /// Retrieves the NINA firmware version contained on the connected ESP32-WROOM device (e.g. 1.7.4).
     pub fn firmware_version(&mut self) -> Result<FirmwareVersion, Error> {
-        self.protocol_handler.get_fw_version()
+        self.protocol_handler.borrow_mut().get_fw_version()
     }
 
     /// Joins a WiFi network given an SSID and a Passphrase.
     pub fn join(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error> {
-        self.protocol_handler.set_passphrase(ssid, passphrase)
+        self.protocol_handler
+            .borrow_mut()
+            .set_passphrase(ssid, passphrase)
     }
 
     /// Disconnects from a joined WiFi network.
     pub fn leave(&mut self) -> Result<(), Error> {
-        self.protocol_handler.disconnect()
+        self.protocol_handler.borrow_mut().disconnect()
     }
 
     /// Retrieves the current WiFi network connection status.
@@ -247,22 +249,24 @@ where
     /// NOTE: A future version will provide a enumerated type instead of the raw integer values
     /// from the NINA firmware.
     pub fn get_connection_status(&mut self) -> Result<ConnectionStatus, Error> {
-        self.protocol_handler.get_conn_status()
+        self.protocol_handler.borrow_mut().get_conn_status()
     }
 
     /// Sets 1 or 2 DNS servers that are used for network hostname resolution.
     pub fn set_dns(&mut self, dns1: IpAddress, dns2: Option<IpAddress>) -> Result<(), Error> {
-        self.protocol_handler.set_dns_config(dns1, dns2)
+        self.protocol_handler
+            .borrow_mut()
+            .set_dns_config(dns1, dns2)
     }
 
     /// Queries the DNS server(s) provided via [set_dns] for the associated IP address to the provided hostname.
     pub fn resolve(&mut self, hostname: &str) -> Result<IpAddress, Error> {
-        self.protocol_handler.resolve(hostname)
+        self.protocol_handler.borrow_mut().resolve(hostname)
     }
 
-    pub fn build_tcp_client(mut self) -> TcpClient<'a, S, C> {
+    pub fn build_tcp_client(&'a mut self) -> TcpClient<'a, S, C> {
         TcpClient {
-            protocol_handler: self.protocol_handler,
+            protocol_handler: self.protocol_handler.get_mut(),
             server_ip_address: None,
             server_hostname: None,
         }

@@ -9,7 +9,7 @@ use super::network::{IpAddress, Socket};
 use embedded_hal::blocking::spi::Transfer;
 
 pub struct TcpClient<'a, B, C> {
-    pub(crate) protocol_handler: NinaProtocolHandler<B, C>,
+    pub(crate) protocol_handler: &'a mut NinaProtocolHandler<B, C>,
     pub(crate) server_ip_address: Option<IpAddress>,
     pub(crate) server_hostname: Option<&'a str>,
 }
