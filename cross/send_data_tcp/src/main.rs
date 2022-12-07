@@ -167,7 +167,9 @@ fn main() -> ! {
 
 fn send_http_get(wifi: &mut Wifi<Spi, Pins>) -> Result<(), Error> {
     let mut client = wifi.build_tcp_client();
+    defmt::info!("Getting Socket");
     let socket = client.get_socket();
+    defmt::info!("Get Socket Result: {:?}", socket);
 
     Ok(())
 }
