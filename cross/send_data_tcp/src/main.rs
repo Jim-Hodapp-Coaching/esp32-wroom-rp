@@ -150,7 +150,7 @@ fn main() -> ! {
 
                     let _hostname = "github.com";
 
-                    let _result = send_http_get(&wifi);
+                    let _result = send_http_get(&mut wifi);
 
                     wifi.leave().ok();
                 } else if status == ConnectionStatus::Disconnected {
@@ -165,6 +165,9 @@ fn main() -> ! {
     }
 }
 
-fn send_http_get(_wifi: &Wifi<Spi, Pins>) -> Result<(), Error> {
+fn send_http_get(wifi: &mut Wifi<Spi, Pins>) -> Result<(), Error> {
+    let mut client = wifi.build_tcp_client();
+    let socket = client.get_socket();
+
     Ok(())
 }
