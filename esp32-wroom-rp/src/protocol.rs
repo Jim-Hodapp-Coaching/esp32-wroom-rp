@@ -245,9 +245,9 @@ pub(crate) trait ProtocolInterface {
 }
 
 #[derive(Debug)]
-pub(crate) struct NinaProtocolHandler<'a, B, C> {
+pub(crate) struct NinaProtocolHandler<B, C> {
     /// A Spi or I2c instance
-    pub bus: RefCell<&'a mut B>,
+    pub bus: RefCell<B>,
     /// An EspControlPins instance
     pub control_pins: C,
 }

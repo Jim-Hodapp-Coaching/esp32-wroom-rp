@@ -96,11 +96,11 @@ impl Format for ConnectionStatus {
 
 /// Fundamental struct for controlling a connected ESP32-WROOM NINA firmware-based Wifi board.
 #[derive(Debug)]
-pub struct Wifi<'a, B, C> {
-    protocol_handler: NinaProtocolHandler<'a, B, C>,
+pub struct Wifi<B, C> {
+    protocol_handler: NinaProtocolHandler<B, C>,
 }
 
-impl<'a, S, C> Wifi<'a, S, C>
+impl<'a, S, C> Wifi<S, C>
 where
     S: Transfer<u8>,
     C: EspControlInterface,
@@ -108,10 +108,10 @@ where
     /// Initializes the ESP32-WROOM Wifi device.
     /// Calling this function puts the connected ESP32-WROOM device in a known good state to accept commands.
     pub fn init<D: DelayMs<u16>>(
-        spi: &'a mut S,
+        spi: S,
         esp32_control_pins: C,
         delay: &mut D,
-    ) -> Result<Wifi<'a, S, C>, Error> {
+    ) -> Result<Wifi<S, C>, Error> {
         let mut wifi = Wifi {
             protocol_handler: NinaProtocolHandler {
                 bus: RefCell::new(spi),
@@ -157,9 +157,9 @@ where
         self.protocol_handler.resolve(hostname)
     }
 
-    pub fn build_tcp_client(&'a mut self) -> TcpClient<S, C> {
+    pub fn build_tcp_client(mut self) -> TcpClient<'a, S, C> {
         TcpClient {
-            protocol_handler: &mut self.protocol_handler,
+            protocol_handler: self.protocol_handler,
             server_ip_address: None,
             server_hostname: None,
         }
