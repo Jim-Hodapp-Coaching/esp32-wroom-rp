@@ -46,13 +46,13 @@ fn too_many_parameters_error() {
         // as we understand more.
         spi::Transaction::transfer(vec![0xff], vec![0x9]),
     ];
-    let mut spi = spi::Mock::new(&spi_expectations);
+    let spi = spi::Mock::new(&spi_expectations);
 
     let mut delay = MockNoop::new();
 
     let pins = EspControlMock {};
 
-    let mut wifi = Wifi::init(&mut spi, pins, &mut delay).ok().unwrap();
+    let mut wifi = Wifi::init(spi, pins, &mut delay).ok().unwrap();
     let f = wifi.firmware_version();
 
     assert_eq!(
@@ -60,7 +60,7 @@ fn too_many_parameters_error() {
         esp32_wroom_rp::Error::Protocol(esp32_wroom_rp::protocol::ProtocolError::TooManyParameters)
     );
 
-    spi.done();
+    wifi.spi_as_mut_ref().done();
 }
 
 #[test]
@@ -76,13 +76,13 @@ fn invalid_number_of_parameters_error() {
         spi::Transaction::transfer(vec![0xff], vec![0xb7]),
         spi::Transaction::transfer(vec![0xff], vec![0x0]),
     ];
-    let mut spi = spi::Mock::new(&spi_expectations);
+    let spi = spi::Mock::new(&spi_expectations);
 
     let mut delay = MockNoop::new();
 
     let pins = EspControlMock {};
 
-    let mut wifi = Wifi::init(&mut spi, pins, &mut delay).ok().unwrap();
+    let mut wifi = Wifi::init(spi, pins, &mut delay).ok().unwrap();
     let f = wifi.firmware_version();
 
     assert_eq!(
@@ -92,7 +92,7 @@ fn invalid_number_of_parameters_error() {
         )
     );
 
-    spi.done();
+    wifi.spi_as_mut_ref().done();
 }
 
 #[test]
@@ -107,13 +107,13 @@ fn invalid_command_induces_invalid_command_error() {
         spi::Transaction::transfer(vec![0xff], vec![0xe0]),
         spi::Transaction::transfer(vec![0xff], vec![0x0]),
     ];
-    let mut spi = spi::Mock::new(&spi_expectations);
+    let spi = spi::Mock::new(&spi_expectations);
 
     let mut delay = MockNoop::new();
 
     let pins = EspControlMock {};
 
-    let mut wifi = Wifi::init(&mut spi, pins, &mut delay).ok().unwrap();
+    let mut wifi = Wifi::init(spi, pins, &mut delay).ok().unwrap();
     let f = wifi.firmware_version();
 
     assert_eq!(
@@ -121,7 +121,7 @@ fn invalid_command_induces_invalid_command_error() {
         esp32_wroom_rp::Error::Protocol(esp32_wroom_rp::protocol::ProtocolError::InvalidCommand)
     );
 
-    spi.done();
+    wifi.spi_as_mut_ref().done();
 }
 
 #[test]
@@ -139,13 +139,13 @@ fn timeout_induces_communication_timeout_error() {
         spi_expectations.push(spi::Transaction::transfer(vec![0xff], vec![0x0]))
     }
 
-    let mut spi = spi::Mock::new(&spi_expectations);
+    let spi = spi::Mock::new(&spi_expectations);
 
     let mut delay = MockNoop::new();
 
     let pins = EspControlMock {};
 
-    let mut wifi = Wifi::init(&mut spi, pins, &mut delay).ok().unwrap();
+    let mut wifi = Wifi::init(spi, pins, &mut delay).ok().unwrap();
     let f = wifi.firmware_version();
 
     assert_eq!(
@@ -155,7 +155,7 @@ fn timeout_induces_communication_timeout_error() {
         )
     );
 
-    spi.done();
+    wifi.spi_as_mut_ref().done();
 }
 
 #[test]
@@ -169,13 +169,13 @@ fn invalid_command_induces_nina_protocol_version_mismatch_error() {
         // wait_response_cmd()
         spi::Transaction::transfer(vec![0xff], vec![0xef]),
     ];
-    let mut spi = spi::Mock::new(&spi_expectations);
+    let spi = spi::Mock::new(&spi_expectations);
 
     let mut delay = MockNoop::new();
 
     let pins = EspControlMock {};
 
-    let mut wifi = Wifi::init(&mut spi, pins, &mut delay).ok().unwrap();
+    let mut wifi = Wifi::init(spi, pins, &mut delay).ok().unwrap();
     let f = wifi.firmware_version();
 
     assert_eq!(
@@ -185,5 +185,5 @@ fn invalid_command_induces_nina_protocol_version_mismatch_error() {
         )
     );
 
-    spi.done();
+    wifi.spi_as_mut_ref().done();
 }
