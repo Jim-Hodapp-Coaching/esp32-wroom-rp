@@ -8,13 +8,13 @@ use super::network::{IpAddress, Socket};
 
 use embedded_hal::blocking::spi::Transfer;
 
-pub struct TcpClient<'a, 'b, B, C> {
-    pub(crate) protocol_handler: &'a mut NinaProtocolHandler<'a, B, C>,
+pub struct TcpClient<'a, B, C> {
+    pub(crate) protocol_handler: NinaProtocolHandler<B, C>,
     pub(crate) server_ip_address: Option<IpAddress>,
-    pub(crate) server_hostname: Option<&'b str>,
+    pub(crate) server_hostname: Option<&'a str>,
 }
 
-impl<'a, 'b, B, C> TcpClient<'a, 'b, B, C>
+impl<'a, B, C> TcpClient<'a, B, C>
 where
     B: Transfer<u8>,
     C: EspControlInterface,
@@ -24,7 +24,7 @@ where
         self
     }
 
-    fn server_hostname(mut self, hostname: &'b str) -> Self {
+    fn server_hostname(mut self, hostname: &'a str) -> Self {
         self.server_hostname = Some(hostname);
         self
     }

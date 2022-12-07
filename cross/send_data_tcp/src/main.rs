@@ -105,7 +105,7 @@ fn main() -> ! {
     let spi = hal::Spi::<_, _, 8>::new(pac.SPI0);
 
     // Exchange the uninitialized SPI driver for an initialized one
-    let mut spi = spi.init(
+    let spi = spi.init(
         &mut pac.RESETS,
         clocks.peripheral_clock.freq(),
         8.MHz(),
@@ -123,7 +123,7 @@ fn main() -> ! {
         ack: pins.gpio10.into_mode::<FloatingInput>(),
     };
 
-    let mut wifi = Wifi::init(&mut spi, esp_pins, &mut delay).unwrap();
+    let mut wifi = Wifi::init(spi, esp_pins, &mut delay).unwrap();
 
     let result = wifi.join(SSID, PASSPHRASE);
     defmt::info!("Join Result: {:?}", result);

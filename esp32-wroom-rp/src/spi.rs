@@ -31,7 +31,7 @@ enum ControlByte {
 }
 
 // All SPI-specific aspects of the NinaProtocolHandler go here in this struct impl
-impl<'a, S, C> ProtocolInterface for NinaProtocolHandler<'a, S, C>
+impl<S, C> ProtocolInterface for NinaProtocolHandler<S, C>
 where
     S: Transfer<u8>,
     C: EspControlInterface,
@@ -161,7 +161,7 @@ where
     }
 }
 
-impl<'a, S, C> NinaProtocolHandler<'a, S, C>
+impl<S, C> NinaProtocolHandler<S, C>
 where
     S: Transfer<u8>,
     C: EspControlInterface,
