@@ -31,11 +31,7 @@ use hal::gpio::{
 use hal::{clocks::Clock, pac, spi::Enabled};
 
 use esp32_wroom_rp::{
-    Error,
-    gpio::EspControlPins,
-    network::IpAddress,
-    wifi::ConnectionStatus,
-    wifi::Wifi
+    gpio::EspControlPins, network::IpAddress, wifi::ConnectionStatus, wifi::Wifi, Error,
 };
 
 /// The linker will place this boot block at the start of our program image. We
@@ -148,9 +144,16 @@ fn main() -> ! {
 
                     defmt::info!("set_dns result: {:?}", dns_result);
 
-                    let _hostname = "github.com";
+                    let hostname = "github.com";
+                    let ip_address: IpAddress = [18, 195, 85, 27];
 
-                    let _result = send_http_get(&mut wifi);
+                    wifi.connect_tcp(ip_address, hostname, |tcp_client, socket| {
+                        defmt::info!("Get Socket Result: {:?}", socket);
+                        defmt::info!("server_ip_address: {:?}", tcp_client.server_ip_address());
+                        defmt::info!("hostname: {:?}", tcp_client.server_hostname());
+
+                        //   this is where you could call something like tcp_client.connect()
+                    });
 
                     wifi.leave().ok();
                 } else if status == ConnectionStatus::Disconnected {
@@ -163,13 +166,4 @@ fn main() -> ! {
             }
         }
     }
-}
-
-fn send_http_get(wifi: &mut Wifi<Spi, Pins>) -> Result<(), Error> {
-    let mut client = wifi.build_tcp_client();
-    defmt::info!("Getting Socket");
-    let socket = client.get_socket();
-    defmt::info!("Get Socket Result: {:?}", socket);
-
-    Ok(())
 }

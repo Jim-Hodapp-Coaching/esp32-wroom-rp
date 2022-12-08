@@ -114,7 +114,7 @@ use super::tcp_client::TcpClient;
 
 use core::cell::RefCell;
 
-use super::IpAddress;
+use super::network::{IpAddress, Socket};
 
 /// An enumerated type that represents the current WiFi network connection status.
 #[repr(u8)]
@@ -264,15 +264,26 @@ where
         self.protocol_handler.borrow_mut().resolve(hostname)
     }
 
-    pub fn build_tcp_client(&'a mut self) -> TcpClient<'a, S, C> {
-        TcpClient {
-            protocol_handler: self.protocol_handler.get_mut(),
-            server_ip_address: None,
-            server_hostname: None,
-        }
+    pub fn connect_tcp<F>(&'a mut self, ip: IpAddress, hostname: &'a str, f: F)
+    where
+        F: Fn(TcpClient<'a, S, C>, Socket),
+    {
+        let mut tcp_client = self.build_tcp_client(ip, hostname);
+        let socket = tcp_client.get_socket().unwrap();
+        // invokes closure or function passing in tcp_client and socket
+        // as arguments
+        f(tcp_client, socket)
     }
 
     pub fn destroy(self) -> S {
         self.protocol_handler.into_inner().bus.into_inner()
+    }
+
+    fn build_tcp_client(&'a mut self, ip: IpAddress, hostname: &'a str) -> TcpClient<'a, S, C> {
+        TcpClient {
+            protocol_handler: self.protocol_handler.get_mut(),
+            server_ip_address: Some(ip),
+            server_hostname: Some(hostname),
+        }
     }
 }
