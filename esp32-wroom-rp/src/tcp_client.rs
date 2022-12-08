@@ -19,14 +19,12 @@ where
     B: Transfer<u8>,
     C: EspControlInterface,
 {
-    fn server_ip_address(mut self, ip: IpAddress) -> Self {
-        self.server_ip_address = Some(ip);
-        self
+    pub fn server_ip_address(&self) -> Option<IpAddress> {
+        self.server_ip_address
     }
 
-    fn server_hostname(mut self, hostname: &'a str) -> Self {
-        self.server_hostname = Some(hostname);
-        self
+    pub fn server_hostname(&self) -> Option<&'a str> {
+        self.server_hostname
     }
 
     pub fn get_socket(&mut self) -> Result<Socket, Error> {
