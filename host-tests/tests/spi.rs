@@ -60,7 +60,7 @@ fn too_many_parameters_error() {
         esp32_wroom_rp::Error::Protocol(esp32_wroom_rp::protocol::ProtocolError::TooManyParameters)
     );
 
-    wifi.spi_as_mut_ref().done();
+    wifi.destroy().done();
 }
 
 #[test]
@@ -92,7 +92,7 @@ fn invalid_number_of_parameters_error() {
         )
     );
 
-    wifi.spi_as_mut_ref().done();
+    wifi.destroy().done();
 }
 
 #[test]
@@ -121,7 +121,7 @@ fn invalid_command_induces_invalid_command_error() {
         esp32_wroom_rp::Error::Protocol(esp32_wroom_rp::protocol::ProtocolError::InvalidCommand)
     );
 
-    wifi.spi_as_mut_ref().done();
+    wifi.destroy().done();
 }
 
 #[test]
@@ -155,7 +155,7 @@ fn timeout_induces_communication_timeout_error() {
         )
     );
 
-    wifi.spi_as_mut_ref().done();
+    wifi.destroy().done();
 }
 
 #[test]
@@ -185,5 +185,5 @@ fn invalid_command_induces_nina_protocol_version_mismatch_error() {
         )
     );
 
-    wifi.spi_as_mut_ref().done();
+    wifi.destroy().done();
 }

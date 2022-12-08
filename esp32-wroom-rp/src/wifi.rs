@@ -272,7 +272,7 @@ where
         }
     }
 
-    pub fn spi_as_mut_ref(&'a mut self) -> &'a mut S {
-        self.protocol_handler.get_mut().bus.get_mut()
+    pub fn destroy(self) -> S {
+        self.protocol_handler.into_inner().bus.into_inner()
     }
 }
