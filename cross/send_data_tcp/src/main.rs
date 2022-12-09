@@ -31,7 +31,7 @@ use hal::gpio::{
 use hal::{clocks::Clock, pac, spi::Enabled};
 
 use esp32_wroom_rp::{
-    gpio::EspControlPins, network::IpAddress, wifi::ConnectionStatus, wifi::Wifi, Error,
+    gpio::EspControlPins, network::IpAddress, wifi::ConnectionStatus, wifi::Wifi, Error, tcp_client::TcpClient
 };
 
 /// The linker will place this boot block at the start of our program image. We
@@ -147,13 +147,14 @@ fn main() -> ! {
                     let hostname = "github.com";
                     let ip_address: IpAddress = [18, 195, 85, 27];
 
-                    wifi.connect_tcp(ip_address, hostname, |tcp_client, socket| {
-                        defmt::info!("Get Socket Result: {:?}", socket);
-                        defmt::info!("server_ip_address: {:?}", tcp_client.server_ip_address());
-                        defmt::info!("hostname: {:?}", tcp_client.server_hostname());
+                    TcpClient::build(&mut wifi)
+                        .connect(ip_address, |tcp_client| {
+                            defmt::info!("server_ip_address: {:?}", tcp_client.server_ip_address());
+                            defmt::info!("hostname: {:?}", tcp_client.server_hostname());
+                            defmt::info!("Socket: {:?}", tcp_client.socket());
 
-                        //   this is where you could call something like tcp_client.connect()
-                    });
+                            //   this is where you send/receive with a connected TCP socket to a remote server
+                        });
 
                     wifi.leave().ok();
                 } else if status == ConnectionStatus::Disconnected {
