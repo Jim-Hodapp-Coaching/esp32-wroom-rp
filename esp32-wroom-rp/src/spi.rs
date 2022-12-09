@@ -2,8 +2,8 @@
 
 use super::gpio::EspControlInterface;
 use super::protocol::{
-    NinaByteParam, NinaCommand, NinaNoParams, NinaParam, NinaProtocolHandler, NinaSmallArrayParam,
-    ProtocolInterface,
+    NinaByteParam, NinaCommand, NinaConcreteParam, NinaNoParams, NinaParam, NinaProtocolHandler,
+    NinaSmallArrayParam, ProtocolInterface,
 };
 
 use super::network::{IpAddress, NetworkError, Socket};
@@ -47,8 +47,8 @@ where
 
     fn get_fw_version(&mut self) -> Result<FirmwareVersion, Error> {
         // TODO: improve the ergonomics around with_no_params()
-        let operation =
-            Operation::new(NinaCommand::GetFwVersion, 1).with_no_params(NinaNoParams::new(""));
+        let operation = Operation::new(NinaCommand::GetFwVersion, 1)
+            .with_no_params(NinaNoParams::new("").into());
 
         self.execute(&operation)?;
 
@@ -59,8 +59,8 @@ where
 
     fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error> {
         let operation = Operation::new(NinaCommand::SetPassphrase, 1)
-            .param(NinaSmallArrayParam::new(ssid))
-            .param(NinaSmallArrayParam::new(passphrase));
+            .param(NinaSmallArrayParam::new(ssid).into())
+            .param(NinaSmallArrayParam::new(passphrase).into());
 
         self.execute(&operation)?;
 
@@ -69,8 +69,8 @@ where
     }
 
     fn get_conn_status(&mut self) -> Result<ConnectionStatus, Error> {
-        let operation =
-            Operation::new(NinaCommand::GetConnStatus, 1).with_no_params(NinaNoParams::new(""));
+        let operation = Operation::new(NinaCommand::GetConnStatus, 1)
+            .with_no_params(NinaNoParams::new("").into());
 
         self.execute(&operation)?;
 
@@ -81,7 +81,7 @@ where
 
     fn disconnect(&mut self) -> Result<(), Error> {
         let dummy_param = NinaByteParam::from_bytes(&[ControlByte::Dummy as u8]);
-        let operation = Operation::new(NinaCommand::Disconnect, 1).param(dummy_param);
+        let operation = Operation::new(NinaCommand::Disconnect, 1).param(dummy_param.into());
 
         self.execute(&operation)?;
 
@@ -94,9 +94,9 @@ where
         // FIXME: refactor Operation so it can take different NinaParam types
         let operation = Operation::new(NinaCommand::SetDNSConfig, 1)
             // FIXME: first param should be able to be a NinaByteParam:
-            .param(NinaSmallArrayParam::from_bytes(&[1]))
-            .param(NinaSmallArrayParam::from_bytes(&ip1))
-            .param(NinaSmallArrayParam::from_bytes(&ip2.unwrap_or_default()));
+            .param(NinaByteParam::from_bytes(&[1]).into())
+            .param(NinaSmallArrayParam::from_bytes(&ip1).into())
+            .param(NinaSmallArrayParam::from_bytes(&ip2.unwrap_or_default()).into());
 
         self.execute(&operation)?;
 
@@ -106,8 +106,8 @@ where
     }
 
     fn req_host_by_name(&mut self, hostname: &str) -> Result<u8, Error> {
-        let operation =
-            Operation::new(NinaCommand::ReqHostByName, 1).param(NinaSmallArrayParam::new(hostname));
+        let operation = Operation::new(NinaCommand::ReqHostByName, 1)
+            .param(NinaSmallArrayParam::new(hostname).into());
 
         self.execute(&operation)?;
 
@@ -121,8 +121,8 @@ where
     }
 
     fn get_host_by_name(&mut self) -> Result<[u8; 8], Error> {
-        let operation =
-            Operation::new(NinaCommand::GetHostByName, 1).with_no_params(NinaNoParams::new(""));
+        let operation = Operation::new(NinaCommand::GetHostByName, 1)
+            .with_no_params(NinaNoParams::new("").into());
 
         self.execute(&operation)?;
 
@@ -151,7 +151,7 @@ where
 
     fn get_socket(&mut self) -> Result<Socket, Error> {
         let operation =
-            Operation::new(NinaCommand::GetSocket, 1).with_no_params(NinaNoParams::new(""));
+            Operation::new(NinaCommand::GetSocket, 1).with_no_params(NinaNoParams::new("").into());
 
         self.execute(&operation)?;
 
@@ -301,16 +301,18 @@ where
 
     fn send_param<P: NinaParam>(&mut self, param: &P) -> Result<(), Infallible> {
         self.send_param_length(param)?;
-
-        for byte in param.data().iter() {
-            self.bus.borrow_mut().transfer(&mut [*byte]).ok();
+        let data_length = param.length() as usize;
+        let bytes = param.data();
+        for i in 0..data_length {
+            self.bus.borrow_mut().transfer(&mut [bytes[i]]).ok();
         }
         Ok(())
     }
 
     fn send_param_length<P: NinaParam>(&mut self, param: &P) -> Result<(), Infallible> {
-        for byte in param.length_as_bytes().into_iter() {
-            self.bus.borrow_mut().transfer(&mut [byte]).ok();
+        let bytes = param.length_as_bytes();
+        for i in 0..param.length_size() as usize {
+            self.bus.borrow_mut().transfer(&mut [bytes[i]]).ok();
         }
         Ok(())
     }

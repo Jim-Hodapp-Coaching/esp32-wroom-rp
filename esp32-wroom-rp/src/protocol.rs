@@ -28,7 +28,7 @@ pub(crate) enum NinaCommand {
     GetSocket = 0x3fu8,
 }
 
-pub(crate) trait NinaParam {
+pub(crate) trait NinaConcreteParam {
     // Length of parameter in bytes
     type LengthAsBytes: IntoIterator<Item = u8>;
 
@@ -48,7 +48,7 @@ pub(crate) struct NinaNoParams {
     _placeholder: u8,
 }
 
-impl NinaParam for NinaNoParams {
+impl NinaConcreteParam for NinaNoParams {
     type LengthAsBytes = [u8; 0];
 
     fn new(_data: &str) -> Self {
@@ -70,6 +70,13 @@ impl NinaParam for NinaNoParams {
     fn length(&self) -> u16 {
         0u16
     }
+}
+
+pub(crate) trait NinaParam {
+    fn length_as_bytes(&self) -> [u8; 2];
+    fn data(&self) -> &[u8];
+    fn length(&self) -> u16;
+    fn length_size(&self) -> u8;
 }
 
 // Used for single byte params
@@ -96,7 +103,92 @@ pub(crate) struct NinaLargeArrayParam {
     data: Vec<u8, MAX_NINA_PARAM_LENGTH>,
 }
 
-impl NinaParam for NinaByteParam {
+pub(crate) struct NinaAbstractParam {
+    // Byte representation of length of data
+    length_as_bytes: [u8; 2],
+    // Data to be transfered over SPI bus
+    data: Vec<u8, MAX_NINA_PARAM_LENGTH>,
+    // Number of bytes in data
+    length: u16,
+    // The number of bytes needed to represent
+    // length_as_bytes
+    length_size: u8,
+}
+
+impl NinaParam for NinaAbstractParam {
+    fn length_as_bytes(&self) -> [u8; 2] {
+        self.length_as_bytes
+    }
+
+    fn data(&self) -> &[u8] {
+        self.data.as_slice()
+    }
+
+    fn length(&self) -> u16 {
+        self.length as u16
+    }
+
+    fn length_size(&self) -> u8 {
+        self.length_size
+    }
+}
+
+impl From<NinaNoParams> for NinaAbstractParam {
+    fn from(concrete_param: NinaNoParams) -> NinaAbstractParam {
+        NinaAbstractParam {
+            length_as_bytes: [0, 0],
+            data: Vec::from_slice(concrete_param.data()).unwrap(),
+            length: concrete_param.length(),
+            length_size: 0,
+        }
+    }
+}
+
+impl From<NinaByteParam> for NinaAbstractParam {
+    fn from(concrete_param: NinaByteParam) -> NinaAbstractParam {
+        NinaAbstractParam {
+            length_as_bytes: [concrete_param.length_as_bytes()[0], 0],
+            data: Vec::from_slice(concrete_param.data()).unwrap(),
+            length: concrete_param.length(),
+            length_size: 1,
+        }
+    }
+}
+
+impl From<NinaWordParam> for NinaAbstractParam {
+    fn from(concrete_param: NinaWordParam) -> NinaAbstractParam {
+        NinaAbstractParam {
+            length_as_bytes: [concrete_param.length_as_bytes()[0], 0],
+            data: Vec::from_slice(concrete_param.data()).unwrap(),
+            length: concrete_param.length(),
+            length_size: 1,
+        }
+    }
+}
+
+impl From<NinaSmallArrayParam> for NinaAbstractParam {
+    fn from(concrete_param: NinaSmallArrayParam) -> NinaAbstractParam {
+        NinaAbstractParam {
+            length_as_bytes: [concrete_param.length_as_bytes()[0], 0],
+            data: Vec::from_slice(concrete_param.data()).unwrap(),
+            length: concrete_param.length(),
+            length_size: 1,
+        }
+    }
+}
+
+impl From<NinaLargeArrayParam> for NinaAbstractParam {
+    fn from(concrete_param: NinaLargeArrayParam) -> NinaAbstractParam {
+        NinaAbstractParam {
+            length_as_bytes: concrete_param.length_as_bytes(),
+            data: Vec::from_slice(concrete_param.data()).unwrap(),
+            length: concrete_param.length(),
+            length_size: 2,
+        }
+    }
+}
+
+impl NinaConcreteParam for NinaByteParam {
     type LengthAsBytes = [u8; 1];
 
     fn new(data: &str) -> Self {
@@ -129,7 +221,7 @@ impl NinaParam for NinaByteParam {
     }
 }
 
-impl NinaParam for NinaWordParam {
+impl NinaConcreteParam for NinaWordParam {
     type LengthAsBytes = [u8; 1];
 
     fn new(data: &str) -> Self {
@@ -162,7 +254,7 @@ impl NinaParam for NinaWordParam {
     }
 }
 
-impl NinaParam for NinaSmallArrayParam {
+impl NinaConcreteParam for NinaSmallArrayParam {
     type LengthAsBytes = [u8; 1];
 
     fn new(data: &str) -> Self {
@@ -195,7 +287,7 @@ impl NinaParam for NinaSmallArrayParam {
     }
 }
 
-impl NinaParam for NinaLargeArrayParam {
+impl NinaConcreteParam for NinaLargeArrayParam {
     type LengthAsBytes = [u8; 2];
 
     fn new(data: &str) -> Self {
