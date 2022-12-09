@@ -1,4 +1,4 @@
-use crate::protocol::NinaCommand;
+use crate::protocol::{NinaAbstractParam, NinaCommand};
 
 use heapless::Vec;
 const MAX_NUMBER_OF_PARAMS: usize = 4;
@@ -13,7 +13,7 @@ pub(crate) struct Operation<P> {
     pub number_of_params_to_receive: u8,
 }
 
-impl<P> Operation<P> {
+impl Operation<NinaAbstractParam> {
     // Initializes new Operation instance.
     //
     // `has_params` defaults to `true`
@@ -29,7 +29,7 @@ impl<P> Operation<P> {
     // Pushes a new param into the internal `params` Vector which
     // builds up an internal byte stream representing one Nina command
     // on the data bus.
-    pub fn param(mut self, param: P) -> Self {
+    pub fn param(mut self, param: NinaAbstractParam) -> Self {
         self.params.push(param).ok().unwrap();
         self
     }
@@ -37,7 +37,7 @@ impl<P> Operation<P> {
     // Used for denoting an Operation where no params are provided.
     //
     // Sets `has_params` to `false`
-    pub fn with_no_params(mut self, no_param: P) -> Self {
+    pub fn with_no_params(mut self, no_param: NinaAbstractParam) -> Self {
         self.params.push(no_param).ok().unwrap();
         self.has_params = false;
         self
