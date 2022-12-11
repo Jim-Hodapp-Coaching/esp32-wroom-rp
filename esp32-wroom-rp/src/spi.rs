@@ -1,12 +1,14 @@
 //! Serial Peripheral Interface (SPI) for Wifi
 
+use crate::protocol::NinaWordParam;
+
 use super::gpio::EspControlInterface;
 use super::protocol::{
-    NinaByteParam, NinaCommand, NinaConcreteParam, NinaNoParams, NinaParam, NinaProtocolHandler,
+    NinaByteParam, NinaCommand, NinaConcreteParam, NinaParam, NinaProtocolHandler,
     NinaSmallArrayParam, ProtocolInterface,
 };
 
-use super::network::{IpAddress, NetworkError, Socket};
+use super::network::{IpAddress, NetworkError, Port, Socket, TransportMode};
 use super::protocol::operation::Operation;
 use super::protocol::ProtocolError;
 use super::wifi::ConnectionStatus;
@@ -154,6 +156,25 @@ where
         let result = self.receive(&operation)?;
 
         Ok(result[0])
+    }
+
+    fn start_client(&mut self, socket: Socket, ip: IpAddress, port: Port, mode: &TransportMode) -> Result<(), Error> {
+        let port_as_bytes = [((port & 0xff00) >> 8) as u8,
+            (port & 0xff) as u8];
+        let operation = Operation::new(NinaCommand::StartClient, 1)
+            .param(NinaSmallArrayParam::from_bytes(&ip).into())
+            .param(NinaWordParam::from_bytes(&port_as_bytes).into())
+            .param(NinaByteParam::from_bytes(&[socket]).into())
+            .param(NinaByteParam::from_bytes(&[*mode as u8]).into());
+        
+        self.execute(&operation)?;
+
+        let result = self.receive(&operation)?;
+        if result[0] == 1 {
+            Ok(())
+        } else {
+            Err(NetworkError::StartClientFailed.into())
+        }
     }
 }
 

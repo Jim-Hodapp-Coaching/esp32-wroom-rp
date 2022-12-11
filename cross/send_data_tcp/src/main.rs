@@ -31,7 +31,8 @@ use hal::gpio::{
 use hal::{clocks::Clock, pac, spi::Enabled};
 
 use esp32_wroom_rp::{
-    gpio::EspControlPins, network::IpAddress, wifi::ConnectionStatus, wifi::Wifi, Error, tcp_client::TcpClient
+    gpio::EspControlPins, network::IpAddress, network::Port, network::TransportMode,
+    wifi::ConnectionStatus, wifi::Wifi, Error, tcp_client::TcpClient
 };
 
 /// The linker will place this boot block at the start of our program image. We
@@ -144,11 +145,14 @@ fn main() -> ! {
 
                     defmt::info!("set_dns result: {:?}", dns_result);
 
-                    let hostname = "github.com";
+                    let _hostname = "github.com";
+
                     let ip_address: IpAddress = [18, 195, 85, 27];
+                    let port: Port = 80;
+                    let mode: TransportMode = TransportMode::Tcp;
 
                     TcpClient::build(&mut wifi)
-                        .connect(ip_address, |tcp_client| {
+                        .connect(ip_address, port, mode, |tcp_client| {
                             defmt::info!("server_ip_address: {:?}", tcp_client.server_ip_address());
                             defmt::info!("hostname: {:?}", tcp_client.server_hostname());
                             defmt::info!("Socket: {:?}", tcp_client.socket());
