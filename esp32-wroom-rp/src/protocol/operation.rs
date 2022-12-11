@@ -14,9 +14,11 @@ pub(crate) struct Operation<P> {
 }
 
 impl Operation<NinaAbstractParam> {
-    // Initializes new Operation instance.
+    // Initializes a new Operation instance with a specified command.
     //
-    // `has_params` defaults to `true`
+    // `number_of_nina_params_to_receive` specifies how many return parameters to expect
+    // when the NINA firmware replies to the command specified in `NinaCommand`.
+    // `has_params` defaults to `false` which allows for a NINA command with no parameters
     pub fn new(nina_command: NinaCommand, number_of_nina_params_to_receive: u8) -> Self {
         Self {
             params: Vec::new(),

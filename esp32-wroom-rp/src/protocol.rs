@@ -6,7 +6,7 @@ use defmt::{write, Format, Formatter};
 
 use heapless::{String, Vec};
 
-use super::network::{IpAddress, Socket};
+use super::network::{IpAddress, Port, Socket, TransportMode};
 use super::wifi::ConnectionStatus;
 use super::{Error, FirmwareVersion};
 
@@ -17,13 +17,14 @@ pub(crate) const MAX_NINA_PARAM_LENGTH: usize = 255;
 #[repr(u8)]
 #[derive(Copy, Clone, Debug)]
 pub(crate) enum NinaCommand {
-    GetFwVersion = 0x37u8,
     SetPassphrase = 0x11u8,
-    GetConnStatus = 0x20u8,
-    Disconnect = 0x30u8,
     SetDNSConfig = 0x15u8,
+    GetConnStatus = 0x20u8,
+    StartClient = 0x2du8,
+    Disconnect = 0x30u8,
     ReqHostByName = 0x34u8,
     GetHostByName = 0x35u8,
+    GetFwVersion = 0x37u8,
     GetSocket = 0x3fu8,
 }
 
@@ -334,6 +335,7 @@ pub(crate) trait ProtocolInterface {
     fn get_host_by_name(&mut self) -> Result<[u8; 8], Error>;
     fn resolve(&mut self, hostname: &str) -> Result<IpAddress, Error>;
     fn get_socket(&mut self) -> Result<Socket, Error>;
+    fn start_client(&mut self, socket: Socket, ip: IpAddress, port: Port, mode: &TransportMode) -> Result<(), Error>;
 }
 
 #[derive(Debug)]
