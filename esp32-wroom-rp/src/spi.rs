@@ -46,9 +46,7 @@ where
     }
 
     fn get_fw_version(&mut self) -> Result<FirmwareVersion, Error> {
-        // TODO: improve the ergonomics around with_no_params()
-        let operation = Operation::new(NinaCommand::GetFwVersion, 1)
-            .with_no_params(NinaNoParams::new("").into());
+        let operation = Operation::new(NinaCommand::GetFwVersion, 1);
 
         self.execute(&operation)?;
 
@@ -69,8 +67,7 @@ where
     }
 
     fn get_conn_status(&mut self) -> Result<ConnectionStatus, Error> {
-        let operation = Operation::new(NinaCommand::GetConnStatus, 1)
-            .with_no_params(NinaNoParams::new("").into());
+        let operation = Operation::new(NinaCommand::GetConnStatus, 1);
 
         self.execute(&operation)?;
 
@@ -121,8 +118,7 @@ where
     }
 
     fn get_host_by_name(&mut self) -> Result<[u8; 8], Error> {
-        let operation = Operation::new(NinaCommand::GetHostByName, 1)
-            .with_no_params(NinaNoParams::new("").into());
+        let operation = Operation::new(NinaCommand::GetHostByName, 1);
 
         self.execute(&operation)?;
 
@@ -151,7 +147,7 @@ where
 
     fn get_socket(&mut self) -> Result<Socket, Error> {
         let operation =
-            Operation::new(NinaCommand::GetSocket, 1).with_no_params(NinaNoParams::new("").into());
+            Operation::new(NinaCommand::GetSocket, 1);
 
         self.execute(&operation)?;
 

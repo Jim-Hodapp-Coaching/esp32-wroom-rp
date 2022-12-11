@@ -3,5 +3,5 @@
 //              all example applications
 //
 
-const SSID: &str = "Calebphone";
+const SSID: &str = "";
 const PASSPHRASE: &str = "";

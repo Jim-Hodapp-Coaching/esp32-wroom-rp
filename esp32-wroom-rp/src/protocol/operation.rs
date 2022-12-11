@@ -21,7 +21,7 @@ impl Operation<NinaAbstractParam> {
         Self {
             params: Vec::new(),
             command: nina_command,
-            has_params: true,
+            has_params: false,
             number_of_params_to_receive: number_of_nina_params_to_receive,
         }
     }
@@ -31,15 +31,7 @@ impl Operation<NinaAbstractParam> {
     // on the data bus.
     pub fn param(mut self, param: NinaAbstractParam) -> Self {
         self.params.push(param).ok().unwrap();
-        self
-    }
-
-    // Used for denoting an Operation where no params are provided.
-    //
-    // Sets `has_params` to `false`
-    pub fn with_no_params(mut self, no_param: NinaAbstractParam) -> Self {
-        self.params.push(no_param).ok().unwrap();
-        self.has_params = false;
+        self.has_params = true;
         self
     }
 }
