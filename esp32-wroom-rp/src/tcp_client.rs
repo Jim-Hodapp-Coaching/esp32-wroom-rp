@@ -34,9 +34,9 @@ where
         }
     }
 
-    pub fn connect<F>(mut self, ip: IpAddress, port: Port, mode: TransportMode, f: F)
+    pub fn connect<F>(mut self, ip: IpAddress, port: Port, mode: TransportMode, f: F) -> Self
     where
-        F: Fn(TcpClient<'a, B, C>),
+        F: Fn(&mut TcpClient<'a, B, C>)
     {
         let socket = self.get_socket().unwrap_or_default();
         self.socket = Some(socket);
@@ -44,9 +44,13 @@ where
         self.port = port;
         self.mode = mode;
 
-        self.protocol_handler.start_client(socket, ip, port, &mode);
+        self.protocol_handler.start_client(socket, ip, port, &mode).ok().unwrap();
 
-        f(self)
+        f(&mut self);
+
+        self.protocol_handler.stop_client(socket, &mode).ok().unwrap();
+
+        self
     }
 
     pub fn server_ip_address(&self) -> Option<IpAddress> {
@@ -69,7 +73,7 @@ where
         self.protocol_handler.get_socket()
     }
 
-    pub fn socket(self) -> Socket {
+    pub fn socket(&self) -> Socket {
         self.socket.unwrap()
     }
 }

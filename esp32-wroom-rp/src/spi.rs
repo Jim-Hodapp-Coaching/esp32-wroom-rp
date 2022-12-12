@@ -158,9 +158,8 @@ where
     }
 
     fn start_client(&mut self, socket: Socket, ip: IpAddress, port: Port, mode: &TransportMode) -> Result<(), Error> {
-        let port_as_bytes = [((port & 0xff00) >> 8) as u8,
-            (port & 0xff) as u8];
-        let operation = Operation::new(NinaCommand::StartClient, 1)
+        let port_as_bytes = [((port & 0xff00) >> 8) as u8, (port & 0xff) as u8];
+        let operation = Operation::new(NinaCommand::StartClientTcp, 1)
             .param(NinaSmallArrayParam::from_bytes(&ip).into())
             .param(NinaWordParam::from_bytes(&port_as_bytes).into())
             .param(NinaByteParam::from_bytes(&[socket]).into())
@@ -173,6 +172,22 @@ where
             Ok(())
         } else {
             Err(NetworkError::StartClientFailed.into())
+        }
+    }
+
+    // TODO: passing in TransportMode but not using, for now. It will become a way
+    // of stopping the right kind of client (e.g. TCP, vs UDP)
+    fn stop_client(&mut self, socket: Socket, _mode: &TransportMode) -> Result<(), Error> {
+        let operation = Operation::new(NinaCommand::StopClientTcp, 1)
+            .param(NinaByteParam::from_bytes(&[socket]).into());
+
+        self.execute(&operation)?;
+
+        let result = self.receive(&operation)?;
+        if result[0] == 1 {
+            Ok(())
+        } else {
+            Err(NetworkError::StopClientFailed.into())
         }
     }
 }
