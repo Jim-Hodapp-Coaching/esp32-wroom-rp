@@ -9,19 +9,14 @@ const MAX_NUMBER_OF_PARAMS: usize = 4;
 pub(crate) struct Operation<P> {
     pub params: Vec<P, MAX_NUMBER_OF_PARAMS>,
     pub command: NinaCommand,
-    pub number_of_params_to_receive: u8,
 }
 
 impl Operation<NinaAbstractParam> {
     // Initializes a new Operation instance with a specified command.
-    //
-    // `number_of_nina_params_to_receive` specifies how many return parameters to expect
-    // when the NINA firmware replies to the command specified in `NinaCommand`.
-    pub fn new(nina_command: NinaCommand, number_of_nina_params_to_receive: u8) -> Self {
+    pub fn new(nina_command: NinaCommand) -> Self {
         Self {
             params: Vec::new(),
             command: nina_command,
-            number_of_params_to_receive: number_of_nina_params_to_receive,
         }
     }
 

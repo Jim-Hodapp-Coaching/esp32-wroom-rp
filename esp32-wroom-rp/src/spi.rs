@@ -45,50 +45,51 @@ where
     }
 
     fn get_fw_version(&mut self) -> Result<FirmwareVersion, Error> {
-        let operation = Operation::new(NinaCommand::GetFwVersion, 1);
+        let operation = Operation::new(NinaCommand::GetFwVersion);
 
         self.execute(&operation)?;
 
-        let result = self.receive(&operation)?;
+        let result = self.receive(&operation, 1)?;
 
         Ok(FirmwareVersion::new(result)) // e.g. 1.7.4
     }
 
     fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error> {
-        let operation = Operation::new(NinaCommand::SetPassphrase, 1)
+        let operation = Operation::new(NinaCommand::SetPassphrase)
             .param(NinaSmallArrayParam::new(ssid).into())
             .param(NinaSmallArrayParam::new(passphrase).into());
 
         self.execute(&operation)?;
 
-        self.receive(&operation)?;
+        self.receive(&operation, 1)?;
         Ok(())
     }
 
     fn get_conn_status(&mut self) -> Result<ConnectionStatus, Error> {
-        let operation = Operation::new(NinaCommand::GetConnStatus, 1);
+        let operation = Operation::new(NinaCommand::GetConnStatus);
 
         self.execute(&operation)?;
 
-        let result = self.receive(&operation)?;
+        let result = self.receive(&operation, 1)?;
 
         Ok(ConnectionStatus::from(result[0]))
     }
 
     fn disconnect(&mut self) -> Result<(), Error> {
         let dummy_param = NinaByteParam::from_bytes(&[ControlByte::Dummy as u8]);
-        let operation = Operation::new(NinaCommand::Disconnect, 1).param(dummy_param.into());
+        let operation = Operation::new(NinaCommand::Disconnect)
+            .param(dummy_param.into());
 
         self.execute(&operation)?;
 
-        self.receive(&operation)?;
+        self.receive(&operation, 1)?;
 
         Ok(())
     }
 
     fn set_dns_config(&mut self, ip1: IpAddress, ip2: Option<IpAddress>) -> Result<(), Error> {
         // FIXME: refactor Operation so it can take different NinaParam types
-        let operation = Operation::new(NinaCommand::SetDNSConfig, 1)
+        let operation = Operation::new(NinaCommand::SetDNSConfig)
             // FIXME: first param should be able to be a NinaByteParam:
             .param(NinaByteParam::from_bytes(&[1]).into())
             .param(NinaSmallArrayParam::from_bytes(&ip1).into())
@@ -96,18 +97,18 @@ where
 
         self.execute(&operation)?;
 
-        self.receive(&operation)?;
+        self.receive(&operation, 1)?;
 
         Ok(())
     }
 
     fn req_host_by_name(&mut self, hostname: &str) -> Result<u8, Error> {
-        let operation = Operation::new(NinaCommand::ReqHostByName, 1)
+        let operation = Operation::new(NinaCommand::ReqHostByName)
             .param(NinaSmallArrayParam::new(hostname).into());
 
         self.execute(&operation)?;
 
-        let result = self.receive(&operation)?;
+        let result = self.receive(&operation, 1)?;
 
         if result[0] != 1u8 {
             return Err(NetworkError::DnsResolveFailed.into());
@@ -117,11 +118,11 @@ where
     }
 
     fn get_host_by_name(&mut self) -> Result<[u8; 8], Error> {
-        let operation = Operation::new(NinaCommand::GetHostByName, 1);
+        let operation = Operation::new(NinaCommand::GetHostByName);
 
         self.execute(&operation)?;
 
-        let result = self.receive(&operation)?;
+        let result = self.receive(&operation, 1)?;
 
         Ok(result)
     }
@@ -146,18 +147,18 @@ where
 
     fn get_socket(&mut self) -> Result<Socket, Error> {
         let operation =
-            Operation::new(NinaCommand::GetSocket, 1);
+            Operation::new(NinaCommand::GetSocket);
 
         self.execute(&operation)?;
 
-        let result = self.receive(&operation)?;
+        let result = self.receive(&operation, 1)?;
 
         Ok(result[0])
     }
 
     fn start_client(&mut self, socket: Socket, ip: IpAddress, port: Port, mode: &TransportMode) -> Result<(), Error> {
         let port_as_bytes = [((port & 0xff00) >> 8) as u8, (port & 0xff) as u8];
-        let operation = Operation::new(NinaCommand::StartClientTcp, 1)
+        let operation = Operation::new(NinaCommand::StartClientTcp)
             .param(NinaSmallArrayParam::from_bytes(&ip).into())
             .param(NinaWordParam::from_bytes(&port_as_bytes).into())
             .param(NinaByteParam::from_bytes(&[socket]).into())
@@ -165,7 +166,7 @@ where
         
         self.execute(&operation)?;
 
-        let result = self.receive(&operation)?;
+        let result = self.receive(&operation, 1)?;
         if result[0] == 1 {
             Ok(())
         } else {
@@ -176,12 +177,12 @@ where
     // TODO: passing in TransportMode but not using, for now. It will become a way
     // of stopping the right kind of client (e.g. TCP, vs UDP)
     fn stop_client(&mut self, socket: Socket, _mode: &TransportMode) -> Result<(), Error> {
-        let operation = Operation::new(NinaCommand::StopClientTcp, 1)
+        let operation = Operation::new(NinaCommand::StopClientTcp)
             .param(NinaByteParam::from_bytes(&[socket]).into());
 
         self.execute(&operation)?;
 
-        let result = self.receive(&operation)?;
+        let result = self.receive(&operation, 1)?;
         if result[0] == 1 {
             Ok(())
         } else {
@@ -228,11 +229,12 @@ where
     fn receive<P: NinaParam>(
         &mut self,
         operation: &Operation<P>,
+        expected_num_params: u8
     ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
         self.control_pins.wait_for_esp_select();
 
         let result =
-            self.wait_response_cmd(&operation.command, operation.number_of_params_to_receive);
+            self.wait_response_cmd(&operation.command, expected_num_params);
 
         self.control_pins.esp_deselect();
 
