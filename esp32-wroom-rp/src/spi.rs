@@ -1,6 +1,6 @@
 //! Serial Peripheral Interface (SPI) for Wifi
 
-use crate::protocol::NinaWordParam;
+use crate::protocol::{NinaWordParam, NinaAbstractParam};
 
 use super::gpio::EspControlInterface;
 use super::protocol::{
@@ -8,9 +8,8 @@ use super::protocol::{
     NinaSmallArrayParam, ProtocolInterface,
 };
 
-use super::network::{IpAddress, NetworkError, Port, Socket, TransportMode};
-use super::protocol::operation::Operation;
-use super::protocol::ProtocolError;
+use super::network::{ IpAddress, NetworkError, Port, Socket, TransportMode };
+use super::protocol::{ operation::Operation, ProtocolError };
 use super::wifi::ConnectionStatus;
 use super::{Error, FirmwareVersion, ARRAY_LENGTH_PLACEHOLDER};
 
@@ -184,7 +183,7 @@ where
     fn execute<P: NinaParam>(&mut self, operation: &Operation<P>) -> Result<(), Error> {
         let mut param_size: u16 = 0;
         self.control_pins.wait_for_esp_select();
-        let number_of_params: u8 = if operation.has_params {
+        let number_of_params: u8 = if !operation.params.is_empty() {
             operation.params.len() as u8
         } else {
             0
@@ -192,7 +191,7 @@ where
         let result = self.send_cmd(&operation.command, number_of_params);
 
         // Only send params if they are present
-        if operation.has_params {
+        if !operation.params.is_empty() {
             operation.params.iter().for_each(|param| {
                 self.send_param(param).ok();
                 param_size += param.length();
