@@ -6,7 +6,7 @@ use defmt::{write, Format, Formatter};
 
 use heapless::{String, Vec};
 
-use super::network::{IpAddress, Port, Socket, TransportMode};
+use super::network::{ConnectionState, IpAddress, Port, Socket, TransportMode};
 use super::wifi::ConnectionStatus;
 use super::{Error, FirmwareVersion};
 
@@ -22,6 +22,7 @@ pub(crate) enum NinaCommand {
     GetConnStatus = 0x20u8,
     StartClientTcp = 0x2du8,
     StopClientTcp = 0x2eu8,
+    GetClientStateTcp = 0x2fu8,
     Disconnect = 0x30u8,
     ReqHostByName = 0x34u8,
     GetHostByName = 0x35u8,
@@ -338,6 +339,7 @@ pub(crate) trait ProtocolInterface {
     fn get_socket(&mut self) -> Result<Socket, Error>;
     fn start_client(&mut self, socket: Socket, ip: IpAddress, port: Port, mode: &TransportMode) -> Result<(), Error>;
     fn stop_client(&mut self, socket: Socket, _mode: &TransportMode) -> Result<(), Error>; 
+    fn get_state(&mut self, socket: Socket) -> Result<ConnectionState, Error>; 
 }
 
 #[derive(Debug)]
