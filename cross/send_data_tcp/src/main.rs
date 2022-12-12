@@ -25,14 +25,12 @@ use rp2040_hal as hal;
 
 use embedded_hal::spi::MODE_0;
 use fugit::RateExtU32;
-use hal::gpio::{
-    bank0::Gpio10, bank0::Gpio11, bank0::Gpio2, bank0::Gpio7, FloatingInput, Pin, PushPullOutput,
-};
-use hal::{clocks::Clock, pac, spi::Enabled};
+use hal::gpio::{FloatingInput, PushPullOutput};
+use hal::{clocks::Clock, pac};
 
 use esp32_wroom_rp::{
     gpio::EspControlPins, network::IpAddress, network::Port, network::TransportMode,
-    wifi::ConnectionStatus, wifi::Wifi, Error, tcp_client::TcpClient
+    wifi::ConnectionStatus, wifi::Wifi, tcp_client::TcpClient
 };
 
 /// The linker will place this boot block at the start of our program image. We
@@ -44,14 +42,6 @@ pub static BOOT2: [u8; 256] = rp2040_boot2::BOOT_LOADER_W25Q080;
 /// External high-speed crystal on the Raspberry Pi Pico board is 12 MHz. Adjust
 /// if your board has a different frequency
 const XTAL_FREQ_HZ: u32 = 12_000_000u32;
-
-type Spi = hal::Spi<Enabled, pac::SPI0, 8>;
-type Pins = EspControlPins<
-    Pin<Gpio7, PushPullOutput>,
-    Pin<Gpio2, PushPullOutput>,
-    Pin<Gpio11, PushPullOutput>,
-    Pin<Gpio10, FloatingInput>,
->;
 
 /// Entry point to our bare-metal application.
 ///
@@ -131,11 +121,11 @@ fn main() -> ! {
     loop {
         match wifi.get_connection_status() {
             Ok(status) => {
-                defmt::info!("Get Connection Result: {:?}", status);
+                defmt::info!("Connection status: {:?}", status);
                 delay.delay_ms(sleep);
 
                 if status == ConnectionStatus::Connected {
-                    defmt::info!("Connected to Network: {:?}", SSID);
+                    defmt::info!("Connected to network: {:?}", SSID);
 
                     // The IPAddresses of two DNS servers to resolve hostnames with.
                     // Note that failover from ip1 to ip2 is fully functional.
@@ -161,9 +151,9 @@ fn main() -> ! {
                             //   this is where you send/receive with a connected TCP socket to a remote server
                         });
 
+                    defmt::info!("Leaving network: {:?}", SSID);
                     wifi.leave().ok();
                 } else if status == ConnectionStatus::Disconnected {
-                    defmt::info!("Disconnected from Network: {:?}", SSID);
                     sleep = 20000; // No need to loop as often after disconnecting
                 }
             }
