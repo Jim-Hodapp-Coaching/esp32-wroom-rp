@@ -20,6 +20,42 @@ pub enum TransportMode {
     TlsBearSsl = 4,
 }
 
+/// Defines all possible TCP connection states for a client or server instance.
+#[repr(u8)]
+#[derive(PartialEq, PartialOrd, Debug)]
+pub enum ConnectionState {
+    Closed = 0,
+    Listening = 1,
+    SynSent = 2,
+    SynReceived = 3,
+    Established = 4,
+    FinWait1 = 5,
+    FinWait2 = 6,
+    CloseWait = 7,
+    Closing = 8,
+    LastAck = 9,
+    TimeWait = 10,
+}
+
+impl From<u8> for ConnectionState {
+    fn from(state: u8) -> ConnectionState {
+        match state {
+            0 => ConnectionState::Closed,
+            1 => ConnectionState::Listening,
+            2 => ConnectionState::SynSent,
+            3 => ConnectionState::SynReceived,
+            4 => ConnectionState::Established,
+            5 => ConnectionState::FinWait1,
+            6 => ConnectionState::FinWait2,
+            7 => ConnectionState::CloseWait,
+            8 => ConnectionState::Closing,
+            9 => ConnectionState::LastAck,
+            10 => ConnectionState::TimeWait,
+            _ => ConnectionState::Closed
+        }
+    }
+}
+
 /// Errors that occur due to issues involving communication over
 /// WiFi network.
 #[derive(PartialEq, Eq, Debug)]

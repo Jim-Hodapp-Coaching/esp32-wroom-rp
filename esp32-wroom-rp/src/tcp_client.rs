@@ -46,6 +46,8 @@ where
 
         self.protocol_handler.start_client(socket, ip, port, &mode).ok().unwrap();
 
+        // TODO: utilize get_state() here to determine when we're connected to the remote TCP server
+
         f(&mut self);
 
         self.protocol_handler.stop_client(socket, &mode).ok().unwrap();
