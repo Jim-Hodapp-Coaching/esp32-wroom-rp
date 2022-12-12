@@ -36,7 +36,7 @@ where
 
     pub fn connect<F>(mut self, ip: IpAddress, port: Port, mode: TransportMode, f: F) -> Self
     where
-        F: Fn(&mut TcpClient<'a, B, C>)
+        F: Fn(&TcpClient<'a, B, C>)
     {
         let socket = self.get_socket().unwrap_or_default();
         self.socket = Some(socket);
@@ -48,7 +48,7 @@ where
 
         // TODO: utilize get_state() here to determine when we're connected to the remote TCP server
 
-        f(&mut self);
+        f(&self);
 
         self.protocol_handler.stop_client(socket, &mode).ok().unwrap();
 
