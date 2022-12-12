@@ -9,7 +9,6 @@ const MAX_NUMBER_OF_PARAMS: usize = 4;
 pub(crate) struct Operation<P> {
     pub params: Vec<P, MAX_NUMBER_OF_PARAMS>,
     pub command: NinaCommand,
-    pub has_params: bool,
     pub number_of_params_to_receive: u8,
 }
 
@@ -18,12 +17,10 @@ impl Operation<NinaAbstractParam> {
     //
     // `number_of_nina_params_to_receive` specifies how many return parameters to expect
     // when the NINA firmware replies to the command specified in `NinaCommand`.
-    // `has_params` defaults to `false` which allows for a NINA command with no parameters
     pub fn new(nina_command: NinaCommand, number_of_nina_params_to_receive: u8) -> Self {
         Self {
             params: Vec::new(),
             command: nina_command,
-            has_params: false,
             number_of_params_to_receive: number_of_nina_params_to_receive,
         }
     }
@@ -32,8 +29,8 @@ impl Operation<NinaAbstractParam> {
     // builds up an internal byte stream representing one Nina command
     // on the data bus.
     pub fn param(mut self, param: NinaAbstractParam) -> Self {
+        // FIXME: Vec::push() will return T when it is full, handle this gracefully
         self.params.push(param).ok().unwrap();
-        self.has_params = true;
         self
     }
 }
