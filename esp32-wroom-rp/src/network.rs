@@ -26,8 +26,10 @@ pub enum TransportMode {
 pub enum NetworkError {
     /// Failed to resolve a hostname for the provided IP address.
     DnsResolveFailed,
-    /// Failed to start up a new TCP/UDP client instancwe.
+    /// Failed to start up a new TCP/UDP client instance.
     StartClientFailed,
+    /// Failed to stop an existing TCP/UDP client instance
+    StopClientFailed,
 }
 
 impl Format for NetworkError {
@@ -43,6 +45,12 @@ impl Format for NetworkError {
                 write!(
                     fmt,
                     "Failed to start up a new TCP/UDP client instance"
+                )
+            }
+            NetworkError::StopClientFailed => {
+                write!(
+                    fmt,
+                    "Failed to stop an existing TCP/UDP client instance"
                 )
             }
         }

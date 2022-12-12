@@ -147,8 +147,9 @@ fn main() -> ! {
 
                     let _hostname = "github.com";
 
-                    let ip_address: IpAddress = [18, 195, 85, 27];
-                    let port: Port = 80;
+                    //let ip_address: IpAddress = [18, 195, 85, 27];
+                    let ip_address: IpAddress = [10, 0, 1, 3];
+                    let port: Port = 4000;
                     let mode: TransportMode = TransportMode::Tcp;
 
                     TcpClient::build(&mut wifi)

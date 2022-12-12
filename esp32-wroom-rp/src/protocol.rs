@@ -20,7 +20,8 @@ pub(crate) enum NinaCommand {
     SetPassphrase = 0x11u8,
     SetDNSConfig = 0x15u8,
     GetConnStatus = 0x20u8,
-    StartClient = 0x2du8,
+    StartClientTcp = 0x2du8,
+    StopClientTcp = 0x2eu8,
     Disconnect = 0x30u8,
     ReqHostByName = 0x34u8,
     GetHostByName = 0x35u8,
@@ -336,6 +337,7 @@ pub(crate) trait ProtocolInterface {
     fn resolve(&mut self, hostname: &str) -> Result<IpAddress, Error>;
     fn get_socket(&mut self) -> Result<Socket, Error>;
     fn start_client(&mut self, socket: Socket, ip: IpAddress, port: Port, mode: &TransportMode) -> Result<(), Error>;
+    fn stop_client(&mut self, socket: Socket, _mode: &TransportMode) -> Result<(), Error>; 
 }
 
 #[derive(Debug)]
