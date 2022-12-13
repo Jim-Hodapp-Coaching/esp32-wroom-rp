@@ -67,10 +67,7 @@ where
         self.port = port;
         self.mode = mode;
 
-        self.protocol_handler
-            .start_client_tcp(socket, ip, port, &mode)
-            .ok()
-            .unwrap();
+        self.protocol_handler.start_client_tcp(socket, ip, port, &mode)?;
 
         // FIXME: without this delay, we'll frequently see timing issues and receive
         // a CmdResponseErr. We may not be handling busy/ack flag handling properly
@@ -85,23 +82,18 @@ where
                 Ok(ConnectionState::Established) => {
                     f(&self);
 
-                    self.protocol_handler
-                        .stop_client_tcp(socket, &mode)
-                        .ok()
-                        .unwrap();
+                    self.protocol_handler.stop_client_tcp(socket, &mode)?;
+
                     return Ok(());
                 }
                 Ok(status) => {
-                    defmt::debug!("TCP Client Connection Status: {:?}", status);
+                    defmt::debug!("TCP client connection status: {:?}", status);
                 }
                 Err(error) => {
                     // At this point any error will likely be a protocol level error.
                     // We do not currently consider any ConnectionState variants as errors.
-                    defmt::debug!("TCP Client Connection Error: {:?}", error);
-                    self.protocol_handler
-                        .stop_client_tcp(socket, &mode)
-                        .ok()
-                        .unwrap();
+                    defmt::error!("TCP client connection error: {:?}", error);
+                    self.protocol_handler.stop_client_tcp(socket, &mode)?;
 
                     return Err(error);
                 }
@@ -110,10 +102,7 @@ where
             retry_limit -= 1;
         }
 
-        self.protocol_handler
-            .stop_client_tcp(socket, &mode)
-            .ok()
-            .unwrap();
+        self.protocol_handler.stop_client_tcp(socket, &mode)?;
 
         Err(TcpError::Timeout.into())
     }

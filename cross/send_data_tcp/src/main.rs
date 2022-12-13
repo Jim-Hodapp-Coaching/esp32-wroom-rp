@@ -138,19 +138,19 @@ fn main() -> ! {
                     let _hostname = "github.com";
 
                     //let ip_address: IpAddress = [18, 195, 85, 27];
-                    let ip_address: IpAddress = [10, 0, 1, 3];
+                    let ip_address: IpAddress = [10, 0, 1, 4];
                     let port: Port = 4000;
                     let mode: TransportMode = TransportMode::Tcp;
 
                     if let Err(e) = TcpClient::build(&mut wifi)
                         .connect(ip_address, port, mode, &mut delay, |tcp_client| {
-                            defmt::info!("TCP Connection to {:?}:{:?} successful", ip_address, port);
+                            defmt::info!("TCP connection to {:?}:{:?} successful", ip_address, port);
                             defmt::info!("hostname: {:?}", tcp_client.server_hostname());
                             defmt::info!("Socket: {:?}", tcp_client.socket());
 
                             //   this is where you send/receive with a connected TCP socket to a remote server
                         }) {
-                            defmt::info!("TCP Connection to {:?}:{:?} Failed: {:?}", ip_address, port, e);
+                            defmt::error!("TCP connection to {:?}:{:?} failed: {:?}", ip_address, port, e);
                         }
 
                     defmt::info!("Leaving network: {:?}", SSID);
@@ -160,7 +160,7 @@ fn main() -> ! {
                 }
             }
             Err(e) => {
-                defmt::info!("Failed to Get Connection Result: {:?}", e);
+                defmt::error!("Failed to get connection result: {:?}", e);
             }
         }
     }
