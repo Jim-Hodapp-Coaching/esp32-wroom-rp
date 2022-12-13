@@ -1,13 +1,29 @@
 use super::Error;
-use crate::{wifi::Wifi};
+use crate::wifi::Wifi;
 
 use super::protocol::NinaProtocolHandler;
 use crate::gpio::EspControlInterface;
 use crate::protocol::ProtocolInterface;
 
-use super::network::{IpAddress, Port, Socket, TransportMode};
+use super::network::{ConnectionState, IpAddress, Port, Socket, TransportMode};
 
+use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::spi::Transfer;
+
+use defmt::{write, Format, Formatter};
+
+#[derive(Debug, Eq, PartialEq)]
+pub enum TcpError {
+    Timeout,
+}
+
+impl Format for TcpError {
+    fn format(&self, fmt: Formatter) {
+        match self {
+            TcpError::Timeout => write!(fmt, "Timeout Connecting to TCP Server"),
+        }
+    }
+}
 
 pub struct TcpClient<'a, B, C> {
     pub(crate) protocol_handler: &'a mut NinaProtocolHandler<B, C>,
@@ -34,9 +50,16 @@ where
         }
     }
 
-    pub fn connect<F>(mut self, ip: IpAddress, port: Port, mode: TransportMode, f: F) -> Self
+    pub fn connect<F, D: DelayMs<u16>>(
+        mut self,
+        ip: IpAddress,
+        port: Port,
+        mode: TransportMode,
+        delay: &mut D,
+        f: F,
+    ) -> Result<(), Error>
     where
-        F: Fn(&TcpClient<'a, B, C>)
+        F: Fn(&TcpClient<'a, B, C>),
     {
         let socket = self.get_socket().unwrap_or_default();
         self.socket = Some(socket);
@@ -44,15 +67,55 @@ where
         self.port = port;
         self.mode = mode;
 
-        self.protocol_handler.start_client(socket, ip, port, &mode).ok().unwrap();
+        self.protocol_handler
+            .start_client_tcp(socket, ip, port, &mode)
+            .ok()
+            .unwrap();
 
-        // TODO: utilize get_state() here to determine when we're connected to the remote TCP server
+        // FIXME: without this delay, we'll frequently see timing issues and receive
+        // a CmdResponseErr. We may not be handling busy/ack flag handling properly
+        // and needs further investigation. I suspect that the ESP32 isn't ready to
+        // receive another command yet. (copied this from POC)
+        delay.delay_ms(250);
 
-        f(&self);
+        let mut retry_limit = 10_000;
 
-        self.protocol_handler.stop_client(socket, &mode).ok().unwrap();
+        while retry_limit > 0 {
+            match self.protocol_handler.get_client_state_tcp(socket) {
+                Ok(ConnectionState::Established) => {
+                    f(&self);
 
-        self
+                    self.protocol_handler
+                        .stop_client_tcp(socket, &mode)
+                        .ok()
+                        .unwrap();
+                    return Ok(());
+                }
+                Ok(status) => {
+                    defmt::debug!("TCP Client Connection Status: {:?}", status);
+                }
+                Err(error) => {
+                    // At this point any error will likely be a protocol level error.
+                    // We do not currently consider any ConnectionState variants as errors.
+                    defmt::debug!("TCP Client Connection Error: {:?}", error);
+                    self.protocol_handler
+                        .stop_client_tcp(socket, &mode)
+                        .ok()
+                        .unwrap();
+
+                    return Err(error);
+                }
+            }
+            delay.delay_ms(100);
+            retry_limit -= 1;
+        }
+
+        self.protocol_handler
+            .stop_client_tcp(socket, &mode)
+            .ok()
+            .unwrap();
+
+        Err(TcpError::Timeout.into())
     }
 
     pub fn server_ip_address(&self) -> Option<IpAddress> {

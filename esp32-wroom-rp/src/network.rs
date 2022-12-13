@@ -51,7 +51,25 @@ impl From<u8> for ConnectionState {
             8 => ConnectionState::Closing,
             9 => ConnectionState::LastAck,
             10 => ConnectionState::TimeWait,
-            _ => ConnectionState::Closed
+            _ => ConnectionState::Closed,
+        }
+    }
+}
+
+impl Format for ConnectionState {
+    fn format(&self, fmt: Formatter) {
+        match self {
+            ConnectionState::Closed => write!(fmt, "Connection Closed"),
+            ConnectionState::Listening => write!(fmt, "Connection Listening"),
+            ConnectionState::SynSent => write!(fmt, "Connection SynSent"),
+            ConnectionState::SynReceived => write!(fmt, "Connection SynRecieved"),
+            ConnectionState::Established => write!(fmt, "Connection Established"),
+            ConnectionState::FinWait1 => write!(fmt, "Connection FinWait1"),
+            ConnectionState::FinWait2 => write!(fmt, "Connection FinWait2"),
+            ConnectionState::CloseWait => write!(fmt, "Connection CloseWait"),
+            ConnectionState::Closing => write!(fmt, "Connection Closing"),
+            ConnectionState::LastAck => write!(fmt, "Connection LastAck"),
+            ConnectionState::TimeWait => write!(fmt, "Connection TimeWait"),
         }
     }
 }
@@ -78,16 +96,10 @@ impl Format for NetworkError {
                 )
             }
             NetworkError::StartClientFailed => {
-                write!(
-                    fmt,
-                    "Failed to start up a new TCP/UDP client instance"
-                )
+                write!(fmt, "Failed to start up a new TCP/UDP client instance")
             }
             NetworkError::StopClientFailed => {
-                write!(
-                    fmt,
-                    "Failed to stop an existing TCP/UDP client instance"
-                )
+                write!(fmt, "Failed to stop an existing TCP/UDP client instance")
             }
         }
     }

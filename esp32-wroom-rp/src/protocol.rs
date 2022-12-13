@@ -339,9 +339,15 @@ pub(crate) trait ProtocolInterface {
     fn get_host_by_name(&mut self) -> Result<[u8; 8], Error>;
     fn resolve(&mut self, hostname: &str) -> Result<IpAddress, Error>;
     fn get_socket(&mut self) -> Result<Socket, Error>;
-    fn start_client(&mut self, socket: Socket, ip: IpAddress, port: Port, mode: &TransportMode) -> Result<(), Error>;
-    fn stop_client(&mut self, socket: Socket, _mode: &TransportMode) -> Result<(), Error>; 
-    fn get_state(&mut self, socket: Socket) -> Result<ConnectionState, Error>; 
+    fn start_client_tcp(
+        &mut self,
+        socket: Socket,
+        ip: IpAddress,
+        port: Port,
+        mode: &TransportMode,
+    ) -> Result<(), Error>;
+    fn stop_client_tcp(&mut self, socket: Socket, _mode: &TransportMode) -> Result<(), Error>;
+    fn get_client_state_tcp(&mut self, socket: Socket) -> Result<ConnectionState, Error>;
 }
 
 #[derive(Debug)]

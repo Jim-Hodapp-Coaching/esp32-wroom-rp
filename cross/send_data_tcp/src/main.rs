@@ -142,14 +142,16 @@ fn main() -> ! {
                     let port: Port = 4000;
                     let mode: TransportMode = TransportMode::Tcp;
 
-                    TcpClient::build(&mut wifi)
-                        .connect(ip_address, port, mode, |tcp_client| {
-                            defmt::info!("server_ip_address: {:?}", tcp_client.server_ip_address());
+                    if let Err(e) = TcpClient::build(&mut wifi)
+                        .connect(ip_address, port, mode, &mut delay, |tcp_client| {
+                            defmt::info!("TCP Connection to {:?}:{:?} successful", ip_address, port);
                             defmt::info!("hostname: {:?}", tcp_client.server_hostname());
                             defmt::info!("Socket: {:?}", tcp_client.socket());
 
                             //   this is where you send/receive with a connected TCP socket to a remote server
-                        });
+                        }) {
+                            defmt::info!("TCP Connection to {:?}:{:?} Failed: {:?}", ip_address, port, e);
+                        }
 
                     defmt::info!("Leaving network: {:?}", SSID);
                     wifi.leave().ok();

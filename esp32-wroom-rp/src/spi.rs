@@ -1,7 +1,7 @@
 //! Serial Peripheral Interface (SPI) for Wifi
 
 use crate::network::ConnectionState;
-use crate::protocol::{NinaWordParam, NinaAbstractParam};
+use crate::protocol::{NinaAbstractParam, NinaWordParam};
 
 use super::gpio::EspControlInterface;
 use super::protocol::{
@@ -9,8 +9,8 @@ use super::protocol::{
     NinaSmallArrayParam, ProtocolInterface,
 };
 
-use super::network::{ IpAddress, NetworkError, Port, Socket, TransportMode };
-use super::protocol::{ operation::Operation, ProtocolError };
+use super::network::{IpAddress, NetworkError, Port, Socket, TransportMode};
+use super::protocol::{operation::Operation, ProtocolError};
 use super::wifi::ConnectionStatus;
 use super::{Error, FirmwareVersion, ARRAY_LENGTH_PLACEHOLDER};
 
@@ -80,8 +80,7 @@ where
 
     fn disconnect(&mut self) -> Result<(), Error> {
         let dummy_param = NinaByteParam::from_bytes(&[ControlByte::Dummy as u8]);
-        let operation = Operation::new(NinaCommand::Disconnect)
-            .param(dummy_param.into());
+        let operation = Operation::new(NinaCommand::Disconnect).param(dummy_param.into());
 
         self.execute(&operation)?;
 
@@ -149,8 +148,7 @@ where
     }
 
     fn get_socket(&mut self) -> Result<Socket, Error> {
-        let operation =
-            Operation::new(NinaCommand::GetSocket);
+        let operation = Operation::new(NinaCommand::GetSocket);
 
         self.execute(&operation)?;
 
@@ -159,14 +157,20 @@ where
         Ok(result[0])
     }
 
-    fn start_client(&mut self, socket: Socket, ip: IpAddress, port: Port, mode: &TransportMode) -> Result<(), Error> {
+    fn start_client_tcp(
+        &mut self,
+        socket: Socket,
+        ip: IpAddress,
+        port: Port,
+        mode: &TransportMode,
+    ) -> Result<(), Error> {
         let port_as_bytes = [((port & 0xff00) >> 8) as u8, (port & 0xff) as u8];
         let operation = Operation::new(NinaCommand::StartClientTcp)
             .param(NinaSmallArrayParam::from_bytes(&ip).into())
             .param(NinaWordParam::from_bytes(&port_as_bytes).into())
             .param(NinaByteParam::from_bytes(&[socket]).into())
             .param(NinaByteParam::from_bytes(&[*mode as u8]).into());
-        
+
         self.execute(&operation)?;
 
         let result = self.receive(&operation, 1)?;
@@ -179,7 +183,7 @@ where
 
     // TODO: passing in TransportMode but not using, for now. It will become a way
     // of stopping the right kind of client (e.g. TCP, vs UDP)
-    fn stop_client(&mut self, socket: Socket, _mode: &TransportMode) -> Result<(), Error> {
+    fn stop_client_tcp(&mut self, socket: Socket, _mode: &TransportMode) -> Result<(), Error> {
         let operation = Operation::new(NinaCommand::StopClientTcp)
             .param(NinaByteParam::from_bytes(&[socket]).into());
 
@@ -193,13 +197,14 @@ where
         }
     }
 
-    fn get_state(&mut self, socket: Socket) -> Result<ConnectionState, Error> {
+    fn get_client_state_tcp(&mut self, socket: Socket) -> Result<ConnectionState, Error> {
         let operation = Operation::new(NinaCommand::GetClientStateTcp);
 
         self.execute(&operation)?;
 
         let result = self.receive(&operation, 1)?;
-
+        // TODO: Determine whether or not any ConnectionState variants should be considered
+        // an error.
         Ok(ConnectionState::from(result[0]))
     }
 }
@@ -242,12 +247,11 @@ where
     fn receive<P: NinaParam>(
         &mut self,
         operation: &Operation<P>,
-        expected_num_params: u8
+        expected_num_params: u8,
     ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
         self.control_pins.wait_for_esp_select();
 
-        let result =
-            self.wait_response_cmd(&operation.command, expected_num_params);
+        let result = self.wait_response_cmd(&operation.command, expected_num_params);
 
         self.control_pins.esp_deselect();
 
