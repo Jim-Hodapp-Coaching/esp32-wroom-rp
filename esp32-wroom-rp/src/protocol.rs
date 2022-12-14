@@ -30,6 +30,7 @@ pub(crate) enum NinaCommand {
     GetHostByName = 0x35u8,
     GetFwVersion = 0x37u8,
     GetSocket = 0x3fu8,
+    SendDataTcp = 0x44,
 }
 
 pub(crate) trait NinaConcreteParam {
@@ -348,6 +349,11 @@ pub(crate) trait ProtocolInterface {
     ) -> Result<(), Error>;
     fn stop_client_tcp(&mut self, socket: Socket, _mode: &TransportMode) -> Result<(), Error>;
     fn get_client_state_tcp(&mut self, socket: Socket) -> Result<ConnectionState, Error>;
+    fn send_data(
+        &mut self,
+        data: TcpData,
+        socket: Socket,
+    ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error>;
 }
 
 #[derive(Debug)]
