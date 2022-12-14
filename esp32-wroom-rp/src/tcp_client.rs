@@ -1,4 +1,4 @@
-use super::Error;
+use super::{Error, ARRAY_LENGTH_PLACEHOLDER};
 use crate::wifi::Wifi;
 
 use super::protocol::NinaProtocolHandler;
@@ -11,6 +11,13 @@ use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::spi::Transfer;
 
 use defmt::{write, Format, Formatter};
+
+use heapless::String;
+
+// TODO: find a good max length
+const MAX_DATA_LENGTH: usize = 512;
+
+pub type TcpData = String<MAX_DATA_LENGTH>;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum TcpError {
@@ -67,7 +74,8 @@ where
         self.port = port;
         self.mode = mode;
 
-        self.protocol_handler.start_client_tcp(socket, ip, port, &mode)?;
+        self.protocol_handler
+            .start_client_tcp(socket, ip, port, &mode)?;
 
         // FIXME: without this delay, we'll frequently see timing issues and receive
         // a CmdResponseErr. We may not be handling busy/ack flag handling properly
@@ -105,6 +113,11 @@ where
         self.protocol_handler.stop_client_tcp(socket, &mode)?;
 
         Err(TcpError::Timeout.into())
+    }
+
+    pub fn send_data(mut self, data: TcpData) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
+        self.protocol_handler
+            .send_data(data, self.socket.unwrap_or_default())
     }
 
     pub fn server_ip_address(&self) -> Option<IpAddress> {
