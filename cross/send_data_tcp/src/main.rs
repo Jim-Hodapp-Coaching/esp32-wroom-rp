@@ -30,7 +30,7 @@ use hal::{clocks::Clock, pac};
 
 use esp32_wroom_rp::{
     gpio::EspControlPins, network::IpAddress, network::Port, network::TransportMode,
-    wifi::ConnectionStatus, wifi::Wifi, tcp_client::TcpClient
+    tcp_client::Connect, tcp_client::TcpClient, wifi::ConnectionStatus, wifi::Wifi,
 };
 
 /// The linker will place this boot block at the start of our program image. We
@@ -138,20 +138,34 @@ fn main() -> ! {
                     let _hostname = "github.com";
 
                     //let ip_address: IpAddress = [18, 195, 85, 27];
-                    let ip_address: IpAddress = [10, 0, 1, 4];
+                    let ip_address: IpAddress = [10, 0, 1, 3];
                     let port: Port = 4000;
                     let mode: TransportMode = TransportMode::Tcp;
 
-                    if let Err(e) = TcpClient::build(&mut wifi)
-                        .connect(ip_address, port, mode, &mut delay, |tcp_client| {
-                            defmt::info!("TCP connection to {:?}:{:?} successful", ip_address, port);
+                    if let Err(e) = TcpClient::build(&mut wifi).connect(
+                        ip_address,
+                        port,
+                        mode,
+                        &mut delay,
+                        |tcp_client| {
+                            defmt::info!(
+                                "TCP connection to {:?}:{:?} successful",
+                                ip_address,
+                                port
+                            );
                             defmt::info!("hostname: {:?}", tcp_client.server_hostname());
                             defmt::info!("Socket: {:?}", tcp_client.socket());
 
                             //   this is where you send/receive with a connected TCP socket to a remote server
-                        }) {
-                            defmt::error!("TCP connection to {:?}:{:?} failed: {:?}", ip_address, port, e);
-                        }
+                        },
+                    ) {
+                        defmt::error!(
+                            "TCP connection to {:?}:{:?} failed: {:?}",
+                            ip_address,
+                            port,
+                            e
+                        );
+                    }
 
                     defmt::info!("Leaving network: {:?}", SSID);
                     wifi.leave().ok();
