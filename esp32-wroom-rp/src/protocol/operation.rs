@@ -1,7 +1,7 @@
 use crate::protocol::{NinaAbstractParam, NinaCommand};
 
 use heapless::Vec;
-const MAX_NUMBER_OF_PARAMS: usize = 4;
+const MAX_NUMBER_OF_PARAMS: usize = 6;
 
 // Encapsulates all information needed to execute commands against Nina Firmware.
 // along with user supplied data. Ex. SSID, passphrase, etc.
