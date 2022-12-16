@@ -5,14 +5,7 @@ use super::protocol::NinaProtocolHandler;
 use crate::gpio::EspControlInterface;
 use crate::protocol::ProtocolInterface;
 
-use super::network::{
-    ConnectionState,
-    Hostname,
-    IpAddress,
-    Port,
-    Socket,
-    TransportMode
-};
+use super::network::{ConnectionState, Hostname, IpAddress, Port, Socket, TransportMode};
 
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::spi::Transfer;
