@@ -244,7 +244,7 @@ where
         if !operation.params.is_empty() {
             operation.params.iter().for_each(|param| {
                 self.send_param(param).ok();
-                param_size += param.length();
+                param_size += param.length_size() as u16;
             });
 
             self.send_end_cmd().ok();
