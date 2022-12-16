@@ -4,7 +4,7 @@ use defmt::{write, Format, Formatter};
 pub type IpAddress = [u8; 4];
 
 /// A named string slice type representing a network hostname.
-pub type Hostname<'a> = &'static str;
+pub type Hostname<'a> = &'a str;
 
 /// A TCP/UDP network port.
 pub type Port = u16;
