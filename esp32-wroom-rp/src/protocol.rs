@@ -7,7 +7,6 @@ use defmt::{write, Format, Formatter};
 use heapless::{String, Vec};
 
 use super::network::{ConnectionState, IpAddress, Port, Socket, TransportMode};
-use super::tcp_client::TcpData;
 use super::wifi::ConnectionStatus;
 use super::{Error, FirmwareVersion, ARRAY_LENGTH_PLACEHOLDER};
 
@@ -350,7 +349,7 @@ pub(crate) trait ProtocolInterface {
     fn get_client_state_tcp(&mut self, socket: Socket) -> Result<ConnectionState, Error>;
     fn send_data(
         &mut self,
-        data: TcpData,
+        data: &str,
         socket: Socket,
     ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error>;
 }

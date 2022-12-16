@@ -11,7 +11,6 @@ use super::protocol::{
 
 use super::network::{IpAddress, NetworkError, Port, Socket, TransportMode};
 use super::protocol::{operation::Operation, ProtocolError};
-use super::tcp_client::TcpData;
 use super::wifi::ConnectionStatus;
 use super::{Error, FirmwareVersion, ARRAY_LENGTH_PLACEHOLDER};
 
@@ -209,12 +208,12 @@ where
 
     fn send_data(
         &mut self,
-        data: TcpData,
+        data: &str,
         socket: Socket,
     ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
         let operation = Operation::new(NinaCommand::SendDataTcp)
             .param(NinaWordParam::from_bytes(&[socket]).into())
-            .param(NinaLargeArrayParam::new(&data).into());
+            .param(NinaLargeArrayParam::new(data).into());
 
         self.execute(&operation)?;
 

@@ -25,9 +25,6 @@ use heapless::String;
 const MAX_DATA_LENGTH: usize = 512;
 const MAX_HOSTNAME_LENGTH: usize = 255;
 
-// TODO: consider if we should move this type into network.rs
-pub type TcpData = String<MAX_DATA_LENGTH>;
-
 #[derive(Debug, Eq, PartialEq)]
 pub enum TcpError {
     Timeout,
@@ -42,7 +39,7 @@ impl Format for TcpError {
 }
 
 pub trait Connect<'a, S, B, C> {
-    fn connect<F: Fn(&TcpClient<'a, B, C>), D: DelayMs<u16>>(
+    fn connect<F: Fn(&mut TcpClient<'a, B, C>), D: DelayMs<u16>>(
         &mut self,
         server: S,
         port: Port,
@@ -66,7 +63,7 @@ where
     B: Transfer<u8>,
     C: EspControlInterface,
 {
-    fn connect<F: Fn(&TcpClient<'a, B, C>), D: DelayMs<u16>>(
+    fn connect<F: Fn(&mut TcpClient<'a, B, C>), D: DelayMs<u16>>(
         &mut self,
         ip: IpAddress,
         port: Port,
@@ -90,7 +87,7 @@ where
     B: Transfer<u8>,
     C: EspControlInterface,
 {
-    fn connect<F: Fn(&TcpClient<'a, B, C>), D: DelayMs<u16>>(
+    fn connect<F: Fn(&mut TcpClient<'a, B, C>), D: DelayMs<u16>>(
         &mut self,
         server_hostname: Hostname,
         port: Port,
@@ -148,12 +145,12 @@ where
         self.socket.unwrap()
     }
 
-    pub fn send_data(mut self, data: TcpData) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
+    pub fn send_data(&mut self, data: &str) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
         self.protocol_handler
             .send_data(data, self.socket.unwrap_or_default())
     }
 
-    fn connect_common<F: Fn(&TcpClient<'a, B, C>), D: DelayMs<u16>>(
+    fn connect_common<F: Fn(&mut TcpClient<'a, B, C>), D: DelayMs<u16>>(
         &mut self,
         delay: &mut D,
         f: F,
@@ -177,7 +174,7 @@ where
         while retry_limit > 0 {
             match self.protocol_handler.get_client_state_tcp(socket) {
                 Ok(ConnectionState::Established) => {
-                    f(&self);
+                    f(self);
 
                     self.protocol_handler.stop_client_tcp(socket, &mode)?;
 

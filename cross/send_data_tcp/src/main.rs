@@ -24,14 +24,21 @@ use panic_probe as _;
 use rp2040_hal as hal;
 
 use embedded_hal::spi::MODE_0;
+
+use core::fmt::Write;
+
 use fugit::RateExtU32;
 use hal::gpio::{FloatingInput, PushPullOutput};
 use hal::{clocks::Clock, pac};
+
+use heapless::String;
 
 use esp32_wroom_rp::{
     gpio::EspControlPins, network::IpAddress, network::Port, network::TransportMode,
     tcp_client::Connect, tcp_client::TcpClient, wifi::ConnectionStatus, wifi::Wifi,
 };
+
+const MAX_HTTP_DOC_LENGTH: usize = u8::MAX as usize;
 
 /// The linker will place this boot block at the start of our program image. We
 /// need this to help the ROM bootloader get our code up and running.
@@ -138,9 +145,20 @@ fn main() -> ! {
                     let _hostname = "github.com";
 
                     //let ip_address: IpAddress = [18, 195, 85, 27];
-                    let ip_address: IpAddress = [10, 0, 1, 3];
-                    let port: Port = 4000;
+                    // let ip_address: IpAddress = [10, 0, 1, 3];
+                    let ip_address: IpAddress = [140, 82, 114, 3]; // github.com
+                    // let port: Port = 4000;
+                    let port: Port = 443u16; // HTTPS
                     let mode: TransportMode = TransportMode::Tcp;
+
+                    let mut http_document: String<MAX_HTTP_DOC_LENGTH> = String::from("");
+                    write!(http_document, "GET / HTTP/1.1\r\nHost: {}.{}.{}.{}:{}\r\nAccept: */*\r\n\r\n",
+                        ip_address[0],
+                        ip_address[1],
+                        ip_address[2],
+                        ip_address[3],
+                        port
+                    );
 
                     if let Err(e) = TcpClient::build(&mut wifi).connect(
                         ip_address,
@@ -155,8 +173,9 @@ fn main() -> ! {
                             );
                             defmt::info!("hostname: {:?}", tcp_client.server_hostname());
                             defmt::info!("Socket: {:?}", tcp_client.socket());
+                            defmt::info!("Sending HTTP Document: {:?}", http_document.as_str());
+                            tcp_client.send_data(&http_document);
 
-                            //   this is where you send/receive with a connected TCP socket to a remote server
                         },
                     ) {
                         defmt::error!(
