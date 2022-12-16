@@ -5,7 +5,14 @@ use super::protocol::NinaProtocolHandler;
 use crate::gpio::EspControlInterface;
 use crate::protocol::ProtocolInterface;
 
-use super::network::{ConnectionState, IpAddress, Port, Socket, TransportMode};
+use super::network::{
+    ConnectionState,
+    Hostname,
+    IpAddress,
+    Port,
+    Socket,
+    TransportMode
+};
 
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::spi::Transfer;
@@ -18,6 +25,7 @@ use heapless::String;
 const MAX_DATA_LENGTH: usize = 512;
 const MAX_HOSTNAME_LENGTH: usize = 255;
 
+// TODO: consider if we should move this type into network.rs
 pub type TcpData = String<MAX_DATA_LENGTH>;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -77,14 +85,14 @@ where
     }
 }
 
-impl<'a, B, C> Connect<'a, &str, B, C> for TcpClient<'a, B, C>
+impl<'a, B, C> Connect<'a, Hostname<'_>, B, C> for TcpClient<'a, B, C>
 where
     B: Transfer<u8>,
     C: EspControlInterface,
 {
     fn connect<F: Fn(&TcpClient<'a, B, C>), D: DelayMs<u16>>(
         &mut self,
-        server_hostname: &str,
+        server_hostname: Hostname,
         port: Port,
         mode: TransportMode,
         delay: &mut D,

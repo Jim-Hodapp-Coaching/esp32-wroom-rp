@@ -3,6 +3,9 @@ use defmt::{write, Format, Formatter};
 /// A four byte array type alias representing an IP address.
 pub type IpAddress = [u8; 4];
 
+/// A named string slice type representing a network hostname.
+pub type Hostname<'a> = &'static str;
+
 /// A TCP/UDP network port.
 pub type Port = u16;
 
