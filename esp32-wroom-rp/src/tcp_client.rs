@@ -74,7 +74,7 @@ where
         delay: &mut D,
         f: F,
     ) -> Result<(), Error> {
-        let socket = self.get_socket().unwrap_or_default();
+        let socket = self.get_socket()?;
         self.socket = Some(socket);
         self.server_ip_address = Some(ip);
         self.server_hostname = Some(String::new());
@@ -98,7 +98,7 @@ where
         delay: &mut D,
         f: F,
     ) -> Result<(), Error> {
-        let socket = self.get_socket().unwrap_or_default();
+        let socket = self.get_socket()?;
         self.socket = Some(socket);
         self.server_hostname = Some(server_hostname.into()); // into() makes a copy of the &str slice
         self.port = port;
