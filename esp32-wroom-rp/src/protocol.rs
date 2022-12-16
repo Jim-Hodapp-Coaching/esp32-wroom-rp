@@ -351,7 +351,7 @@ pub(crate) trait ProtocolInterface {
     fn get_client_state_tcp(&mut self, socket: Socket) -> Result<ConnectionState, Error>;
     fn send_data(
         &mut self,
-        data: TcpData,
+        data: &str,
         socket: Socket,
     ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error>;
 }
