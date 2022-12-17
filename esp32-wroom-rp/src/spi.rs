@@ -212,7 +212,7 @@ where
         socket: Socket,
     ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
         let operation = Operation::new(NinaCommand::SendDataTcp)
-            .param(NinaWordParam::from_bytes(&[socket]).into())
+            .param(NinaLargeArrayParam::from_bytes(&[socket]).into())
             .param(NinaLargeArrayParam::new(data).into());
 
         self.execute(&operation)?;
@@ -229,7 +229,9 @@ where
     C: EspControlInterface,
 {
     fn execute<P: NinaParam>(&mut self, operation: &Operation<P>) -> Result<(), Error> {
-        let mut param_size: u16 = 0;
+        let mut total_params_length: u16 = 0;
+        let mut total_params_length_size: u16 = 0;
+
         self.control_pins.wait_for_esp_select();
         let number_of_params: u8 = if !operation.params.is_empty() {
             operation.params.len() as u8
@@ -242,15 +244,19 @@ where
         if !operation.params.is_empty() {
             operation.params.iter().for_each(|param| {
                 self.send_param(param).ok();
-                param_size += param.length_size() as u16;
+
+                total_params_length += param.length() as u16;
+                total_params_length_size += param.length_size() as u16;
             });
 
             self.send_end_cmd().ok();
 
             // This is to make sure we align correctly
-            // 4 (start byte, command byte, number of params, end byte) + 1 byte for each param + the sum of all param lengths
+            // 4 (start byte, command byte, number of params as byte, end byte)
+            // + the number of bytes to represent the param length (1 or 2)
+            // + the sum of all param lengths
             // See https://github.com/arduino/nina-fw/blob/master/main/CommandHandler.cpp#L2153 for the actual equation.
-            let command_size: u16 = 4u16 + number_of_params as u16 + param_size;
+            let command_size: u16 = 4u16 + total_params_length_size + total_params_length;
             self.pad_to_multiple_of_4(command_size);
         }
         self.control_pins.esp_deselect();
