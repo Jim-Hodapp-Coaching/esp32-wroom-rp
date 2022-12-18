@@ -162,52 +162,6 @@ fn main() -> ! {
                         port
                     ).ok().unwrap();
 
-                    // let request_path: String<MAX_HTTP_DOC_LENGTH> = String::from("/api/readings/add");
-                    // let mut http_document: String<MAX_HTTP_DOC_LENGTH> = String::from("POST ");
-                    // http_document.push_str(&request_path).ok().unwrap();
-                    // http_document
-                    //     .push_str(" HTTP/1.1\r\nHost: ")
-                    //     .ok()
-                    //     .unwrap();
-                    // let mut host_address_str: String<MAX_HTTP_DOC_LENGTH> = String::new();
-                    // write!(
-                    //     host_address_str,
-                    //     "{}.{}.{}.{}:{:?}\r\n",
-                    //     ip_address[0],
-                    //     ip_address[1],
-                    //     ip_address[2],
-                    //     ip_address[3],
-                    //     port
-                    // )
-                    // .unwrap();
-                    // http_document.push_str(&host_address_str).ok().unwrap();
-                    // http_document
-                    //     .push_str("User-Agent: edge/0.0.1\r\n")
-                    //     .ok()
-                    //     .unwrap();
-                    // http_document.push_str("Accept: */*\r\n").ok().unwrap();
-                    // http_document
-                    //     .push_str("Content-Type: application/json\r\n")
-                    //     .ok()
-                    //     .unwrap();
-                    // let temperature = 22.0;
-                    // let humidity = 35.0;
-                    // let pressure = 9970.0;
-                    // let mut json_str: String<MAX_HTTP_DOC_LENGTH> = String::new();
-                    // write!(json_str,
-                    //     "{{\"temperature\":\"{:.1?}\",\"humidity\":\"{:.1?}\",\"pressure\":\"{:.0?}\",\"dust_concentration\":\"200\",\"air_purity\":\"Low Pollution\"}}\r\n",
-                    //     temperature, humidity, pressure / 100.0
-                    // ).ok().unwrap();
-                    // let mut content_len_str: String<MAX_HTTP_DOC_LENGTH> = String::new();
-                    // write!(content_len_str, "{:?}\r\n", json_str.len())
-                    //     .ok()
-                    //     .unwrap();
-                    // http_document.push_str("Content-Length: ").ok().unwrap();
-                    // http_document.push_str(&content_len_str).ok().unwrap();
-                    // http_document.push_str("\r\n").ok().unwrap();
-                    // http_document.push_str(&json_str).ok().unwrap();
-                    // http_document.push_str("\r\n").ok().unwrap();
-
                     if let Err(e) = TcpClient::build(&mut wifi).connect(
                         hostname,
                         port,
