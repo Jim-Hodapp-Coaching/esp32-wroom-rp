@@ -14,7 +14,7 @@ use super::{Error, FirmwareVersion};
 
 use core::cell::RefCell;
 
-pub(crate) const MAX_NINA_PARAM_LENGTH: usize = 255;
+pub(crate) const MAX_NINA_PARAM_LENGTH: usize = 4096;
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug)]

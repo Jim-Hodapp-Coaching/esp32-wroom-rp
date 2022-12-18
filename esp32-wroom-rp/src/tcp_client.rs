@@ -150,8 +150,14 @@ where
     ) -> Result<(), Error> {
         let socket = self.socket.unwrap_or_default();
         let mode = self.mode;
-        let ip = self.server_ip_address.unwrap_or_default();
+        let mut ip = self.server_ip_address.unwrap_or_default();
+        let hostname = self.server_hostname.as_ref().unwrap();
         let port = self.port;
+
+        if !hostname.is_empty() {
+            ip = self.protocol_handler.resolve(hostname.as_str()).ok().unwrap_or_default();
+            defmt::debug!("Resolved ip: {:?} for hostname: {:?}", ip, hostname.as_str());
+        }
 
         self.protocol_handler
             .start_client_tcp(socket, ip, port, &mode)?;
