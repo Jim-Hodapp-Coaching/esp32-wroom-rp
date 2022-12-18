@@ -38,7 +38,7 @@ use esp32_wroom_rp::{
     tcp_client::Connect, tcp_client::TcpClient, wifi::ConnectionStatus, wifi::Wifi,
 };
 
-const MAX_HTTP_DOC_LENGTH: usize = u8::MAX as usize;
+const MAX_HTTP_DOC_LENGTH: usize = 4096 as usize;
 
 /// The linker will place this boot block at the start of our program image. We
 /// need this to help the ROM bootloader get our code up and running.
@@ -142,49 +142,102 @@ fn main() -> ! {
 
                     defmt::info!("set_dns result: {:?}", dns_result);
 
-                    let _hostname = "github.com";
+                    let hostname = "github.com";
+                    // let ip_address: IpAddress = [140, 82, 114, 3]; // github.com
 
-                    //let ip_address: IpAddress = [18, 195, 85, 27];
-                    // let ip_address: IpAddress = [10, 0, 1, 3];
-                    let ip_address: IpAddress = [140, 82, 114, 3]; // github.com
-                    // let port: Port = 4000;
-                    let port: Port = 443u16; // HTTPS
+                    let port: Port = 80;
                     let mode: TransportMode = TransportMode::Tcp;
 
                     let mut http_document: String<MAX_HTTP_DOC_LENGTH> = String::from("");
-                    write!(http_document, "GET / HTTP/1.1\r\nHost: {}.{}.{}.{}:{}\r\nAccept: */*\r\n\r\n",
-                        ip_address[0],
-                        ip_address[1],
-                        ip_address[2],
-                        ip_address[3],
+                    // write!(http_document, "GET / HTTP/1.1\r\nHost: {}.{}.{}.{}:{}\r\nAccept: */*\r\n\r\n",
+                    //     ip_address[0],
+                    //     ip_address[1],
+                    //     ip_address[2],
+                    //     ip_address[3],
+                    //     port
+                    // ).ok().unwrap();
+
+                    write!(http_document, "GET / HTTP/1.1\r\nHost: {}:{}\r\nAccept: */*\r\n\r\n",
+                        hostname,
                         port
-                    );
+                    ).ok().unwrap();
+
+                    // let request_path: String<MAX_HTTP_DOC_LENGTH> = String::from("/api/readings/add");
+                    // let mut http_document: String<MAX_HTTP_DOC_LENGTH> = String::from("POST ");
+                    // http_document.push_str(&request_path).ok().unwrap();
+                    // http_document
+                    //     .push_str(" HTTP/1.1\r\nHost: ")
+                    //     .ok()
+                    //     .unwrap();
+                    // let mut host_address_str: String<MAX_HTTP_DOC_LENGTH> = String::new();
+                    // write!(
+                    //     host_address_str,
+                    //     "{}.{}.{}.{}:{:?}\r\n",
+                    //     ip_address[0],
+                    //     ip_address[1],
+                    //     ip_address[2],
+                    //     ip_address[3],
+                    //     port
+                    // )
+                    // .unwrap();
+                    // http_document.push_str(&host_address_str).ok().unwrap();
+                    // http_document
+                    //     .push_str("User-Agent: edge/0.0.1\r\n")
+                    //     .ok()
+                    //     .unwrap();
+                    // http_document.push_str("Accept: */*\r\n").ok().unwrap();
+                    // http_document
+                    //     .push_str("Content-Type: application/json\r\n")
+                    //     .ok()
+                    //     .unwrap();
+                    // let temperature = 22.0;
+                    // let humidity = 35.0;
+                    // let pressure = 9970.0;
+                    // let mut json_str: String<MAX_HTTP_DOC_LENGTH> = String::new();
+                    // write!(json_str,
+                    //     "{{\"temperature\":\"{:.1?}\",\"humidity\":\"{:.1?}\",\"pressure\":\"{:.0?}\",\"dust_concentration\":\"200\",\"air_purity\":\"Low Pollution\"}}\r\n",
+                    //     temperature, humidity, pressure / 100.0
+                    // ).ok().unwrap();
+                    // let mut content_len_str: String<MAX_HTTP_DOC_LENGTH> = String::new();
+                    // write!(content_len_str, "{:?}\r\n", json_str.len())
+                    //     .ok()
+                    //     .unwrap();
+                    // http_document.push_str("Content-Length: ").ok().unwrap();
+                    // http_document.push_str(&content_len_str).ok().unwrap();
+                    // http_document.push_str("\r\n").ok().unwrap();
+                    // http_document.push_str(&json_str).ok().unwrap();
+                    // http_document.push_str("\r\n").ok().unwrap();
 
                     if let Err(e) = TcpClient::build(&mut wifi).connect(
-                        ip_address,
+                        hostname,
                         port,
                         mode,
                         &mut delay,
                         |tcp_client| {
                             defmt::info!(
                                 "TCP connection to {:?}:{:?} successful",
-                                ip_address,
+                                hostname,
                                 port
                             );
-                            defmt::info!("hostname: {:?}", tcp_client.server_hostname());
+                            defmt::info!("Hostname: {:?}", tcp_client.server_hostname());
                             defmt::info!("Socket: {:?}", tcp_client.socket());
                             defmt::info!("Sending HTTP Document: {:?}", http_document.as_str());
-                            tcp_client.send_data(&http_document);
+                            match tcp_client.send_data(&http_document) {
+                                Ok(response) => { defmt::info!("Response: {:?}", response) }
+                                Err(e) => { defmt::error!("Response error: {:?}", e) }
+                            }
 
                         },
                     ) {
                         defmt::error!(
                             "TCP connection to {:?}:{:?} failed: {:?}",
-                            ip_address,
+                            hostname,
                             port,
                             e
                         );
                     }
+
+                    delay.delay_ms(100);
 
                     defmt::info!("Leaving network: {:?}", SSID);
                     wifi.leave().ok();
