@@ -1,12 +1,11 @@
 //! Serial Peripheral Interface (SPI) for Wifi
 
 use crate::network::ConnectionState;
-use crate::protocol::{NinaAbstractParam, NinaWordParam};
 
 use super::gpio::EspControlInterface;
 use super::protocol::{
     NinaByteParam, NinaCommand, NinaConcreteParam, NinaLargeArrayParam, NinaParam,
-    NinaProtocolHandler, NinaSmallArrayParam, ProtocolInterface,
+    NinaProtocolHandler, NinaSmallArrayParam, NinaWordParam, ProtocolInterface,
 };
 
 use super::network::{IpAddress, NetworkError, Port, Socket, TransportMode};
@@ -198,7 +197,8 @@ where
     }
 
     fn get_client_state_tcp(&mut self, socket: Socket) -> Result<ConnectionState, Error> {
-        let operation = Operation::new(NinaCommand::GetClientStateTcp);
+        let operation = Operation::new(NinaCommand::GetClientStateTcp)
+            .param(NinaByteParam::from_bytes(&[socket]).into());
 
         self.execute(&operation)?;
 

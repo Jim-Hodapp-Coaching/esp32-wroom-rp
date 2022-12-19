@@ -263,6 +263,8 @@ where
         self.protocol_handler.borrow_mut().resolve(hostname)
     }
 
+    /// Provides a reference to the `Spi` bus instance typically used when cleaning up
+    /// an instance of `Wifi`.
     pub fn destroy(self) -> S {
         self.protocol_handler.into_inner().bus.into_inner()
     }

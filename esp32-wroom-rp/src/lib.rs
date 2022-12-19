@@ -98,13 +98,11 @@ pub mod protocol;
 
 mod spi;
 
-use network::{IpAddress, NetworkError};
+use network::NetworkError;
 use protocol::ProtocolError;
 use tcp_client::TcpError;
 
 use defmt::{write, Format, Formatter};
-
-use self::wifi::ConnectionStatus;
 
 const ARRAY_LENGTH_PLACEHOLDER: usize = 8;
 

@@ -31,7 +31,11 @@ impl Format for TcpError {
     }
 }
 
+/// Connect trait that allows for a `TcpClient` instance to connect to a remote
+/// server by providing either a `Hostname` or an `IpAddress`. This trait also
+/// makes it possible to implement and support IPv6 addresses.
 pub trait Connect<'a, S, B, C> {
+    /// Connects to `server` on `port` using transport layer `mode`.
     fn connect<F: Fn(&mut TcpClient<'a, B, C>), D: DelayMs<u16>>(
         &mut self,
         server: S,
@@ -42,6 +46,8 @@ pub trait Connect<'a, S, B, C> {
     ) -> Result<(), Error>;
 }
 
+/// A client that connects to and performs send/receive operations with a remote
+/// server using the TCP protocol.
 pub struct TcpClient<'a, B, C> {
     pub(crate) protocol_handler: &'a mut NinaProtocolHandler<B, C>,
     pub(crate) socket: Option<Socket>,
@@ -103,6 +109,7 @@ where
     B: Transfer<u8>,
     C: EspControlInterface,
 {
+    /// Builds a new instance of a `TcpClient` provided a `Wifi` instance.
     pub fn build(wifi: &'a mut Wifi<B, C>) -> Self {
         Self {
             protocol_handler: wifi.protocol_handler.get_mut(),
@@ -114,35 +121,48 @@ where
         }
     }
 
+    /// Returns `IpAddress` of the remote server to communicate with that is
+    /// set by calling `connect()`.
     pub fn server_ip_address(&self) -> Option<IpAddress> {
         self.server_ip_address
     }
 
+    /// Returns `Hostname` of the remote server to communicate with that is
+    /// set by calling `connect()`.
     pub fn server_hostname(&self) -> &str {
         self.server_hostname.as_ref().unwrap().as_str()
     }
 
+    /// Returns `Port` of the remote server to communicate with that is
+    /// set by calling `connect()`.
     pub fn port(&self) -> Port {
         self.port
     }
 
+    /// Returns `TransportMode` used in communication with the remote server that is
+    /// set by calling `connect()`.
     pub fn mode(&self) -> TransportMode {
         self.mode
     }
 
+    // TODO: Make this non-public
     pub fn get_socket(&mut self) -> Result<Socket, Error> {
         self.protocol_handler.get_socket()
     }
 
+    // TODO: Make this non-public
     pub fn socket(&self) -> Socket {
         self.socket.unwrap()
     }
 
+    /// Sends a string slice of data to a connected server.
     pub fn send_data(&mut self, data: &str) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
         self.protocol_handler
             .send_data(data, self.socket.unwrap_or_default())
     }
 
+    // Provides the in-common connect() functionality used by the public interface's
+    // connect(ip_address) or connect(hostname) instances.
     fn connect_common<F: Fn(&mut TcpClient<'a, B, C>), D: DelayMs<u16>>(
         &mut self,
         delay: &mut D,
