@@ -18,8 +18,6 @@ use embedded_hal::blocking::spi::Transfer;
 
 use core::convert::Infallible;
 
-use super::wifi::ConnectionStatus;
-
 // TODO: this should eventually move into NinaCommandHandler
 #[repr(u8)]
 #[derive(Debug)]

@@ -175,8 +175,16 @@ where
         let port = self.port;
 
         if !hostname.is_empty() {
-            ip = self.protocol_handler.resolve(hostname.as_str()).ok().unwrap_or_default();
-            defmt::debug!("Resolved ip: {:?} for hostname: {:?}", ip, hostname.as_str());
+            ip = self
+                .protocol_handler
+                .resolve(hostname.as_str())
+                .ok()
+                .unwrap_or_default();
+            defmt::debug!(
+                "Resolved ip: {:?} for hostname: {:?}",
+                ip,
+                hostname.as_str()
+            );
         }
 
         self.protocol_handler

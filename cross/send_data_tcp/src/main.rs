@@ -157,10 +157,13 @@ fn main() -> ! {
                     //     port
                     // ).ok().unwrap();
 
-                    write!(http_document, "GET / HTTP/1.1\r\nHost: {}:{}\r\nAccept: */*\r\n\r\n",
-                        hostname,
-                        port
-                    ).ok().unwrap();
+                    write!(
+                        http_document,
+                        "GET / HTTP/1.1\r\nHost: {}:{}\r\nAccept: */*\r\n\r\n",
+                        hostname, port
+                    )
+                    .ok()
+                    .unwrap();
 
                     if let Err(e) = TcpClient::build(&mut wifi).connect(
                         hostname,
@@ -168,19 +171,18 @@ fn main() -> ! {
                         mode,
                         &mut delay,
                         |tcp_client| {
-                            defmt::info!(
-                                "TCP connection to {:?}:{:?} successful",
-                                hostname,
-                                port
-                            );
+                            defmt::info!("TCP connection to {:?}:{:?} successful", hostname, port);
                             defmt::info!("Hostname: {:?}", tcp_client.server_hostname());
                             defmt::info!("Socket: {:?}", tcp_client.socket());
                             defmt::info!("Sending HTTP Document: {:?}", http_document.as_str());
                             match tcp_client.send_data(&http_document) {
-                                Ok(response) => { defmt::info!("Response: {:?}", response) }
-                                Err(e) => { defmt::error!("Response error: {:?}", e) }
+                                Ok(response) => {
+                                    defmt::info!("Response: {:?}", response)
+                                }
+                                Err(e) => {
+                                    defmt::error!("Response error: {:?}", e)
+                                }
                             }
-
                         },
                     ) {
                         defmt::error!(

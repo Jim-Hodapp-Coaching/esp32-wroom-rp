@@ -6,11 +6,11 @@ use defmt::{write, Format, Formatter};
 
 use heapless::{String, Vec};
 
-use super::network::{IpAddress, Port, Socket, TransportMode};
+use super::network::{ConnectionState, IpAddress, Port, Socket, TransportMode};
 
 use super::wifi::ConnectionStatus;
 
-use super::{Error, FirmwareVersion};
+use super::{Error, FirmwareVersion, ARRAY_LENGTH_PLACEHOLDER};
 
 use core::cell::RefCell;
 
