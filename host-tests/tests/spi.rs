@@ -3,7 +3,6 @@ use embedded_hal_mock::spi;
 
 use esp32_wroom_rp::gpio::EspControlInterface;
 use esp32_wroom_rp::wifi::Wifi;
-
 struct EspControlMock {}
 
 impl EspControlInterface for EspControlMock {
