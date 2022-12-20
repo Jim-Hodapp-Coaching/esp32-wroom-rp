@@ -115,7 +115,7 @@ fn main() -> ! {
 
     defmt::info!("Entering main loop");
 
-    let mut sleep: u32 = 1500;
+    let sleep: u32 = 1500;
     loop {
         match wifi.get_connection_status() {
             Ok(status) => {

@@ -171,7 +171,11 @@ fn main() -> ! {
                         mode,
                         &mut delay,
                         |tcp_client| {
-                            defmt::info!("TCP connection to {:?}:{:?} successful", hostname, port);
+                            defmt::info!(
+                                "TCP connection to {:?}:{:?} successful",
+                                hostname,
+                                port
+                            );
                             defmt::info!("Hostname: {:?}", tcp_client.server_hostname());
                             defmt::info!("Socket: {:?}", tcp_client.socket());
                             defmt::info!("Sending HTTP Document: {:?}", http_document.as_str());
