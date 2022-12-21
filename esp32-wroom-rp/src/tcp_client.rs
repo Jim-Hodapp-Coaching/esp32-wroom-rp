@@ -202,7 +202,7 @@ where
 
                     return Ok(());
                 }
-                Ok(status) => {
+                Ok(_status) => {
                     delay.delay_ms(100);
                     retry_limit -= 1;
                 }

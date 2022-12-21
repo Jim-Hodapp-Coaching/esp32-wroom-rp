@@ -33,28 +33,62 @@ pub fn mock_command(command_byte: u8, number_of_params: u8) -> Vec<spi::Transact
         // send start byte
         spi::Transaction::transfer(vec![0xe0], vec![0x0]),
         // send command byte
-        spi::Transaction::transfer(vec![command_byte], vec![0x0]),
+        spi::Transaction::transfer(vec![command_and_reply_byte(command_byte)], vec![0x0]),
         // send number of params
         spi::Transaction::transfer(vec![number_of_params], vec![0x0]),
+    ]
+}
+
+pub fn mock_single_byte_size_params(
+    number_of_param_bytes: u8,
+    byte_value: u8,
+) -> Vec<spi::Transaction> {
+    let mut expectations = vec![spi::Transaction::transfer(
+        vec![number_of_param_bytes],
+        vec![0x0],
+    )];
+
+    for _ in 0..number_of_param_bytes {
+        expectations.push(spi::Transaction::transfer(vec![byte_value], vec![0x0]));
+    }
+
+    expectations
+}
+
+pub fn mock_padding(number_of_padding_bytes: u8) -> Vec<spi::Transaction> {
+    let mut expectations = Vec::new();
+    for _ in 0..number_of_padding_bytes {
+        expectations.push(spi::Transaction::transfer(vec![0xff], vec![0x0]));
+    }
+
+    expectations
+}
+
+pub fn mock_end_byte() -> Vec<spi::Transaction> {
+    vec![
         // send end command byte
         spi::Transaction::transfer(vec![0xee], vec![0x0]),
     ]
 }
 
-fn mock_response(command_byte: u8, number_of_params_to_receive: u8) -> Vec<spi::Transaction> {
+pub fn mock_receive(
+    command_byte: u8,
+    number_of_params_to_receive: u8,
+    value_to_receive: u8,
+) -> Vec<spi::Transaction> {
     vec![
         // wait_response_cmd()
         // read start command
         spi::Transaction::transfer(vec![0xff], vec![0xe0]),
         // read command byte | reply byte
-        spi::Transaction::transfer(vec![command_reply_byte(command_byte)], vec![0xbf]),
+        spi::Transaction::transfer(vec![0xff], vec![command_or_reply_byte(command_byte)]),
         // read number of params to receive
-        spi::Transaction::transfer(vec![number_of_params_to_receive], vec![0x1]),
+        spi::Transaction::transfer(vec![0xff], vec![number_of_params_to_receive]),
         // test relies on max number of parameters being 8. This will probably change
         // as we understand more.
         spi::Transaction::transfer(vec![0xff], vec![0x8]),
         // read full 8 byte buffer
-        spi::Transaction::transfer(vec![0xff], vec![0xff]),
+        spi::Transaction::transfer(vec![0xff], vec![value_to_receive]),
         spi::Transaction::transfer(vec![0xff], vec![0xff]),
         spi::Transaction::transfer(vec![0xff], vec![0xff]),
         spi::Transaction::transfer(vec![0xff], vec![0xff]),
@@ -67,6 +101,10 @@ fn mock_response(command_byte: u8, number_of_params_to_receive: u8) -> Vec<spi::
     ]
 }
 
-pub fn command_reply_byte(command: u8) -> u8 {
+pub fn command_or_reply_byte(command: u8) -> u8 {
     command | 0x80
+}
+
+pub fn command_and_reply_byte(command: u8) -> u8 {
+    (command as u8) & !(0x80 as u8)
 }

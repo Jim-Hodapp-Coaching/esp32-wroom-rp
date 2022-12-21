@@ -13,12 +13,14 @@ fn too_many_parameters_error() {
     let number_of_params = 0x0;
     let mut expectations = mock_command(command, number_of_params);
 
+    expectations.append(&mut mock_end_byte());
+
     let mut too_man_parameters_expectations = vec![
         // wait_response_cmd()
         // read start command
         spi::Transaction::transfer(vec![0xff], vec![0xe0]),
         // read command byte | reply byte
-        spi::Transaction::transfer(vec![0xff], vec![command_reply_byte(command)]),
+        spi::Transaction::transfer(vec![0xff], vec![command_or_reply_byte(command)]),
         // read number of params to receive
         spi::Transaction::transfer(vec![0xff], vec![0x1]),
         // test relies on max number of parameters being 8. This will probably change
@@ -50,12 +52,15 @@ fn invalid_number_of_parameters_error() {
     let command = 0x37;
     let number_of_params = 0x0;
     let mut expectations = mock_command(command, number_of_params);
+
+    expectations.append(&mut mock_end_byte());
+
     let mut invalid_number_of_parameters_expactations = vec![
         // wait_response_cmd()
         // read start command
         spi::Transaction::transfer(vec![0xff], vec![0xe0]),
         // read command byte | reply byte
-        spi::Transaction::transfer(vec![0xff], vec![command_reply_byte(command)]),
+        spi::Transaction::transfer(vec![0xff], vec![command_or_reply_byte(command)]),
         // read number of params to receive (should be 1)
         spi::Transaction::transfer(vec![0xff], vec![0x0]),
     ];
@@ -86,6 +91,9 @@ fn invalid_command_induces_invalid_command_error() {
     let command = 0x37;
     let number_of_params = 0x0;
     let mut expectations = mock_command(command, number_of_params);
+
+    expectations.append(&mut mock_end_byte());
+
     let mut invalid_command_expactations = vec![
         // wait_response_cmd()
         // read start command
@@ -118,6 +126,8 @@ fn timeout_induces_communication_timeout_error() {
     let number_of_params = 0x0;
     let mut expectations = mock_command(command, number_of_params);
 
+    expectations.append(&mut mock_end_byte());
+
     // simulate reading 1000 bytes which will exhaust the retry limit.
     for _ in 0..1000 {
         expectations.push(spi::Transaction::transfer(vec![0xff], vec![0x0]))
@@ -147,6 +157,9 @@ fn invalid_command_induces_nina_protocol_version_mismatch_error() {
     let command = 0x37;
     let number_of_params = 0x0;
     let mut expectations = mock_command(command, number_of_params);
+
+    expectations.append(&mut mock_end_byte());
+
     let mut invalid_command_expactations = vec![
         // wait_response_cmd()
         // read start command (should be ee)
