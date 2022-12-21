@@ -1,33 +1,11 @@
 use embedded_hal_mock::delay::MockNoop;
 use embedded_hal_mock::spi;
 
-use esp32_wroom_rp::gpio::EspControlInterface;
 use esp32_wroom_rp::wifi::Wifi;
-struct EspControlMock {}
 
-impl EspControlInterface for EspControlMock {
-    fn init(&mut self) {}
+pub mod support;
 
-    fn reset<D>(&mut self, _delay: &mut D) {}
-
-    fn get_esp_ack(&self) -> bool {
-        true
-    }
-
-    fn wait_for_esp_select(&mut self) {}
-
-    fn wait_for_esp_ack(&self) {}
-
-    fn wait_for_esp_ready(&self) {}
-
-    fn esp_select(&mut self) {}
-
-    fn esp_deselect(&mut self) {}
-
-    fn get_esp_ready(&self) -> bool {
-        true
-    }
-}
+use support::EspControlMock;
 
 #[test]
 fn too_many_parameters_error() {

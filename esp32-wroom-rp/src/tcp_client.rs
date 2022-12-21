@@ -10,9 +10,9 @@ use super::network::{ConnectionState, Hostname, IpAddress, Port, Socket, Transpo
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::spi::Transfer;
 
-use defmt::{write, Format, Formatter};
-
 use heapless::String;
+
+use defmt::{write, Format, Formatter};
 
 // TODO: find a good max length
 const MAX_DATA_LENGTH: usize = 512;
@@ -180,11 +180,6 @@ where
                 .resolve(hostname.as_str())
                 .ok()
                 .unwrap_or_default();
-            defmt::debug!(
-                "Resolved ip: {:?} for hostname: {:?}",
-                ip,
-                hostname.as_str()
-            );
         }
 
         self.protocol_handler
@@ -208,19 +203,17 @@ where
                     return Ok(());
                 }
                 Ok(status) => {
-                    defmt::debug!("TCP client connection status: {:?}", status);
+                    delay.delay_ms(100);
+                    retry_limit -= 1;
                 }
                 Err(error) => {
                     // At this point any error will likely be a protocol level error.
                     // We do not currently consider any ConnectionState variants as errors.
-                    defmt::error!("TCP client connection error: {:?}", error);
                     self.protocol_handler.stop_client_tcp(socket, &mode)?;
 
                     return Err(error);
                 }
             }
-            delay.delay_ms(100);
-            retry_limit -= 1;
         }
 
         self.protocol_handler.stop_client_tcp(socket, &mode)?;
