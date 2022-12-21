@@ -322,7 +322,7 @@ where
             return Err(ProtocolError::TooManyParameters.into());
         }
 
-        let mut params: [u8; ARRAY_LENGTH_PLACEHOLDER] = [0; 8];
+        let mut params: [u8; ARRAY_LENGTH_PLACEHOLDER] = [0; ARRAY_LENGTH_PLACEHOLDER];
         for (index, _param) in params.into_iter().enumerate() {
             params[index] = self.get_byte().ok().unwrap()
         }
