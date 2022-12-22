@@ -36,13 +36,13 @@ impl Format for TcpError {
 /// makes it possible to implement and support IPv6 addresses.
 pub trait Connect<'a, S, B, C> {
     /// Connects to `server` on `port` using transport layer `mode`.
-    fn connect<F: Fn(&mut TcpClient<'a, B, C>), D: DelayMs<u16>>(
+    fn connect<F: FnMut(&mut TcpClient<'a, B, C>), D: DelayMs<u16>>(
         &mut self,
         server: S,
         port: Port,
         mode: TransportMode,
         delay: &mut D,
-        f: F,
+        f: &mut F,
     ) -> Result<(), Error>;
 }
 
@@ -62,13 +62,13 @@ where
     B: Transfer<u8>,
     C: EspControlInterface,
 {
-    fn connect<F: Fn(&mut TcpClient<'a, B, C>), D: DelayMs<u16>>(
+    fn connect<F: FnMut(&mut TcpClient<'a, B, C>), D: DelayMs<u16>>(
         &mut self,
         ip: IpAddress,
         port: Port,
         mode: TransportMode,
         delay: &mut D,
-        f: F,
+        f: &mut F,
     ) -> Result<(), Error> {
         let socket = self.get_socket()?;
         self.socket = Some(socket);
@@ -86,13 +86,13 @@ where
     B: Transfer<u8>,
     C: EspControlInterface,
 {
-    fn connect<F: Fn(&mut TcpClient<'a, B, C>), D: DelayMs<u16>>(
+    fn connect<F: FnMut(&mut TcpClient<'a, B, C>), D: DelayMs<u16>>(
         &mut self,
         server_hostname: Hostname,
         port: Port,
         mode: TransportMode,
         delay: &mut D,
-        f: F,
+        f: &mut F,
     ) -> Result<(), Error> {
         let socket = self.get_socket()?;
         self.socket = Some(socket);
@@ -163,10 +163,10 @@ where
 
     // Provides the in-common connect() functionality used by the public interface's
     // connect(ip_address) or connect(hostname) instances.
-    fn connect_common<F: Fn(&mut TcpClient<'a, B, C>), D: DelayMs<u16>>(
+    fn connect_common<F: FnMut(&mut TcpClient<'a, B, C>), D: DelayMs<u16>>(
         &mut self,
         delay: &mut D,
-        f: F,
+        mut f: F,
     ) -> Result<(), Error> {
         let socket = self.socket.unwrap_or_default();
         let mode = self.mode;

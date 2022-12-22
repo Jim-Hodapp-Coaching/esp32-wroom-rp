@@ -74,9 +74,20 @@ pub fn mock_end_byte() -> Vec<spi::Transaction> {
 pub fn mock_receive(
     command_byte: u8,
     number_of_params_to_receive: u8,
-    value_to_receive: u8,
+    values_to_receive: &[u8],
 ) -> Vec<spi::Transaction> {
-    vec![
+    let mut buffer = vec![0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
+
+    let length_of_values = if values_to_receive.len() > 0 {
+        values_to_receive.len() - 1
+    } else {
+        0
+    };
+
+    // replace buffer values with values from values_to_receive
+    buffer.splice(0..length_of_values, values_to_receive.iter().cloned());
+
+    let mut expectations = vec![
         // wait_response_cmd()
         // read start command
         spi::Transaction::transfer(vec![0xff], vec![0xe0]),
@@ -87,18 +98,12 @@ pub fn mock_receive(
         // test relies on max number of parameters being 8. This will probably change
         // as we understand more.
         spi::Transaction::transfer(vec![0xff], vec![0x8]),
-        // read full 8 byte buffer
-        spi::Transaction::transfer(vec![0xff], vec![value_to_receive]),
-        spi::Transaction::transfer(vec![0xff], vec![0xff]),
-        spi::Transaction::transfer(vec![0xff], vec![0xff]),
-        spi::Transaction::transfer(vec![0xff], vec![0xff]),
-        spi::Transaction::transfer(vec![0xff], vec![0xff]),
-        spi::Transaction::transfer(vec![0xff], vec![0xff]),
-        spi::Transaction::transfer(vec![0xff], vec![0xff]),
-        spi::Transaction::transfer(vec![0xff], vec![0xff]),
-        // read end byte
-        spi::Transaction::transfer(vec![0xff], vec![0xee]),
-    ]
+    ];
+
+    for byte in buffer.iter().cloned() {
+        expectations.push(spi::Transaction::transfer(vec![0xff], vec![byte]));
+    }
+    expectations
 }
 
 pub fn command_or_reply_byte(command: u8) -> u8 {

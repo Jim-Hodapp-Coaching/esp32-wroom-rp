@@ -170,7 +170,7 @@ fn main() -> ! {
                         port,
                         mode,
                         &mut delay,
-                        |tcp_client| {
+                        &mut |tcp_client| {
                             defmt::info!(
                                 "TCP connection to {:?}:{:?} successful",
                                 hostname,
