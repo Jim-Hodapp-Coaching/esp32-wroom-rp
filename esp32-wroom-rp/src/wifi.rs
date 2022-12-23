@@ -141,9 +141,6 @@ where
     }
 
     /// Retrieves the current WiFi network connection status.
-    ///
-    /// NOTE: A future version will provide a enumerated type instead of the raw integer values
-    /// from the NINA firmware.
     pub fn get_connection_status(&mut self) -> Result<ConnectionStatus, Error> {
         self.protocol_handler.borrow_mut().get_conn_status()
     }
