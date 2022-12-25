@@ -83,6 +83,8 @@ impl Format for ConnectionState {
 pub enum NetworkError {
     /// Failed to resolve a hostname for the provided IP address.
     DnsResolveFailed,
+    /// Timed out while trying to connect to remote TCP server.
+    ConnectionTimeout,
     /// Failed to start up a new TCP/UDP client instance.
     StartClientFailed,
     /// Failed to stop an existing TCP/UDP client instance
@@ -97,6 +99,9 @@ impl Format for NetworkError {
                     fmt,
                     "Failed to resolve a hostname for the provided IP address"
                 )
+            }
+            NetworkError::ConnectionTimeout => {
+                write!(fmt, "Timed out while trying connect the remote TCP server")
             }
             NetworkError::StartClientFailed => {
                 write!(fmt, "Failed to start up a new TCP/UDP client instance")

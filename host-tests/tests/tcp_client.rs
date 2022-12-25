@@ -258,7 +258,7 @@ fn successful_tcp_connection_with_ip_address_invokes_closure() {
 }
 
 #[test]
-fn tcp_timeout_error() {
+fn tcp_connection_timeout_error() {
     let get_socket_command = 0x3f;
     let mut number_of_params = 0x0;
     let mut number_of_params_to_receive = 0x1;
@@ -379,6 +379,6 @@ fn tcp_timeout_error() {
 
     assert_eq!(
         result.unwrap_err(),
-        esp32_wroom_rp::Error::Tcp(esp32_wroom_rp::tcp_client::TcpError::Timeout)
+        esp32_wroom_rp::Error::Network(esp32_wroom_rp::network::NetworkError::ConnectionTimeout)
     );
 }

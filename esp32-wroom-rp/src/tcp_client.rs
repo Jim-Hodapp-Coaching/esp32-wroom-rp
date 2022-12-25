@@ -1,5 +1,5 @@
 use super::{Error, ARRAY_LENGTH_PLACEHOLDER};
-use crate::wifi::Wifi;
+use crate::{wifi::Wifi, network::NetworkError};
 
 use super::protocol::NinaProtocolHandler;
 use crate::gpio::EspControlInterface;
@@ -12,24 +12,9 @@ use embedded_hal::blocking::spi::Transfer;
 
 use heapless::String;
 
-use defmt::{write, Format, Formatter};
-
 // TODO: find a good max length
 const MAX_DATA_LENGTH: usize = 512;
 const MAX_HOSTNAME_LENGTH: usize = 255;
-
-#[derive(Debug, Eq, PartialEq)]
-pub enum TcpError {
-    Timeout,
-}
-
-impl Format for TcpError {
-    fn format(&self, fmt: Formatter) {
-        match self {
-            TcpError::Timeout => write!(fmt, "Timeout Connecting to TCP Server"),
-        }
-    }
-}
 
 /// Connect trait that allows for a `TcpClient` instance to connect to a remote
 /// server by providing either a `Hostname` or an `IpAddress`. This trait also
@@ -218,6 +203,6 @@ where
 
         self.protocol_handler.stop_client_tcp(socket, &mode)?;
 
-        Err(TcpError::Timeout.into())
+        Err(NetworkError::ConnectionTimeout.into())
     }
 }

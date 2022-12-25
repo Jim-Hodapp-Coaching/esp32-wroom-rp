@@ -100,7 +100,6 @@ mod spi;
 
 use network::NetworkError;
 use protocol::ProtocolError;
-use tcp_client::TcpError;
 
 use defmt::{write, Format, Formatter};
 
@@ -116,9 +115,6 @@ pub enum Error {
 
     /// Network related error
     Network(NetworkError),
-
-    /// TCP related error
-    Tcp(TcpError),
 }
 
 impl Format for Error {
@@ -131,7 +127,6 @@ impl Format for Error {
                 e
             ),
             Error::Network(e) => write!(fmt, "Network error: {}", e),
-            Error::Tcp(e) => write!(fmt, "TCP error: {}", e),
         }
     }
 }
@@ -145,12 +140,6 @@ impl From<protocol::ProtocolError> for Error {
 impl From<network::NetworkError> for Error {
     fn from(err: network::NetworkError) -> Self {
         Error::Network(err)
-    }
-}
-
-impl From<tcp_client::TcpError> for Error {
-    fn from(err: tcp_client::TcpError) -> Self {
-        Error::Tcp(err)
     }
 }
 
