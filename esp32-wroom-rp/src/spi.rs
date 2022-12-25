@@ -174,7 +174,7 @@ where
         if result[0] == 1 {
             Ok(())
         } else {
-            Err(NetworkError::StartClientFailed.into())
+            Err(NetworkError::ConnectFailed.into())
         }
     }
 
@@ -190,7 +190,7 @@ where
         if result[0] == 1 {
             Ok(())
         } else {
-            Err(NetworkError::StopClientFailed.into())
+            Err(NetworkError::DisconnectFailed.into())
         }
     }
 

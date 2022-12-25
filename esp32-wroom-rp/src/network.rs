@@ -85,10 +85,10 @@ pub enum NetworkError {
     DnsResolveFailed,
     /// Timed out while trying to connect to remote TCP server.
     ConnectionTimeout,
-    /// Failed to start up a new TCP/UDP client instance.
-    StartClientFailed,
-    /// Failed to stop an existing TCP/UDP client instance
-    StopClientFailed,
+    /// Failed to connect to remote TCP server.
+    ConnectFailed,
+    /// Failed to disconnect from remote TCP server.
+    DisconnectFailed,
 }
 
 impl Format for NetworkError {
@@ -103,11 +103,11 @@ impl Format for NetworkError {
             NetworkError::ConnectionTimeout => {
                 write!(fmt, "Timed out while trying connect the remote TCP server")
             }
-            NetworkError::StartClientFailed => {
-                write!(fmt, "Failed to start up a new TCP/UDP client instance")
+            NetworkError::ConnectFailed => {
+                write!(fmt, "Failed to connect to remote TCP server")
             }
-            NetworkError::StopClientFailed => {
-                write!(fmt, "Failed to stop an existing TCP/UDP client instance")
+            NetworkError::DisconnectFailed => {
+                write!(fmt, "Failed to start up a new TCP/UDP client instance")
             }
         }
     }
