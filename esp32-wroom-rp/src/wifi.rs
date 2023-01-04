@@ -1,16 +1,14 @@
-use embedded_hal::blocking::delay::DelayMs;
-use embedded_hal::blocking::spi::Transfer;
+use core::cell::RefCell;
 
 use defmt::{write, Format, Formatter};
 
-use super::{Error, FirmwareVersion};
+use embedded_hal::blocking::delay::DelayMs;
+use embedded_hal::blocking::spi::Transfer;
 
 use super::gpio::EspControlInterface;
-use super::protocol::{NinaProtocolHandler, ProtocolInterface};
-
-use core::cell::RefCell;
-
 use super::network::IpAddress;
+use super::protocol::{NinaProtocolHandler, ProtocolInterface};
+use super::{Error, FirmwareVersion};
 
 /// An enumerated type that represents the current WiFi network connection status.
 #[repr(u8)]
