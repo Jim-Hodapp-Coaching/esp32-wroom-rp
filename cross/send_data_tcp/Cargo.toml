@@ -2,12 +2,12 @@
 authors = [
     "Jim Hodapp",
     "Caleb Bourg",
-    "Dilyn Corner",
-    "Glyn Matthews"
+    "Glyn Matthews",
+    "Dilyn Corner"
 ]
 edition = "2021"
 name = "send_data_tcp"
-version = "0.1.0"
+version = "0.3.0"
 description = "Example RP2040 target application that demonstrates how to send data to a remote server over TCP."
 
 # makes `cargo check --all-targets` work
