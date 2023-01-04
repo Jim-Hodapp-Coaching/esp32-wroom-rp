@@ -6,19 +6,18 @@
 //! ```
 //! 
 
-use super::{Error, ARRAY_LENGTH_PLACEHOLDER};
-use crate::{network::NetworkError, wifi::Wifi};
-
-use super::protocol::NinaProtocolHandler;
-use crate::gpio::EspControlInterface;
-use crate::protocol::ProtocolInterface;
-
-use super::network::{ConnectionState, Hostname, IpAddress, Port, Socket, TransportMode};
-
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::spi::Transfer;
 
 use heapless::String;
+
+use super::gpio::EspControlInterface;
+use super::network::{
+    ConnectionState, Hostname, IpAddress, NetworkError, Port, Socket, TransportMode,
+};
+use super::protocol::{NinaProtocolHandler, ProtocolInterface};
+use super::wifi::Wifi;
+use super::{Error, ARRAY_LENGTH_PLACEHOLDER};
 
 const MAX_HOSTNAME_LENGTH: usize = 255;
 

@@ -149,18 +149,18 @@
 #![warn(missing_docs)]
 #![cfg_attr(not(test), no_std)]
 
-pub mod tcp_client;
 pub mod gpio;
-pub mod wifi;
 pub mod network;
 pub mod protocol;
+pub mod tcp_client;
+pub mod wifi;
 
 mod spi;
 
+use defmt::{write, Format, Formatter};
+
 use network::NetworkError;
 use protocol::ProtocolError;
-
-use defmt::{write, Format, Formatter};
 
 const ARRAY_LENGTH_PLACEHOLDER: usize = 8;
 
