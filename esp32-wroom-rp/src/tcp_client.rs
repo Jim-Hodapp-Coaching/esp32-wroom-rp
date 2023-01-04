@@ -12,8 +12,6 @@ use embedded_hal::blocking::spi::Transfer;
 
 use heapless::String;
 
-// TODO: find a good max length
-const MAX_DATA_LENGTH: usize = 512;
 const MAX_HOSTNAME_LENGTH: usize = 255;
 
 /// Connect trait that allows for a `TcpClient` instance to connect to a remote
@@ -131,11 +129,13 @@ where
     }
 
     // TODO: Make this non-public
+    /// Requests a Socket
     pub fn get_socket(&mut self) -> Result<Socket, Error> {
         self.protocol_handler.get_socket()
     }
 
     // TODO: Make this non-public
+    /// Returns `Socket` reference set by calling `get_socket()`
     pub fn socket(&self) -> Socket {
         self.socket.unwrap()
     }

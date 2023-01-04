@@ -128,7 +128,7 @@ impl NinaParam for NinaAbstractParam {
     }
 
     fn length(&self) -> u16 {
-        self.length as u16
+        self.length
     }
 
     fn length_size(&self) -> u8 {
@@ -220,7 +220,7 @@ impl NinaConcreteParam for NinaByteParam {
     }
 
     fn length_as_bytes(&self) -> Self::LengthAsBytes {
-        [self.length as u8]
+        [self.length]
     }
 }
 
@@ -253,7 +253,7 @@ impl NinaConcreteParam for NinaWordParam {
     }
 
     fn length_as_bytes(&self) -> Self::LengthAsBytes {
-        [self.length as u8]
+        [self.length]
     }
 }
 
@@ -286,7 +286,7 @@ impl NinaConcreteParam for NinaSmallArrayParam {
     }
 
     fn length_as_bytes(&self) -> Self::LengthAsBytes {
-        [self.length as u8]
+        [self.length]
     }
 }
 

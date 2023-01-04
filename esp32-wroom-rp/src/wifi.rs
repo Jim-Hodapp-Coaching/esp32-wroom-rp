@@ -99,7 +99,7 @@ pub struct Wifi<B, C> {
     pub(crate) protocol_handler: RefCell<NinaProtocolHandler<B, C>>,
 }
 
-impl<'a, S, C> Wifi<S, C>
+impl<S, C> Wifi<S, C>
 where
     S: Transfer<u8>,
     C: EspControlInterface,

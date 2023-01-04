@@ -245,7 +245,7 @@ where
             operation.params.iter().for_each(|param| {
                 self.send_param(param).ok();
 
-                total_params_length += param.length() as u16;
+                total_params_length += param.length();
                 total_params_length_size += param.length_size() as u16;
             });
 
@@ -341,7 +341,7 @@ where
     fn get_byte(&mut self) -> Result<u8, Infallible> {
         let word_out = &mut [ControlByte::Dummy as u8];
         let word = self.bus.borrow_mut().transfer(word_out).ok().unwrap();
-        Ok(word[0] as u8)
+        Ok(word[0])
     }
 
     fn wait_for_byte(&mut self, wait_byte: u8) -> Result<bool, Error> {
@@ -369,18 +369,16 @@ where
 
     fn send_param<P: NinaParam>(&mut self, param: &P) -> Result<(), Infallible> {
         self.send_param_length(param)?;
-        let data_length = param.length() as usize;
-        let bytes = param.data();
-        for i in 0..data_length {
-            self.bus.borrow_mut().transfer(&mut [bytes[i]]).ok();
+        for byte in param.data().iter() {
+            self.bus.borrow_mut().transfer(&mut [*byte]).ok();
         }
         Ok(())
     }
 
     fn send_param_length<P: NinaParam>(&mut self, param: &P) -> Result<(), Infallible> {
         let bytes = param.length_as_bytes();
-        for i in 0..param.length_size() as usize {
-            self.bus.borrow_mut().transfer(&mut [bytes[i]]).ok();
+        for byte in bytes.iter().take(param.length_size() as usize) {
+            self.bus.borrow_mut().transfer(&mut [*byte]).ok();
         }
         Ok(())
     }

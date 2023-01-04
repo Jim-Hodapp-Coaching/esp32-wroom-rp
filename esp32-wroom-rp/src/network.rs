@@ -16,10 +16,15 @@ pub(crate) type Socket = u8;
 #[repr(u8)]
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub enum TransportMode {
+    /// TCP mode
     Tcp = 0,
+    /// UDP mode
     Udp = 1,
+    /// TLS mode
     Tls = 2,
+    /// UDP multicast mode
     UdpMulticast = 3,
+    /// TLS BearSSL mode
     TlsBearSsl = 4,
 }
 
@@ -27,16 +32,27 @@ pub enum TransportMode {
 #[repr(u8)]
 #[derive(PartialEq, PartialOrd, Debug)]
 pub enum ConnectionState {
+    /// Closed
     Closed = 0,
+    /// Listening
     Listening = 1,
+    /// SynSent
     SynSent = 2,
+    /// SynReceived
     SynReceived = 3,
+    /// Established
     Established = 4,
+    /// FinWait1
     FinWait1 = 5,
+    /// Finwait2
     FinWait2 = 6,
+    /// CloseWait
     CloseWait = 7,
+    /// Closing
     Closing = 8,
+    /// LastAck
     LastAck = 9,
+    /// TimeWait
     TimeWait = 10,
 }
 

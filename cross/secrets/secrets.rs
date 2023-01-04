@@ -3,5 +3,5 @@
 //              all example applications
 //
 
-const SSID: &str = "Zion";
-const PASSPHRASE: &str = "Diesel12103465";
+const SSID: &str = "";
+const PASSPHRASE: &str = "";
