@@ -1,5 +1,5 @@
 use super::{Error, ARRAY_LENGTH_PLACEHOLDER};
-use crate::{wifi::Wifi, network::NetworkError};
+use crate::{network::NetworkError, wifi::Wifi};
 
 use super::protocol::NinaProtocolHandler;
 use crate::gpio::EspControlInterface;

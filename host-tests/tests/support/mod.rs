@@ -76,7 +76,7 @@ pub fn mock_receive(
     number_of_params_to_receive: u8,
     values_to_receive: &[u8],
 ) -> Vec<spi::Transaction> {
-    let mut buffer = vec![0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
+    let mut buffer = vec![0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x21];
 
     let length_of_values = if values_to_receive.len() > 0 {
         values_to_receive.len() - 1
@@ -101,7 +101,11 @@ pub fn mock_receive(
     ];
 
     for byte in buffer.iter().cloned() {
-        expectations.push(spi::Transaction::transfer(vec![0xff], vec![byte]));
+        expectations.append(&mut vec![spi::Transaction::transfer(
+            vec![0xff],
+            vec![byte],
+        )]);
+        // expectations.push(spi::Transaction::transfer(vec![0xff], vec![byte]));
     }
     expectations
 }

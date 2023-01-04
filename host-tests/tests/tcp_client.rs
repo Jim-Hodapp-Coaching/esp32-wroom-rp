@@ -42,12 +42,12 @@ fn successful_tcp_connection_with_hostname_invokes_closure() {
 
     expectations.append(&mut mock_end_byte());
 
-    expectations.append(&mut mock_padding(1));
+    expectations.append(&mut mock_padding(3));
 
     expectations.append(&mut mock_receive(
         req_host_by_name_command,
         number_of_params_to_receive,
-        &[0x46, 0x46, 0x46, 0x46],
+        &[0x1],
     ));
 
     // ----- get_host_by_name -----
@@ -66,7 +66,7 @@ fn successful_tcp_connection_with_hostname_invokes_closure() {
     expectations.append(&mut mock_receive(
         get_host_by_name_command,
         number_of_params_to_receive,
-        &[],
+        &[0x46, 0x46, 0x46, 0x46],
     ));
 
     // ----- start_client_tcp -----
@@ -79,7 +79,7 @@ fn successful_tcp_connection_with_hostname_invokes_closure() {
         start_client_tcp_command,
         number_of_params,
     ));
-    expectations.append(&mut mock_single_byte_size_params(4, 0x40)); // Send fake IP Address
+    expectations.append(&mut mock_single_byte_size_params(4, 0x46)); // Send fake IP Address
     expectations.append(&mut mock_single_byte_size_params(2, 0x11)); // Send fake Port
     expectations.append(&mut mock_single_byte_size_params(1, 0x0)); // Send fake Socket
     expectations.append(&mut mock_single_byte_size_params(1, 0x0)); // Send fake Transport Mode
@@ -158,6 +158,8 @@ fn successful_tcp_connection_with_hostname_invokes_closure() {
 
 #[test]
 fn successful_tcp_connection_with_ip_address_invokes_closure() {
+    // ----- get_socket -----
+
     let get_socket_command = 0x3f;
     let mut number_of_params = 0x0;
     let mut number_of_params_to_receive = 0x1;
@@ -171,6 +173,8 @@ fn successful_tcp_connection_with_ip_address_invokes_closure() {
         number_of_params_to_receive,
         &[0x0],
     ));
+
+    // ------ start_client_tcp ------
 
     let start_client_tcp_command = 0x2d;
     number_of_params = 0x4;
@@ -192,6 +196,8 @@ fn successful_tcp_connection_with_ip_address_invokes_closure() {
         number_of_params_to_receive,
         &[0x1],
     ));
+
+    // ----- get_client_state_tcp -----
 
     let get_client_state_tcp_command = 0x2f;
     number_of_params = 0x1;
@@ -259,6 +265,7 @@ fn successful_tcp_connection_with_ip_address_invokes_closure() {
 
 #[test]
 fn tcp_connection_timeout_error() {
+    // ----- get_socket -----
     let get_socket_command = 0x3f;
     let mut number_of_params = 0x0;
     let mut number_of_params_to_receive = 0x1;
@@ -272,6 +279,8 @@ fn tcp_connection_timeout_error() {
         number_of_params_to_receive,
         &[0x0],
     ));
+
+    // ----- start_client_tcp -----
 
     let start_client_tcp_command = 0x2d;
     number_of_params = 0x4;
