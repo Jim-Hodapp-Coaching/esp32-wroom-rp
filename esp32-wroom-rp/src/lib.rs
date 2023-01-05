@@ -99,6 +99,7 @@ mod spi;
 use defmt::{write, Format, Formatter};
 
 use network::NetworkError;
+
 use protocol::ProtocolError;
 
 const ARRAY_LENGTH_PLACEHOLDER: usize = 8;

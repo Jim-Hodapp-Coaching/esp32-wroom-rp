@@ -5,13 +5,18 @@ use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::spi::Transfer;
 
 use super::gpio::EspControlInterface;
+
 use super::network::{ConnectionState, IpAddress, NetworkError, Port, Socket, TransportMode};
+
 use super::protocol::operation::Operation;
+
 use super::protocol::{
     NinaByteParam, NinaCommand, NinaConcreteParam, NinaLargeArrayParam, NinaParam,
     NinaProtocolHandler, NinaSmallArrayParam, NinaWordParam, ProtocolError, ProtocolInterface,
 };
+
 use super::wifi::ConnectionStatus;
+
 use super::{Error, FirmwareVersion, ARRAY_LENGTH_PLACEHOLDER};
 
 // TODO: this should eventually move into NinaCommandHandler
