@@ -1,7 +1,7 @@
 //! # ESP32-WROOM-RP Pico Wireless Example
 //!
-//! This application demonstrates how to use the ESP32-WROOM-RP crate to perform
-//! a DNS hostname lookup after setting what DNS server to use.
+//! This application demonstrates how to use the ESP32-WROOM-RP crate to
+//! send data to a remote server over TCP.
 //!
 //! See the `Cargo.toml` file for Copyright and license details.
 
@@ -24,12 +24,21 @@ use panic_probe as _;
 use rp2040_hal as hal;
 
 use embedded_hal::spi::MODE_0;
-use fugit::RateExtU32;
-use hal::clocks::Clock;
-use hal::pac;
 
-use esp32_wroom_rp::network::IpAddress;
-use esp32_wroom_rp::wifi::ConnectionStatus;
+use core::fmt::Write;
+
+use fugit::RateExtU32;
+use hal::gpio::{FloatingInput, PushPullOutput};
+use hal::{clocks::Clock, pac};
+
+use heapless::String;
+
+use esp32_wroom_rp::{
+    gpio::EspControlPins, network::IpAddress, network::Port, network::TransportMode,
+    tcp_client::Connect, tcp_client::TcpClient, wifi::ConnectionStatus, wifi::Wifi,
+};
+
+const MAX_HTTP_DOC_LENGTH: usize = 4096 as usize;
 
 /// The linker will place this boot block at the start of our program image. We
 /// need this to help the ROM bootloader get our code up and running.
@@ -80,7 +89,7 @@ fn main() -> ! {
         &mut pac.RESETS,
     );
 
-    defmt::info!("ESP32-WROOM-RP DNS resolve example");
+    defmt::info!("ESP32-WROOM-RP example to send data over TCP socket");
 
     // These are implicitly used by the spi driver if they are in the correct mode
     let _spi_miso = pins.gpio16.into_mode::<hal::gpio::FunctionSpi>();
@@ -97,18 +106,18 @@ fn main() -> ! {
         &MODE_0,
     );
 
-    let esp_pins = esp32_wroom_rp::gpio::EspControlPins {
+    let esp_pins = EspControlPins {
         // CS on pin x (GPIO7)
-        cs: pins.gpio7.into_mode::<hal::gpio::PushPullOutput>(),
+        cs: pins.gpio7.into_mode::<PushPullOutput>(),
         // GPIO0 on pin x (GPIO2)
-        gpio0: pins.gpio2.into_mode::<hal::gpio::PushPullOutput>(),
+        gpio0: pins.gpio2.into_mode::<PushPullOutput>(),
         // RESETn on pin x (GPIO11)
-        resetn: pins.gpio11.into_mode::<hal::gpio::PushPullOutput>(),
+        resetn: pins.gpio11.into_mode::<PushPullOutput>(),
         // ACK on pin x (GPIO10)
-        ack: pins.gpio10.into_mode::<hal::gpio::FloatingInput>(),
+        ack: pins.gpio10.into_mode::<FloatingInput>(),
     };
 
-    let mut wifi = esp32_wroom_rp::wifi::Wifi::init(spi, esp_pins, &mut delay).unwrap();
+    let mut wifi = Wifi::init(spi, esp_pins, &mut delay).unwrap();
 
     let result = wifi.join(SSID, PASSPHRASE);
     defmt::info!("Join Result: {:?}", result);
@@ -119,12 +128,11 @@ fn main() -> ! {
     loop {
         match wifi.get_connection_status() {
             Ok(status) => {
-                defmt::info!("Get Connection Result: {:?}", status);
-
+                defmt::info!("Connection status: {:?}", status);
                 delay.delay_ms(sleep);
 
                 if status == ConnectionStatus::Connected {
-                    defmt::info!("Connected to Network: {:?}", SSID);
+                    defmt::info!("Connected to network: {:?}", SSID);
 
                     // The IPAddresses of two DNS servers to resolve hostnames with.
                     // Note that failover from ip1 to ip2 is fully functional.
@@ -135,26 +143,69 @@ fn main() -> ! {
                     defmt::info!("set_dns result: {:?}", dns_result);
 
                     let hostname = "github.com";
-                    defmt::info!("Doing a DNS resolve for {}", hostname);
+                    // let ip_address: IpAddress = [140, 82, 114, 3]; // github.com
 
-                    match wifi.resolve(hostname) {
-                        Ok(ip) => {
-                            defmt::info!("Server IP: {:?}", ip);
-                        }
-                        Err(e) => {
-                            defmt::error!("Failed to resolve hostname {}", hostname);
-                            defmt::error!("Err: {}", e);
-                        }
+                    let port: Port = 80;
+                    let mode: TransportMode = TransportMode::Tcp;
+
+                    let mut http_document: String<MAX_HTTP_DOC_LENGTH> = String::from("");
+                    // write!(http_document, "GET / HTTP/1.1\r\nHost: {}.{}.{}.{}:{}\r\nAccept: */*\r\n\r\n",
+                    //     ip_address[0],
+                    //     ip_address[1],
+                    //     ip_address[2],
+                    //     ip_address[3],
+                    //     port
+                    // ).ok().unwrap();
+
+                    write!(
+                        http_document,
+                        "GET / HTTP/1.1\r\nHost: {}:{}\r\nAccept: */*\r\n\r\n",
+                        hostname, port
+                    )
+                    .ok()
+                    .unwrap();
+
+                    if let Err(e) = TcpClient::build(&mut wifi).connect(
+                        hostname,
+                        port,
+                        mode,
+                        &mut delay,
+                        &mut |tcp_client| {
+                            defmt::info!(
+                                "TCP connection to {:?}:{:?} successful",
+                                hostname,
+                                port
+                            );
+                            defmt::info!("Hostname: {:?}", tcp_client.server_hostname());
+                            defmt::info!("Sending HTTP Document: {:?}", http_document.as_str());
+                            match tcp_client.send_data(&http_document) {
+                                Ok(response) => {
+                                    defmt::info!("Response: {:?}", response)
+                                }
+                                Err(e) => {
+                                    defmt::error!("Response error: {:?}", e)
+                                }
+                            }
+                        },
+                    ) {
+                        defmt::error!(
+                            "TCP connection to {:?}:{:?} failed: {:?}",
+                            hostname,
+                            port,
+                            e
+                        );
                     }
 
-                    wifi.leave().ok().unwrap();
+                    delay.delay_ms(100);
+
+                    defmt::info!("Leaving network: {:?}", SSID);
+                    wifi.leave().ok();
                 } else if status == ConnectionStatus::Disconnected {
-                    defmt::info!("Disconnected from Network: {:?}", SSID);
                     sleep = 20000; // No need to loop as often after disconnecting
                 }
             }
             Err(e) => {
-                defmt::info!("Failed to Get Connection Result: {:?}", e);
+                defmt::error!("Failed to get connection result: {:?}", e);
             }
         }
     }

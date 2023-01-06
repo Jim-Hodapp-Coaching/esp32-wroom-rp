@@ -1,7 +1,7 @@
-use super::protocol::NinaCommand;
+use crate::protocol::{NinaAbstractParam, NinaCommand};
 
 use heapless::Vec;
-const MAX_NUMBER_OF_PARAMS: usize = 4;
+const MAX_NUMBER_OF_PARAMS: usize = 6;
 
 // Encapsulates all information needed to execute commands against Nina Firmware.
 // along with user supplied data. Ex. SSID, passphrase, etc.
@@ -9,37 +9,23 @@ const MAX_NUMBER_OF_PARAMS: usize = 4;
 pub(crate) struct Operation<P> {
     pub params: Vec<P, MAX_NUMBER_OF_PARAMS>,
     pub command: NinaCommand,
-    pub has_params: bool,
-    pub number_of_params_to_receive: u8,
 }
 
-impl<P> Operation<P> {
-    // Initializes new Operation instance.
-    //
-    // `has_params` defaults to `true`
-    pub fn new(nina_command: NinaCommand, number_of_nina_params_to_receive: u8) -> Self {
+impl Operation<NinaAbstractParam> {
+    // Initializes a new Operation instance with a specified command.
+    pub fn new(nina_command: NinaCommand) -> Self {
         Self {
             params: Vec::new(),
             command: nina_command,
-            has_params: true,
-            number_of_params_to_receive: number_of_nina_params_to_receive,
         }
     }
 
     // Pushes a new param into the internal `params` Vector which
     // builds up an internal byte stream representing one Nina command
     // on the data bus.
-    pub fn param(mut self, param: P) -> Self {
+    pub fn param(mut self, param: NinaAbstractParam) -> Self {
+        // FIXME: Vec::push() will return T when it is full, handle this gracefully
         self.params.push(param).ok().unwrap();
-        self
-    }
-
-    // Used for denoting an Operation where no params are provided.
-    //
-    // Sets `has_params` to `false`
-    pub fn with_no_params(mut self, no_param: P) -> Self {
-        self.params.push(no_param).ok().unwrap();
-        self.has_params = false;
         self
     }
 }

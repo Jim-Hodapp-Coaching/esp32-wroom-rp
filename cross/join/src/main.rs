@@ -89,14 +89,14 @@ fn main() -> ! {
     let spi = hal::Spi::<_, _, 8>::new(pac.SPI0);
 
     // Exchange the uninitialized SPI driver for an initialized one
-    let mut spi = spi.init(
+    let spi = spi.init(
         &mut pac.RESETS,
         clocks.peripheral_clock.freq(),
         8.MHz(),
         &MODE_0,
     );
 
-    let mut esp_pins = esp32_wroom_rp::gpio::EspControlPins {
+    let esp_pins = esp32_wroom_rp::gpio::EspControlPins {
         // CS on pin x (GPIO7)
         cs: pins.gpio7.into_mode::<hal::gpio::PushPullOutput>(),
         // GPIO0 on pin x (GPIO2)
@@ -107,18 +107,19 @@ fn main() -> ! {
         ack: pins.gpio10.into_mode::<hal::gpio::FloatingInput>(),
     };
 
-    let mut wifi = esp32_wroom_rp::wifi::Wifi::init(&mut spi, &mut esp_pins, &mut delay).unwrap();
+    let mut wifi = esp32_wroom_rp::wifi::Wifi::init(spi, esp_pins, &mut delay).unwrap();
 
     let result = wifi.join(SSID, PASSPHRASE);
     defmt::info!("Join Result: {:?}", result);
 
     defmt::info!("Entering main loop");
 
+    let mut sleep: u32 = 1500;
     loop {
         match wifi.get_connection_status() {
             Ok(status) => {
                 defmt::info!("Get Connection Result: {:?}", status);
-                let sleep: u32 = 1500;
+
                 delay.delay_ms(sleep);
 
                 if status == ConnectionStatus::Connected {
@@ -130,8 +131,7 @@ fn main() -> ! {
                     wifi.leave().ok().unwrap();
                 } else if status == ConnectionStatus::Disconnected {
                     defmt::info!("Disconnected from Network: {:?}", SSID);
-                } else {
-                    defmt::info!("Unhandled WiFi connection status: {:?}", status);
+                    sleep = 20000; // No need to loop as often after disconnecting
                 }
             }
             Err(e) => {
