@@ -4,6 +4,9 @@
 //! Supports the [ESP32-WROOM-32E](https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32e_esp32-wroom-32ue_datasheet_en.pdf), [ESP32-WROOM-32UE](https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32e_esp32-wroom-32ue_datasheet_en.pdf) modules.
 //! Future implementations will support the [ESP32-WROOM-DA](https://www.espressif.com/sites/default/files/documentation/esp32-wroom-da_datasheet_en.pdf) module.
 //!
+//! It's intended to communicate with recent versions of most [Arduino-derived WiFiNINA firmwares](https://www.arduino.cc/reference/en/libraries/wifinina/)
+//! that run on an ESP32-WROOM-XX WiFi module. For example, Adafruit makes such WiFi hardware referred to as the [Airlift](https://www.adafruit.com/product/4201) and maintains its [firmware](https://github.com/adafruit/nina-fw).
+//! 
 //! This driver is implemented on top of [embedded-hal](https://github.com/rust-embedded/embedded-hal/), which makes it platform-independent, but is currently only intended
 //! to be used with [rp2040-hal](https://github.com/rp-rs/rp-hal/tree/main/rp2040-hal) for your application.
 //! 
