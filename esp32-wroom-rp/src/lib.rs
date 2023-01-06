@@ -1,10 +1,22 @@
 //! esp32-wroom-rp
 //!
-//! Rust-based Espressif ESP32-WROOM WiFi driver for RP2040 series microcontroller.
+//! This crate is an Espressif ESP32-WROOM WiFi driver implementation for RP2040 series microcontroller implemented in Rust.
 //! Supports the [ESP32-WROOM-32E](https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32e_esp32-wroom-32ue_datasheet_en.pdf), [ESP32-WROOM-32UE](https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32e_esp32-wroom-32ue_datasheet_en.pdf) modules.
 //! Future implementations will support the [ESP32-WROOM-DA](https://www.espressif.com/sites/default/files/documentation/esp32-wroom-da_datasheet_en.pdf) module.
 //!
-//! **NOTE:** This crate is still under active development. This API will remain volatile until 1.0.0
+//! This driver is implemented on top of [embedded-hal](https://github.com/rust-embedded/embedded-hal/), which makes it platform-independent, but is currently only intended
+//! to be used with [rp2040-hal](https://github.com/rp-rs/rp-hal/tree/main/rp2040-hal) for your application.
+//! 
+//! Please see the README.md for details on where to obtain and how to connect your RP2040-based device (e.g. Pico) to your ESP32-WROOM-XX WiFI board.
+//! 
+//! Once connected, note that all communication with the WiFI board occurs via a SPI bus. As the example below (and all examples under the directory `cross/`)
+//! show, you first need to create an `embedded_hal::spi::Spi` instance. See the [rp2040-hal documentation](https://docs.rs/rp2040-hal/0.6.0/rp2040_hal/spi/index.html) along
+//! with the datasheet for your device on what specific SPI ports are available to you.
+//! 
+//! You'll also need to reserve 4 important [GPIO pins](https://docs.rs/rp2040-hal/0.6.0/rp2040_hal/gpio/index.html) (3 output, 1 input) that are used to mediate communication between the two boards. The examples
+//! also demonstrate how to do this through instantiating an instance of `esp32_wroom_rp::gpio::EspControlPins`.
+//! 
+//! **NOTE:** This crate is still under active development. This API will remain volatile until 1.0.0.
 //!
 //! ## Usage
 //!
@@ -12,71 +24,115 @@
 //!
 //! ```toml
 //! [dependencies]
-//! esp32_wroom_rp = 0.3
+//! esp32_wroom_rp = 0.3.0
+//! ...
 //! ```
 //!
 //! Next:
 //!
-//! ```no_run
-//! use esp32_wroom_rp::spi::*;
-//! use embedded_hal::blocking::delay::DelayMs;
+//! ```
+//! // The macro for our start-up function
+//! use cortex_m_rt::entry;
 //!
-//! let mut pac = pac::Peripherals::take().unwrap();
-//! let core = pac::CorePeripherals::take().unwrap();
+//! // Needed for debug output symbols to be linked in binary image
+//! use defmt_rtt as _;
 //!
-//! let mut watchdog = hal::Watchdog::new(pac.WATCHDOG);
+//! use panic_probe as _;
 //!
-//! // Configure the clocks
-//! let clocks = hal::clocks::init_clocks_and_plls(
-//!     XTAL_FREQ_HZ,
-//!     pac.XOSC,
-//!     pac.CLOCKS,
-//!     pac.PLL_SYS,
-//!     pac.PLL_USB,
-//!     &mut pac.RESETS,
-//!     &mut watchdog,
-//! )
-//! .ok()
-//! .unwrap();
+//! // Alias for our HAL crate
+//! use rp2040_hal as hal;
 //!
-//! // The single-cycle I/O block controls our GPIO pins
-//! let sio = hal::Sio::new(pac.SIO);
+//! use embedded_hal::spi::MODE_0;
+//! use fugit::RateExtU32;
+//! use hal::clocks::Clock;
+//! use hal::pac;
+//! 
+//! use esp32_wroom_rp::gpio::EspControlPins;
+//! use esp32_wroom_rp::wifi::Wifi;
 //!
-//! // Set the pins to their default state
-//! let pins = hal::gpio::Pins::new(
-//!     pac.IO_BANK0,
-//!     pac.PADS_BANK0,
-//!     sio.gpio_bank0,
-//!     &mut pac.RESETS,
-//! );
+//! // The linker will place this boot block at the start of our program image. We
+//! // need this to help the ROM bootloader get our code up and running.
+//! #[link_section = ".boot2"]
+//! #[used]
+//! pub static BOOT2: [u8; 256] = rp2040_boot2::BOOT_LOADER_W25Q080;
+//! 
+//! // External high-speed crystal on the Raspberry Pi Pico board is 12 MHz. Adjust
+//! // if your board has a different frequency
+//! const XTAL_FREQ_HZ: u32 = 12_000_000u32;
+//! 
+//! // Entry point to our bare-metal application.
+//! //
+//! // The `#[entry]` macro ensures the Cortex-M start-up code calls this function
+//! // as soon as all global variables are initialized.
+//! #[entry]
+//! fn main() -> ! {
+//!     // Grab our singleton objects
+//!     let mut pac = pac::Peripherals::take().unwrap();
+//!     let core = pac::CorePeripherals::take().unwrap();
+
+//!     // Set up the watchdog driver - needed by the clock setup code
+//!     let mut watchdog = hal::Watchdog::new(pac.WATCHDOG);
+
+//!     // Configure the clocks
+//!     let clocks = hal::clocks::init_clocks_and_plls(
+//!         XTAL_FREQ_HZ,
+//!         pac.XOSC,
+//!         pac.CLOCKS,
+//!         pac.PLL_SYS,
+//!         pac.PLL_USB,
+//!         &mut pac.RESETS,
+//!         &mut watchdog,
+//!     )
+//!     .ok()
+//!     .unwrap();
 //!
-//! let spi_miso = pins.gpio16.into_mode::<hal::gpio::FunctionSpi>();
-//! let spi_sclk = pins.gpio18.into_mode::<hal::gpio::FunctionSpi>();
-//! let spi_mosi = pins.gpio19.into_mode::<hal::gpio::FunctionSpi>();
+//!     let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
 //!
-//! let spi = hal::Spi::<_, _, 8>::new(pac.SPI0);
+//!     // The single-cycle I/O block controls our GPIO pins
+//!     let sio = hal::Sio::new(pac.SIO);
 //!
-//! // Exchange the uninitialized SPI driver for an initialized one
-//! let spi = spi.init(
-//!     &mut pac.RESETS,
-//!     clocks.peripheral_clock.freq(),
-//!     8.MHz(),
-//!     &MODE_0,
-//! );
+//!     // Set the pins to their default state
+//!     let pins = hal::gpio::Pins::new(
+//!         pac.IO_BANK0,
+//!         pac.PADS_BANK0,
+//!         sio.gpio_bank0,
+//!         &mut pac.RESETS,
+//!     );
 //!
-//! let esp_pins = esp32_wroom_rp::gpio::EspControlPins {
-//!     // CS on pin x (GPIO7)
-//!     cs: pins.gpio7.into_mode::<hal::gpio::PushPullOutput>(),
-//!     // GPIO0 on pin x (GPIO2)
-//!     gpio0: pins.gpio2.into_mode::<hal::gpio::PushPullOutput>(),
-//!     // RESETn on pin x (GPIO11)
-//!     resetn: pins.gpio11.into_mode::<hal::gpio::PushPullOutput>(),
-//!     // ACK on pin x (GPIO10)
-//!     ack: pins.gpio10.into_mode::<hal::gpio::FloatingInput>(),
-//! };
+//!     defmt::info!("ESP32-WROOM-RP get NINA firmware version example");
 //!
-//! let mut wifi = esp32_wroom_rp::spi::Wifi::init(&mut spi, &mut esp_pins, &mut delay).unwrap();
-//! let version = wifi.firmware_version();
+//!     // These are implicitly used by the spi driver if they are in the correct mode
+//!     let _spi_miso = pins.gpio16.into_mode::<hal::gpio::FunctionSpi>();
+//!     let _spi_sclk = pins.gpio18.into_mode::<hal::gpio::FunctionSpi>();
+//!     let _spi_mosi = pins.gpio19.into_mode::<hal::gpio::FunctionSpi>();
+//!
+//!     let spi = hal::Spi::<_, _, 8>::new(pac.SPI0);
+//!
+//!     // Exchange the uninitialized SPI driver for an initialized one
+//!     let spi = spi.init(
+//!         &mut pac.RESETS,
+//!         clocks.peripheral_clock.freq(),
+//!         8.MHz(),
+//!         &MODE_0,
+//!     );
+//!
+//!     let esp_pins = esp32_wroom_rp::gpio::EspControlPins {
+//!         // CS on pin x (GPIO7)
+//!         cs: pins.gpio7.into_mode::<hal::gpio::PushPullOutput>(),
+//!         // GPIO0 on pin x (GPIO2)
+//!         gpio0: pins.gpio2.into_mode::<hal::gpio::PushPullOutput>(),
+//!         // RESETn on pin x (GPIO11)
+//!         resetn: pins.gpio11.into_mode::<hal::gpio::PushPullOutput>(),
+//!         // ACK on pin x (GPIO10)
+//!         ack: pins.gpio10.into_mode::<hal::gpio::FloatingInput>(),
+//!     };
+//!     let mut wifi = esp32_wroom_rp::wifi::Wifi::init(spi, esp_pins, &mut delay).unwrap();
+//!     let firmware_version = wifi.firmware_version();
+//!     defmt::info!("NINA firmware version: {:?}", firmware_version);
+//!
+//!     defmt::info!("Entering main loop");
+//!     loop {}
+//! }
 //! ```
 
 #![doc(html_root_url = "https://docs.rs/esp32-wroom-rp")]
