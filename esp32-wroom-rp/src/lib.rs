@@ -120,7 +120,7 @@
 //!         &MODE_0,
 //!     );
 //!
-//!     let esp_pins = esp32_wroom_rp::gpio::EspControlPins {
+//!     let esp_pins = EspControlPins {
 //!         // CS on pin x (GPIO7)
 //!         cs: pins.gpio7.into_mode::<hal::gpio::PushPullOutput>(),
 //!         // GPIO0 on pin x (GPIO2)
@@ -130,11 +130,11 @@
 //!         // ACK on pin x (GPIO10)
 //!         ack: pins.gpio10.into_mode::<hal::gpio::FloatingInput>(),
 //!     };
-//!     let mut wifi = esp32_wroom_rp::wifi::Wifi::init(spi, esp_pins, &mut delay).unwrap();
+//!     let mut wifi = Wifi::init(spi, esp_pins, &mut delay).unwrap();
 //!     let firmware_version = wifi.firmware_version();
 //!     defmt::info!("NINA firmware version: {:?}", firmware_version);
 //!
-//!     defmt::info!("Entering main loop");
+//!     // Infinitely sit in a main loop
 //!     loop {}
 //! }
 //! ```
