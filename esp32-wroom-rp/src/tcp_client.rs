@@ -141,7 +141,7 @@ where
     }
 
     /// Sends a string slice of data to a connected server.
-    pub fn send_data(&mut self, data: &str) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
+    fn send_data(&mut self, data: &str) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
         self.protocol_handler
             .send_data(data, self.socket.unwrap_or_default())
     }

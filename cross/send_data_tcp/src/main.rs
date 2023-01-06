@@ -177,7 +177,6 @@ fn main() -> ! {
                                 port
                             );
                             defmt::info!("Hostname: {:?}", tcp_client.server_hostname());
-                            defmt::info!("Socket: {:?}", tcp_client.socket());
                             defmt::info!("Sending HTTP Document: {:?}", http_document.as_str());
                             match tcp_client.send_data(&http_document) {
                                 Ok(response) => {
