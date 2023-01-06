@@ -1,3 +1,11 @@
+//! Defines common network functions, types and error definitions.
+//!
+//! ## Usage
+//!
+//! ```no_run
+//! ```
+//!
+
 use defmt::{write, Format, Formatter};
 
 /// A four byte array type alias representing an IP address.

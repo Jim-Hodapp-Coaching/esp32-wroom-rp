@@ -1,3 +1,11 @@
+//! Send/receive data to/from a TCP server.
+//!
+//! ## Usage
+//!
+//! ```no_run
+//! ```
+//! 
+
 use super::{Error, ARRAY_LENGTH_PLACEHOLDER};
 use crate::{network::NetworkError, wifi::Wifi};
 

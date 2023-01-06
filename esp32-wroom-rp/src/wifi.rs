@@ -1,3 +1,11 @@
+//! Perform common core WiFi functions such as join a network, resolve a DNS hostname, etc.
+//!
+//! ## Usage
+//!
+//! ```no_run
+//! ```
+//!
+
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::spi::Transfer;
 

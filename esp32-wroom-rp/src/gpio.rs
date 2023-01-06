@@ -1,4 +1,4 @@
-//! GPIO pin control interface of a connected ESP32-WROOM target Wifi board.
+//! GPIO pin control interface of a connected ESP32-WROOM target WiFi board.
 //!
 //! ## Usage
 //!
