@@ -1,22 +1,18 @@
 //! Serial Peripheral Interface (SPI) for Wifi
-
-use crate::network::ConnectionState;
-
-use super::gpio::EspControlInterface;
-use super::protocol::{
-    NinaByteParam, NinaCommand, NinaConcreteParam, NinaLargeArrayParam, NinaParam,
-    NinaProtocolHandler, NinaSmallArrayParam, NinaWordParam, ProtocolInterface,
-};
-
-use super::network::{IpAddress, NetworkError, Port, Socket, TransportMode};
-use super::protocol::{operation::Operation, ProtocolError};
-use super::wifi::ConnectionStatus;
-use super::{Error, FirmwareVersion, ARRAY_LENGTH_PLACEHOLDER};
+use core::convert::Infallible;
 
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::spi::Transfer;
 
-use core::convert::Infallible;
+use super::gpio::EspControlInterface;
+use super::network::{ConnectionState, IpAddress, NetworkError, Port, Socket, TransportMode};
+use super::protocol::operation::Operation;
+use super::protocol::{
+    NinaByteParam, NinaCommand, NinaConcreteParam, NinaLargeArrayParam, NinaParam,
+    NinaProtocolHandler, NinaSmallArrayParam, NinaWordParam, ProtocolError, ProtocolInterface,
+};
+use super::wifi::ConnectionStatus;
+use super::{Error, FirmwareVersion, ARRAY_LENGTH_PLACEHOLDER};
 
 // TODO: this should eventually move into NinaCommandHandler
 #[repr(u8)]

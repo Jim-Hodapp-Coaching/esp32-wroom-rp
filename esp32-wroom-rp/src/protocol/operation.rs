@@ -1,6 +1,7 @@
-use crate::protocol::{NinaAbstractParam, NinaCommand};
-
 use heapless::Vec;
+
+use super::{NinaAbstractParam, NinaCommand};
+
 const MAX_NUMBER_OF_PARAMS: usize = 6;
 
 // Encapsulates all information needed to execute commands against Nina Firmware.

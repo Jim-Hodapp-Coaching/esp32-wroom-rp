@@ -84,24 +84,23 @@
 #![warn(missing_docs)]
 #![cfg_attr(not(test), no_std)]
 
-/// Fundamental interface for creating and send/receiving data to/from a TCP server.
-pub mod tcp_client;
-
 pub mod gpio;
-/// Fundamental interface for controlling a connected ESP32-WROOM NINA firmware-based Wifi board.
-pub mod wifi;
-
 /// Responsible for interactions over a WiFi network and also contains related types.
 pub mod network;
 /// Responsible for interactions with NINA firmware over a data bus.
 pub mod protocol;
+/// Fundamental interface for creating and send/receiving data to/from a TCP server.
+pub mod tcp_client;
+/// Fundamental interface for controlling a connected ESP32-WROOM NINA firmware-based Wifi board.
+pub mod wifi;
 
 mod spi;
 
-use network::NetworkError;
-use protocol::ProtocolError;
-
 use defmt::{write, Format, Formatter};
+
+use network::NetworkError;
+
+use protocol::ProtocolError;
 
 const ARRAY_LENGTH_PLACEHOLDER: usize = 8;
 
