@@ -1,18 +1,16 @@
 pub(crate) mod operation;
 
-use embedded_hal::blocking::delay::DelayMs;
+use core::cell::RefCell;
 
 use defmt::{write, Format, Formatter};
+
+use embedded_hal::blocking::delay::DelayMs;
 
 use heapless::{String, Vec};
 
 use super::network::{ConnectionState, IpAddress, Port, Socket, TransportMode};
-
 use super::wifi::ConnectionStatus;
-
 use super::{Error, FirmwareVersion, ARRAY_LENGTH_PLACEHOLDER};
-
-use core::cell::RefCell;
 
 pub(crate) const MAX_NINA_PARAM_LENGTH: usize = 4096;
 
