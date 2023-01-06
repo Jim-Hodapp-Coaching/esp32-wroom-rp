@@ -136,12 +136,12 @@ where
 
     // TODO: Make this non-public
     /// Returns `Socket` reference set by calling `get_socket()`
-    pub fn socket(&self) -> Socket {
+    fn socket(&self) -> Socket {
         self.socket.unwrap()
     }
 
     /// Sends a string slice of data to a connected server.
-    fn send_data(&mut self, data: &str) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
+    pub fn send_data(&mut self, data: &str) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
         self.protocol_handler
             .send_data(data, self.socket.unwrap_or_default())
     }
