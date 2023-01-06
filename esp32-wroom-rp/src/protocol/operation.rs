@@ -1,6 +1,6 @@
 use heapless::Vec;
 
-use crate::protocol::{NinaAbstractParam, NinaCommand};
+use super::{NinaAbstractParam, NinaCommand};
 
 const MAX_NUMBER_OF_PARAMS: usize = 6;
 
