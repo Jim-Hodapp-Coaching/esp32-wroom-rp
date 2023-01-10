@@ -5,7 +5,7 @@
 //! ```no_run
 //! let hostname = "github.com";
 //! // let ip_address: IpAddress = [140, 82, 114, 3]; // github.com
-
+//!
 //! let port: Port = 80;
 //! let mode: TransportMode = TransportMode::Tcp;
 //! if let Err(e) = TcpClient::build(&mut wifi).connect(
