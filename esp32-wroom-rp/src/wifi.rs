@@ -121,7 +121,7 @@ impl Format for ConnectionStatus {
             ConnectionStatus::Disconnected => write!(fmt, "Device disconnected from WiFi network"),
             ConnectionStatus::ApListening => write!(
                 fmt,
-                "Device is lstening for connections in Access Point mode"
+                "Device is listening for connections in Access Point mode"
             ),
             ConnectionStatus::ApConnected => {
                 write!(fmt, "Device is connected in Access Point mode")
