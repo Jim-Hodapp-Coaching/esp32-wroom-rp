@@ -1,10 +1,5 @@
 //! Defines common network functions, types and error definitions.
 //!
-//! ## Usage
-//!
-//! ```no_run
-//! ```
-//!
 
 use defmt::{write, Format, Formatter};
 

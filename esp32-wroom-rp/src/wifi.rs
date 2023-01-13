@@ -3,6 +3,52 @@
 //! ## Usage
 //!
 //! ```no_run
+//! let mut wifi = Wifi::init(spi, esp_pins, &mut delay).unwrap();
+//!
+//! let result = wifi.join(ssid, passphrase);
+//! defmt::info!("Join Result: {:?}", result);
+//!
+//! defmt::info!("Entering main loop");
+//!
+//! let mut sleep: u32 = 1500;
+//! loop {
+//!     match wifi.get_connection_status() {
+//!         Ok(status) => {
+//!             defmt::info!("Connection status: {:?}", status);
+//!             delay.delay_ms(sleep);
+//!
+//!             if status == ConnectionStatus::Connected {
+//!                 defmt::info!("Connected to network: {:?}", SSID);
+//!
+//!                 // The IPAddresses of two DNS servers to resolve hostnames with.
+//!                 // Note that failover from ip1 to ip2 is fully functional.
+//!                 let ip1: IpAddress = [9, 9, 9, 9];
+//!                 let ip2: IpAddress = [8, 8, 8, 8];
+//!                 let dns_result = wifi.set_dns(ip1, Some(ip2));
+//!
+//!                 defmt::info!("set_dns result: {:?}", dns_result);
+//!
+//!                 match wifi.resolve(hostname) {
+//!                     Ok(ip) => {
+//!                         defmt::info!("Server IP: {:?}", ip);
+//!                     }
+//!                     Err(e) => {
+//!                         defmt::error!("Failed to resolve hostname {}", hostname);
+//!                         defmt::error!("Err: {}", e);
+//!                     }
+//!                 }
+//!
+//!                 defmt::info!("Leaving network: {:?}", ssid);
+//!                 wifi.leave().ok();
+//!             } else if status == ConnectionStatus::Disconnected {
+//!                 sleep = 20000; // No need to loop as often after disconnecting
+//!             }
+//!         }
+//!         Err(e) => {
+//!             defmt::error!("Failed to get connection result: {:?}", e);
+//!         }
+//!     }
+//! }
 //! ```
 //!
 
@@ -98,7 +144,7 @@ impl Format for ConnectionStatus {
     }
 }
 
-/// Fundamental struct for controlling a connected ESP32-WROOM NINA firmware-based Wifi board.
+/// Base type for controlling an ESP32-WROOM NINA firmware-based WiFi board.
 #[derive(Debug)]
 pub struct Wifi<B, C> {
     pub(crate) protocol_handler: RefCell<NinaProtocolHandler<B, C>>,
@@ -109,8 +155,8 @@ where
     S: Transfer<u8>,
     C: EspControlInterface,
 {
-    /// Initializes the ESP32-WROOM Wifi device.
-    /// Calling this function puts the connected ESP32-WROOM device in a known good state to accept commands.
+    /// Initialize the ESP32-WROOM WiFi device.
+    /// Call this function to put the connected ESP32-WROOM device in a known good state to accept commands.
     pub fn init<D: DelayMs<u16>>(
         spi: S,
         esp32_control_pins: C,
@@ -128,42 +174,42 @@ where
         Ok(wifi)
     }
 
-    /// Retrieves the NINA firmware version contained on the connected ESP32-WROOM device (e.g. 1.7.4).
+    /// Retrieve the NINA firmware version contained on the connected ESP32-WROOM device (e.g. 1.7.4).
     pub fn firmware_version(&mut self) -> Result<FirmwareVersion, Error> {
         self.protocol_handler.borrow_mut().get_fw_version()
     }
 
-    /// Joins a WiFi network given an SSID and a Passphrase.
+    /// Join a WiFi network given an SSID and a Passphrase.
     pub fn join(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error> {
         self.protocol_handler
             .borrow_mut()
             .set_passphrase(ssid, passphrase)
     }
 
-    /// Disconnects from a joined WiFi network.
+    /// Disconnect from a previously joined WiFi network.
     pub fn leave(&mut self) -> Result<(), Error> {
         self.protocol_handler.borrow_mut().disconnect()
     }
 
-    /// Retrieves the current WiFi network connection status.
+    /// Retrieve the current WiFi network [`ConnectionStatus`].
     pub fn get_connection_status(&mut self) -> Result<ConnectionStatus, Error> {
         self.protocol_handler.borrow_mut().get_conn_status()
     }
 
-    /// Sets 1 or 2 DNS servers that are used for network hostname resolution.
+    /// Set 1 or 2 DNS servers that are used for network hostname resolution.
     pub fn set_dns(&mut self, dns1: IpAddress, dns2: Option<IpAddress>) -> Result<(), Error> {
         self.protocol_handler
             .borrow_mut()
             .set_dns_config(dns1, dns2)
     }
 
-    /// Queries the DNS server(s) provided via [set_dns] for the associated IP address to the provided hostname.
+    /// Query the DNS server(s) provided via [`set_dns`] for the associated IP address to the provided hostname.
     pub fn resolve(&mut self, hostname: &str) -> Result<IpAddress, Error> {
         self.protocol_handler.borrow_mut().resolve(hostname)
     }
 
-    /// Provides a reference to the `Spi` bus instance typically used when cleaning up
-    /// an instance of `Wifi`.
+    /// Return a reference to the `Spi` bus instance typically used when cleaning up
+    /// an instance of [`Wifi`].
     pub fn destroy(self) -> S {
         self.protocol_handler.into_inner().bus.into_inner()
     }

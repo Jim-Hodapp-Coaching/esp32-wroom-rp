@@ -7,19 +7,19 @@
 //!
 //! It's intended to communicate with recent versions of most [Arduino-derived WiFiNINA firmwares](https://www.arduino.cc/reference/en/libraries/wifinina/)
 //! that run on an ESP32-WROOM-XX WiFi module. For example, Adafruit makes such WiFi hardware, referred to as the [Airlift](https://www.adafruit.com/product/4201), and maintains its [firmware](https://github.com/adafruit/nina-fw).
-//! 
+//!
 //! This driver is implemented on top of [embedded-hal](https://github.com/rust-embedded/embedded-hal/), which makes it platform-independent, but is currently only intended
 //! to be used with [rp2040-hal](https://github.com/rp-rs/rp-hal/tree/main/rp2040-hal) for your application.
-//! 
+//!
 //! Please see the README.md for details on where to obtain and how to connect your RP2040-based device (e.g. Pico) to your ESP32-WROOM-XX WiFi board.
-//! 
+//!
 //! Once connected, note that all communication with the WiFi board occurs via a SPI bus. As the example below (and all examples under the directory `cross/`)
 //! show, you first need to create an `embedded_hal::spi::Spi` instance. See the [rp2040-hal documentation](https://docs.rs/rp2040-hal/0.6.0/rp2040_hal/spi/index.html) along
 //! with the datasheet for your device on what specific SPI ports are available to you.
-//! 
+//!
 //! You'll also need to reserve 4 important [GPIO pins](https://docs.rs/rp2040-hal/0.6.0/rp2040_hal/gpio/index.html) (3 output, 1 input) that are used to mediate communication between the two boards. The examples
 //! also demonstrate how to do this through instantiating an instance of `esp32_wroom_rp::gpio::EspControlPins`.
-//! 
+//!
 //! **NOTE:** This crate is still under active development. This API will remain volatile until 1.0.0.
 //!
 //! ## Usage
@@ -50,7 +50,7 @@
 //! use fugit::RateExtU32;
 //! use hal::clocks::Clock;
 //! use hal::pac;
-//! 
+//!
 //! use esp32_wroom_rp::gpio::EspControlPins;
 //! use esp32_wroom_rp::wifi::Wifi;
 //!
@@ -59,11 +59,11 @@
 //! #[link_section = ".boot2"]
 //! #[used]
 //! pub static BOOT2: [u8; 256] = rp2040_boot2::BOOT_LOADER_W25Q080;
-//! 
+//!
 //! // External high-speed crystal on the Raspberry Pi Pico board is 12 MHz. Adjust
 //! // if your board has a different frequency
 //! const XTAL_FREQ_HZ: u32 = 12_000_000u32;
-//! 
+//!
 //! // Entry point to our bare-metal application.
 //! //
 //! // The `#[entry]` macro ensures the Cortex-M start-up code calls this function
@@ -138,11 +138,11 @@
 //!     loop {}
 //! }
 //! ```
-//! 
+//!
 //! ## More examples
-//! 
+//!
 //! Please refer to the `cross/` directory in this crate's source for examples that demonstrate how to use every part of its public API.
-//! 
+//!
 
 #![doc(html_root_url = "https://docs.rs/esp32-wroom-rp")]
 #![doc(issue_tracker_base_url = "https://github.com/Jim-Hodapp-Coaching/esp32-wroom-rp/issues")]

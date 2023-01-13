@@ -39,7 +39,7 @@
 //!     );
 //! }
 //! ```
-//! 
+//!
 
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::spi::Transfer;

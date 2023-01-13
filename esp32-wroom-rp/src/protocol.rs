@@ -1,10 +1,5 @@
 //! Defines functions, types and error definitions related to the WiFiNINA protocol communication specification.
 //!
-//! ## Usage
-//!
-//! ```no_run
-//! ```
-//!
 
 pub(crate) mod operation;
 
