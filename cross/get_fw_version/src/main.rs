@@ -8,8 +8,6 @@
 #![no_std]
 #![no_main]
 
-extern crate esp32_wroom_rp;
-
 // The macro for our start-up function
 use cortex_m_rt::entry;
 
@@ -25,6 +23,9 @@ use embedded_hal::spi::MODE_0;
 use fugit::RateExtU32;
 use hal::clocks::Clock;
 use hal::pac;
+
+use esp32_wroom_rp::gpio::EspControlPins;
+use esp32_wroom_rp::wifi::Wifi;
 
 /// The linker will place this boot block at the start of our program image. We
 /// need this to help the ROM bootloader get our code up and running.
@@ -92,7 +93,7 @@ fn main() -> ! {
         &MODE_0,
     );
 
-    let esp_pins = esp32_wroom_rp::gpio::EspControlPins {
+    let esp_pins = EspControlPins {
         // CS on pin x (GPIO7)
         cs: pins.gpio7.into_mode::<hal::gpio::PushPullOutput>(),
         // GPIO0 on pin x (GPIO2)
@@ -102,7 +103,7 @@ fn main() -> ! {
         // ACK on pin x (GPIO10)
         ack: pins.gpio10.into_mode::<hal::gpio::FloatingInput>(),
     };
-    let mut wifi = esp32_wroom_rp::wifi::Wifi::init(spi, esp_pins, &mut delay).unwrap();
+    let mut wifi = Wifi::init(spi, esp_pins, &mut delay).unwrap();
     let firmware_version = wifi.firmware_version();
     defmt::info!("NINA firmware version: {:?}", firmware_version);
 

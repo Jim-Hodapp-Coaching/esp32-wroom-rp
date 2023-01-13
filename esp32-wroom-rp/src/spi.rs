@@ -1,4 +1,10 @@
-//! Serial Peripheral Interface (SPI) for Wifi
+//! Serial Peripheral Interface (SPI)
+//!
+//! Contains all SPI bus related structs, types and errors. Also responsible for
+//! implementing WifiNINA protocol communication over a selected SPI interface.
+//!
+//! Note: Currently everything in this file is private and considered internal to the crate.
+//!
 use core::convert::Infallible;
 
 use embedded_hal::blocking::delay::DelayMs;

@@ -1,3 +1,46 @@
+//! Send/receive data to/from a TCP server and associated types.
+//!
+//! ## Usage
+//!
+//! ```no_run
+//! let hostname = "github.com";
+//! // let ip_address: IpAddress = [140, 82, 114, 3]; // github.com
+//!
+//! let port: Port = 80;
+//! let mode: TransportMode = TransportMode::Tcp;
+//! if let Err(e) = TcpClient::build(&mut wifi).connect(
+//!     hostname,
+//!     port,
+//!     mode,
+//!     &mut delay,
+//!     &mut |tcp_client| {
+//!         defmt::info!(
+//!             "TCP connection to {:?}:{:?} successful",
+//!             hostname,
+//!             port
+//!         );
+//!         defmt::info!("Hostname: {:?}", tcp_client.server_hostname());
+//!         defmt::info!("Sending HTTP Document: {:?}", http_document.as_str());
+//!         match tcp_client.send_data(&http_document) {
+//!             Ok(response) => {
+//!                 defmt::info!("Response: {:?}", response)
+//!             }
+//!             Err(e) => {
+//!                 defmt::error!("Response error: {:?}", e)
+//!             }
+//!         }
+//!     },
+//! ) {
+//!     defmt::error!(
+//!         "TCP connection to {:?}:{:?} failed: {:?}",
+//!         hostname,
+//!         port,
+//!         e
+//!     );
+//! }
+//! ```
+//!
+
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::spi::Transfer;
 
@@ -13,11 +56,11 @@ use super::{Error, ARRAY_LENGTH_PLACEHOLDER};
 
 const MAX_HOSTNAME_LENGTH: usize = 255;
 
-/// Connect trait that allows for a `TcpClient` instance to connect to a remote
-/// server by providing either a `Hostname` or an `IpAddress`. This trait also
-/// makes it possible to implement and support IPv6 addresses.
+/// Allows for a [`TcpClient`] instance to connect to a remote server by providing
+/// either a [`Hostname`] or an [`IpAddress`]. This trait also makes it possible to
+/// implement and support IPv6 addresses.
 pub trait Connect<'a, S, B, C> {
-    /// Connects to `server` on `port` using transport layer `mode`.
+    /// Enable a client to connect to `server` on `port` using transport layer `mode`.
     fn connect<F: FnMut(&mut TcpClient<'a, B, C>), D: DelayMs<u16>>(
         &mut self,
         server: S,
@@ -28,7 +71,7 @@ pub trait Connect<'a, S, B, C> {
     ) -> Result<(), Error>;
 }
 
-/// A client that connects to and performs send/receive operations with a remote
+/// A client type that connects to and performs send/receive operations with a remote
 /// server using the TCP protocol.
 pub struct TcpClient<'a, B, C> {
     pub(crate) protocol_handler: &'a mut NinaProtocolHandler<B, C>,
@@ -91,7 +134,7 @@ where
     B: Transfer<u8>,
     C: EspControlInterface,
 {
-    /// Builds a new instance of a `TcpClient` provided a `Wifi` instance.
+    /// Build a new instance of a [`TcpClient`] provided a [`Wifi`] instance.
     pub fn build(wifi: &'a mut Wifi<B, C>) -> Self {
         Self {
             protocol_handler: wifi.protocol_handler.get_mut(),
@@ -103,43 +146,36 @@ where
         }
     }
 
-    /// Returns `IpAddress` of the remote server to communicate with that is
-    /// set by calling `connect()`.
+    /// Get an [`IpAddress`] of the remote server to communicate with that is
+    /// set by calling [`TcpClient::connect`].
     pub fn server_ip_address(&self) -> Option<IpAddress> {
         self.server_ip_address
     }
 
-    /// Returns `Hostname` of the remote server to communicate with that is
-    /// set by calling `connect()`.
+    /// Get a [`Hostname`] of the remote server to communicate with that is
+    /// set by calling [`TcpClient::connect`].
     pub fn server_hostname(&self) -> &str {
         self.server_hostname.as_ref().unwrap().as_str()
     }
 
-    /// Returns `Port` of the remote server to communicate with that is
-    /// set by calling `connect()`.
+    /// Get a [`Port`] of the remote server to communicate with that is
+    /// set by calling [`TcpClient::connect`].
     pub fn port(&self) -> Port {
         self.port
     }
 
-    /// Returns `TransportMode` used in communication with the remote server that is
-    /// set by calling `connect()`.
+    /// Get a [`TransportMode`] used in communication with the remote server that is
+    /// set by calling [`TcpClient::connect`].
     pub fn mode(&self) -> TransportMode {
         self.mode
     }
 
-    // TODO: Make this non-public
-    /// Requests a Socket
+    /// Request current `Socket` handle.
     pub fn get_socket(&mut self) -> Result<Socket, Error> {
         self.protocol_handler.get_socket()
     }
 
-    // TODO: Make this non-public
-    /// Returns `Socket` reference set by calling `get_socket()`
-    fn socket(&self) -> Socket {
-        self.socket.unwrap()
-    }
-
-    /// Sends a string slice of data to a connected server.
+    /// Send a string slice of data to a connected server.
     pub fn send_data(&mut self, data: &str) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
         self.protocol_handler
             .send_data(data, self.socket.unwrap_or_default())

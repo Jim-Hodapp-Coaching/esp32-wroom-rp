@@ -1,3 +1,6 @@
+//! Defines functions, types and error definitions related to the WiFiNINA protocol communication specification.
+//!
+
 pub(crate) mod operation;
 
 use core::cell::RefCell;
