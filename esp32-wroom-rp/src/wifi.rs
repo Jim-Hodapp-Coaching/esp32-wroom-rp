@@ -196,7 +196,7 @@ where
             .set_dns_config(dns1, dns2)
     }
 
-    /// Query the DNS server(s) provided via [`set_dns`] for the associated IP address to the provided hostname.
+    /// Query the DNS server(s) provided via `set_dns` for the associated IP address to the provided hostname.
     pub fn resolve(&mut self, hostname: &str) -> Result<IpAddress, Error> {
         self.protocol_handler.borrow_mut().resolve(hostname)
     }

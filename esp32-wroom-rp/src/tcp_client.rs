@@ -170,15 +170,9 @@ where
         self.mode
     }
 
-    // TODO: Make this non-public
-    /// Requests a Socket
+    /// Request current `Socket` handle.
     pub fn get_socket(&mut self) -> Result<Socket, Error> {
         self.protocol_handler.get_socket()
-    }
-
-    /// Returns [`Socket`] reference set by calling [`TcpClient::get_socket`]
-    fn socket(&self) -> Socket {
-        self.socket.unwrap()
     }
 
     /// Send a string slice of data to a connected server.
