@@ -69,10 +69,8 @@ use super::{Error, FirmwareVersion};
 pub enum ConnectionStatus {
     /// No device is connected to hardware
     NoEsp32 = 255,
-    /// Temporary status while attempting to connect to WiFi network
-    Idle = 0,
     /// No SSID is available
-    NoActiveSsid,
+    NoActiveSsid = 1,
     /// WiFi network scan has finished
     ScanCompleted,
     /// Device is connected to WiFi network
@@ -96,7 +94,6 @@ pub enum ConnectionStatus {
 impl From<u8> for ConnectionStatus {
     fn from(status: u8) -> ConnectionStatus {
         match status {
-            0 => ConnectionStatus::Idle,
             1 => ConnectionStatus::NoActiveSsid,
             2 => ConnectionStatus::ScanCompleted,
             3 => ConnectionStatus::Connected,
@@ -116,10 +113,6 @@ impl Format for ConnectionStatus {
     fn format(&self, fmt: Formatter) {
         match self {
             ConnectionStatus::NoEsp32 => write!(fmt, "No device is connected to hardware"),
-            ConnectionStatus::Idle => write!(
-                fmt,
-                "Temporary status while attempting to connect to WiFi network"
-            ),
             ConnectionStatus::NoActiveSsid => write!(fmt, "No SSID is available"),
             ConnectionStatus::ScanCompleted => write!(fmt, "WiFi network scan has finished"),
             ConnectionStatus::Connected => write!(fmt, "Device is connected to WiFi network"),
