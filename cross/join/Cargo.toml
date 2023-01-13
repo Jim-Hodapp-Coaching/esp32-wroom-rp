@@ -7,7 +7,7 @@ authors = [
 ]
 edition = "2021"
 name = "join"
-version = "0.3.0"
+version = "0.3.1"
 description = "Example target application that joins/leaves an SSID with the Rust-based Espressif ESP32-WROOM WiFi driver crate for RP2040 series microcontroller boards."
 
 # makes `cargo check --all-targets` work

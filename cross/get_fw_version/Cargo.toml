@@ -7,7 +7,7 @@ authors = [
 ]
 edition = "2021"
 name = "get_fw_version"
-version = "0.3.0"
+version = "0.3.1"
 description = "Example target application that gets the Nina firmware version with the Rust-based Espressif ESP32-WROOM WiFi driver crate for RP2040 series microcontroller boards."
 
 # makes `cargo check --all-targets` work
