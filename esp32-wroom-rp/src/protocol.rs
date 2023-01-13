@@ -207,7 +207,7 @@ impl NinaConcreteParam for NinaByteParam {
 
     fn from_bytes(bytes: &[u8]) -> Self {
         let mut data_as_bytes: Vec<u8, 1> = Vec::new();
-        data_as_bytes.extend_from_slice(bytes).ok().unwrap();
+        data_as_bytes.extend_from_slice(bytes).unwrap_or_default();
         Self {
             length: data_as_bytes.len() as u8,
             data: data_as_bytes,
@@ -240,7 +240,7 @@ impl NinaConcreteParam for NinaWordParam {
 
     fn from_bytes(bytes: &[u8]) -> Self {
         let mut data_as_bytes: Vec<u8, 2> = Vec::new();
-        data_as_bytes.extend_from_slice(bytes).ok().unwrap();
+        data_as_bytes.extend_from_slice(bytes).unwrap_or_default();
         Self {
             length: data_as_bytes.len() as u8,
             data: data_as_bytes,
@@ -273,7 +273,7 @@ impl NinaConcreteParam for NinaSmallArrayParam {
 
     fn from_bytes(bytes: &[u8]) -> Self {
         let mut data_as_bytes: Vec<u8, MAX_NINA_PARAM_LENGTH> = Vec::new();
-        data_as_bytes.extend_from_slice(bytes).ok().unwrap();
+        data_as_bytes.extend_from_slice(bytes).unwrap_or_default();
         Self {
             length: data_as_bytes.len() as u8,
             data: data_as_bytes,
@@ -306,7 +306,7 @@ impl NinaConcreteParam for NinaLargeArrayParam {
 
     fn from_bytes(bytes: &[u8]) -> Self {
         let mut data_as_bytes: Vec<u8, MAX_NINA_PARAM_LENGTH> = Vec::new();
-        data_as_bytes.extend_from_slice(bytes).ok().unwrap();
+        data_as_bytes.extend_from_slice(bytes).unwrap_or_default();
         Self {
             length: data_as_bytes.len() as u16,
             data: data_as_bytes,

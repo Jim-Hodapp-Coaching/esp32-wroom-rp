@@ -198,7 +198,6 @@ where
             ip = self
                 .protocol_handler
                 .resolve(hostname.as_str())
-                .ok()
                 .unwrap_or_default();
         }
 
