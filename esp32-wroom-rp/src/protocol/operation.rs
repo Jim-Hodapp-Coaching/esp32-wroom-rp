@@ -26,7 +26,7 @@ impl Operation<NinaAbstractParam> {
     // on the data bus.
     pub fn param(mut self, param: NinaAbstractParam) -> Self {
         // FIXME: Vec::push() will return T when it is full, handle this gracefully
-        self.params.push(param).ok().unwrap();
+        self.params.push(param).unwrap_or(());
         self
     }
 }
