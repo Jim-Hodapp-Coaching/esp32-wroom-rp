@@ -135,6 +135,13 @@ cargo install flip-link
 cargo install probe-run
 ```
 
+## Set Up Git Hooks
+
+The esp32-wroom-rp repository makes use of several Git hooks to ensure that code quality standards are met and consistent. To automatically configure these hooks for your local workspace, you can run the following:
+
+./scripts/create-git-hooks
+This will create symlinks to the Git hooks, preserving any hooks that you may have already configured.
+
 ## Building the crate and running the examples
 
 To build the esp32-wroom-rp crate:

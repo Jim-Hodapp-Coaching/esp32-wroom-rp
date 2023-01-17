@@ -1,0 +1,12 @@
+# This script was taken from a StackOverflow answer that can be found at
+# https://stackoverflow.com/a/3464399
+# This is used under the CC BY-SA 4.0 license:
+# https://creativecommons.org/licenses/by-sa/4.0/
+
+#!/bin/bash
+if [ -x $0.local ]; then
+    $0.local "$@" || exit $?
+fi
+if [ -x scripts/git/$(basename $0) ]; then
+    scripts/git/$(basename $0) "$@" || exit $?
+fi

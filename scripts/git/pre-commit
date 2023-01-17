@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -eo pipefail
+
+cargo fmt
+
+# Stage changes to files that were already staged
+git update-index --again
