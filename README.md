@@ -55,13 +55,11 @@ needed at minimum, and some suggested items to make your life even easier.
 
 ### Required Hardware
 
-1. [Raspberry Pi Pico with pre-soldered headers](https://www.elektor.com/raspberry-pi-pico-rp2040-with-pre-soldered-headers) (2x)
+1. [Raspberry Pi Pico with pre-soldered headers](https://www.elektor.com/raspberry-pi-pico-rp2040-h) (2x)
    * [Alternate distributors](https://www.raspberrypi.com/products/raspberry-pi-pico/)
 
-2. Pimoroni Pico Wireless Pack (1x)
-   * [US distributor](https://www.digikey.com/en/products/detail/pimoroni-ltd/PIM548/15851367)
-   * [UK distributor](https://shop.pimoroni.com/products/pico-wireless-pack?variant=32369508581459)
-   * [EU distributor](https://www.elektor.com/pimoroni-raspberry-pi-pico-wireless-pack)
+2. Adafruit Airlift (1x)
+   * [US distributor](https://www.adafruit.com/product/4201)
 
 3. [Breadboard](https://www.sparkfun.com/products/12614) (1x)
    * __Note__: If you already have a medium/large breadboard, then don't worry about purchasing this specific one
@@ -80,7 +78,10 @@ needed at minimum, and some suggested items to make your life even easier.
 4. [Straight 6" Jumper Wires M/F](https://www.sparkfun.com/products/12794) (1x)
    * Helpful to have some of these on hand
 
-5. [Saleae Logic 8](https://www.saleae.com/) (1x)
+5. [Adafruit BME280 sensor](https://www.adafruit.com/product/2651) (2x)
+   * Used for an example using the crate to read temperature/pressure/humidity values
+
+6. [Saleae Logic 8](https://www.saleae.com/) (1x)
    * __Note__: Only needed if you'd like to participate in developing/debugging parts of this project that communicate
    on the SPI/I2C buses
 
