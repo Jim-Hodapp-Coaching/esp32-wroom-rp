@@ -16,9 +16,10 @@ use super::protocol::operation::Operation;
 use super::protocol::{
     NinaByteParam, NinaCommand, NinaConcreteParam, NinaLargeArrayParam, NinaParam,
     NinaProtocolHandler, NinaSmallArrayParam, NinaWordParam, ProtocolError, ProtocolInterface,
+    ResponseData, MAX_NINA_RESPONSE_LENGTH,
 };
 use super::wifi::ConnectionStatus;
-use super::{Error, FirmwareVersion, ARRAY_LENGTH_PLACEHOLDER};
+use super::{Error, FirmwareVersion};
 
 // TODO: this should eventually move into NinaCommandHandler
 #[repr(u8)]
@@ -52,8 +53,9 @@ where
         self.execute(&operation)?;
 
         let result = self.receive(&operation, 1)?;
+        let (version, _) = result.split_at(4);
 
-        Ok(FirmwareVersion::new(result)) // e.g. 1.7.4
+        Ok(FirmwareVersion::new(version)) // e.g. 1.7.4
     }
 
     fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error> {
@@ -118,7 +120,7 @@ where
         Ok(result[0])
     }
 
-    fn get_host_by_name(&mut self) -> Result<[u8; 8], Error> {
+    fn get_host_by_name(&mut self) -> Result<ResponseData, Error> {
         let operation = Operation::new(NinaCommand::GetHostByName);
 
         self.execute(&operation)?;
@@ -163,7 +165,7 @@ where
         port: Port,
         mode: &TransportMode,
     ) -> Result<(), Error> {
-        let port_as_bytes = [((port & 0xff00) >> 8) as u8, (port & 0xff) as u8];
+        let port_as_bytes = Self::split_word_into_bytes(port);
         let operation = Operation::new(NinaCommand::StartClientTcp)
             .param(NinaSmallArrayParam::from_bytes(&ip).into())
             .param(NinaWordParam::from_bytes(&port_as_bytes).into())
@@ -208,14 +210,56 @@ where
         Ok(ConnectionState::from(result[0]))
     }
 
-    fn send_data(
-        &mut self,
-        data: &str,
-        socket: Socket,
-    ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
+    fn send_data(&mut self, data: &str, socket: Socket) -> Result<ResponseData, Error> {
         let operation = Operation::new(NinaCommand::SendDataTcp)
             .param(NinaLargeArrayParam::from_bytes(&[socket]).into())
             .param(NinaLargeArrayParam::new(data).into());
+
+        self.execute(&operation)?;
+
+        let result = self.receive(&operation, 1)?;
+
+        Ok(result)
+    }
+
+    fn receive_data(&mut self, socket: Socket) -> Result<ResponseData, Error> {
+        let mut timeout: u16 = 10_000;
+        let mut available_data_length: usize = 0;
+
+        while timeout > 0 {
+            available_data_length = self.avail_data_tcp(socket)?;
+            if available_data_length > 0 {
+                break;
+            }
+
+            timeout += 1;
+        }
+
+        self.get_data_buf_tcp(socket, available_data_length)
+    }
+
+    fn avail_data_tcp(&mut self, socket: Socket) -> Result<usize, Error> {
+        let operation = Operation::new(NinaCommand::AvailDataTcp)
+            .param(NinaByteParam::from_bytes(&[socket]).into());
+
+        self.execute(&operation)?;
+
+        let result = self.receive(&operation, 1)?;
+
+        let avail_data_length: usize = Self::combine_2_bytes(result[0], result[1]).into();
+
+        Ok(avail_data_length)
+    }
+
+    fn get_data_buf_tcp(
+        &mut self,
+        socket: Socket,
+        available_length: usize,
+    ) -> Result<ResponseData, Error> {
+        let available_length: [u8; 2] = Self::split_word_into_bytes(available_length as u16);
+        let operation = Operation::new(NinaCommand::GetDataBufTcp)
+            .param(NinaByteParam::from_bytes(&[socket]).into())
+            .param(NinaWordParam::from_bytes(&available_length).into());
 
         self.execute(&operation)?;
 
@@ -270,7 +314,7 @@ where
         &mut self,
         operation: &Operation<P>,
         expected_num_params: u8,
-    ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
+    ) -> Result<ResponseData, Error> {
         self.control_pins.wait_for_esp_select();
 
         let result = self.wait_response_cmd(&operation.command, expected_num_params);
@@ -302,7 +346,7 @@ where
         &mut self,
         cmd: &NinaCommand,
         num_params: u8,
-    ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
+    ) -> Result<ResponseData, Error> {
         self.check_start_cmd()?;
         let byte_to_check: u8 = *cmd as u8 | ControlByte::Reply as u8;
         let result = self.read_and_check_byte(&byte_to_check).ok().unwrap();
@@ -324,7 +368,7 @@ where
             return Err(ProtocolError::TooManyParameters.into());
         }
 
-        let mut params: [u8; ARRAY_LENGTH_PLACEHOLDER] = [0; ARRAY_LENGTH_PLACEHOLDER];
+        let mut params: ResponseData = [0; MAX_NINA_RESPONSE_LENGTH];
         for (index, _param) in params.into_iter().enumerate() {
             params[index] = self.get_byte().ok().unwrap()
         }
@@ -390,5 +434,18 @@ where
             self.get_byte().ok();
             command_size += 1;
         }
+    }
+
+    // Accepts two separate bytes and packs them into 2 combined bytes as a u16
+    // byte 0 is the LSB, byte1 is the MSB
+    // See: https://en.wikipedia.org/wiki/Bit_numbering#LSB_0_bit_numbering
+    fn combine_2_bytes(byte0: u8, byte1: u8) -> u16 {
+        let word0: u16 = byte0 as u16;
+        let word1: u16 = byte1 as u16;
+        (word1 << 8) | (word0 & 0xff)
+    }
+
+    fn split_word_into_bytes(word: u16) -> [u8; 2] {
+        [((word & 0xff00) >> 8) as u8, (word & 0xff) as u8]
     }
 }

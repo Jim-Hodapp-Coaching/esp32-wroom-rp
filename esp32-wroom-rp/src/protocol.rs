@@ -13,9 +13,12 @@ use heapless::{String, Vec};
 
 use super::network::{ConnectionState, IpAddress, Port, Socket, TransportMode};
 use super::wifi::ConnectionStatus;
-use super::{Error, FirmwareVersion, ARRAY_LENGTH_PLACEHOLDER};
+use super::{Error, FirmwareVersion};
 
 pub(crate) const MAX_NINA_PARAM_LENGTH: usize = 4096;
+pub(crate) const MAX_NINA_RESPONSE_LENGTH: usize = 4096;
+
+pub type ResponseData = [u8; MAX_NINA_RESPONSE_LENGTH];
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug)]
@@ -23,6 +26,7 @@ pub(crate) enum NinaCommand {
     SetPassphrase = 0x11u8,
     SetDNSConfig = 0x15u8,
     GetConnStatus = 0x20u8,
+    AvailDataTcp = 0x2bu8,
     StartClientTcp = 0x2du8,
     StopClientTcp = 0x2eu8,
     GetClientStateTcp = 0x2fu8,
@@ -32,6 +36,7 @@ pub(crate) enum NinaCommand {
     GetFwVersion = 0x37u8,
     GetSocket = 0x3fu8,
     SendDataTcp = 0x44,
+    GetDataBufTcp = 0x45,
 }
 
 pub(crate) trait NinaConcreteParam {
@@ -338,7 +343,7 @@ pub(crate) trait ProtocolInterface {
     fn get_conn_status(&mut self) -> Result<ConnectionStatus, Error>;
     fn set_dns_config(&mut self, dns1: IpAddress, dns2: Option<IpAddress>) -> Result<(), Error>;
     fn req_host_by_name(&mut self, hostname: &str) -> Result<u8, Error>;
-    fn get_host_by_name(&mut self) -> Result<[u8; 8], Error>;
+    fn get_host_by_name(&mut self) -> Result<ResponseData, Error>;
     fn resolve(&mut self, hostname: &str) -> Result<IpAddress, Error>;
     fn get_socket(&mut self) -> Result<Socket, Error>;
     fn start_client_tcp(
@@ -350,11 +355,14 @@ pub(crate) trait ProtocolInterface {
     ) -> Result<(), Error>;
     fn stop_client_tcp(&mut self, socket: Socket, _mode: &TransportMode) -> Result<(), Error>;
     fn get_client_state_tcp(&mut self, socket: Socket) -> Result<ConnectionState, Error>;
-    fn send_data(
+    fn send_data(&mut self, data: &str, socket: Socket) -> Result<ResponseData, Error>;
+    fn receive_data(&mut self, socket: Socket) -> Result<ResponseData, Error>;
+    fn avail_data_tcp(&mut self, socket: Socket) -> Result<usize, Error>;
+    fn get_data_buf_tcp(
         &mut self,
-        data: &str,
         socket: Socket,
-    ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error>;
+        available_length: usize,
+    ) -> Result<ResponseData, Error>;
 }
 
 #[derive(Debug)]
