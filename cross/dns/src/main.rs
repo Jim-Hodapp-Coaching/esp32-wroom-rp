@@ -147,7 +147,7 @@ fn main() -> ! {
                         }
                     }
 
-                    wifi.leave().ok().unwrap();
+                    wifi.leave().ok();
                 } else if status == ConnectionStatus::Disconnected {
                     defmt::info!("Disconnected from Network: {:?}", SSID);
                     sleep = 20000; // No need to loop as often after disconnecting

@@ -15,8 +15,8 @@ use super::network::{ConnectionState, IpAddress, NetworkError, Port, Socket, Tra
 use super::protocol::operation::Operation;
 use super::protocol::{
     NinaByteParam, NinaCommand, NinaConcreteParam, NinaLargeArrayParam, NinaParam,
-    NinaProtocolHandler, NinaSmallArrayParam, NinaWordParam, ProtocolError, ProtocolInterface,
-    ResponseData, MAX_NINA_RESPONSE_LENGTH,
+    NinaProtocolHandler, NinaSmallArrayParam, NinaWordParam, ParamLengthSize, ProtocolError,
+    ProtocolInterface, ResponseData, MAX_NINA_RESPONSE_LENGTH,
 };
 use super::wifi::ConnectionStatus;
 use super::{Error, FirmwareVersion};
@@ -52,10 +52,11 @@ where
 
         self.execute(&operation)?;
 
-        let result = self.receive(&operation, 1)?;
-        let (version, _) = result.split_at(4);
+        let result = self.receive(&operation, 1, ParamLengthSize::OneByte)?;
 
-        Ok(FirmwareVersion::new(version)) // e.g. 1.7.4
+        let (version, _) = result.split_at(5);
+
+        Ok(FirmwareVersion::new(version)) // e.g. 1.7.3
     }
 
     fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error> {
@@ -65,7 +66,7 @@ where
 
         self.execute(&operation)?;
 
-        self.receive(&operation, 1)?;
+        self.receive(&operation, 1, ParamLengthSize::OneByte)?;
         Ok(())
     }
 
@@ -74,7 +75,7 @@ where
 
         self.execute(&operation)?;
 
-        let result = self.receive(&operation, 1)?;
+        let result = self.receive(&operation, 1, ParamLengthSize::OneByte)?;
 
         Ok(ConnectionStatus::from(result[0]))
     }
@@ -85,7 +86,7 @@ where
 
         self.execute(&operation)?;
 
-        self.receive(&operation, 1)?;
+        self.receive(&operation, 1, ParamLengthSize::OneByte)?;
 
         Ok(())
     }
@@ -100,7 +101,7 @@ where
 
         self.execute(&operation)?;
 
-        self.receive(&operation, 1)?;
+        self.receive(&operation, 1, ParamLengthSize::OneByte)?;
 
         Ok(())
     }
@@ -111,8 +112,8 @@ where
 
         self.execute(&operation)?;
 
-        let result = self.receive(&operation, 1)?;
-
+        let result = self.receive(&operation, 1, ParamLengthSize::OneByte)?;
+        // defmt::debug!("Response: {:?}", result);
         if result[0] != 1u8 {
             return Err(NetworkError::DnsResolveFailed.into());
         }
@@ -125,7 +126,7 @@ where
 
         self.execute(&operation)?;
 
-        let result = self.receive(&operation, 1)?;
+        let result = self.receive(&operation, 1, ParamLengthSize::OneByte)?;
 
         Ok(result)
     }
@@ -153,7 +154,7 @@ where
 
         self.execute(&operation)?;
 
-        let result = self.receive(&operation, 1)?;
+        let result = self.receive(&operation, 1, ParamLengthSize::OneByte)?;
 
         Ok(result[0])
     }
@@ -174,7 +175,7 @@ where
 
         self.execute(&operation)?;
 
-        let result = self.receive(&operation, 1)?;
+        let result = self.receive(&operation, 1, ParamLengthSize::OneByte)?;
         if result[0] == 1 {
             Ok(())
         } else {
@@ -190,7 +191,7 @@ where
 
         self.execute(&operation)?;
 
-        let result = self.receive(&operation, 1)?;
+        let result = self.receive(&operation, 1, ParamLengthSize::OneByte)?;
         if result[0] == 1 {
             Ok(())
         } else {
@@ -204,7 +205,7 @@ where
 
         self.execute(&operation)?;
 
-        let result = self.receive(&operation, 1)?;
+        let result = self.receive(&operation, 1, ParamLengthSize::OneByte)?;
         // TODO: Determine whether or not any ConnectionState variants should be considered
         // an error.
         Ok(ConnectionState::from(result[0]))
@@ -217,7 +218,7 @@ where
 
         self.execute(&operation)?;
 
-        let result = self.receive(&operation, 1)?;
+        let result = self.receive(&operation, 1, ParamLengthSize::OneByte)?;
 
         Ok(result)
     }
@@ -244,7 +245,7 @@ where
 
         self.execute(&operation)?;
 
-        let result = self.receive(&operation, 1)?;
+        let result = self.receive(&operation, 1, ParamLengthSize::OneByte)?;
 
         let avail_data_length: usize = Self::combine_2_bytes(result[0], result[1]).into();
 
@@ -263,7 +264,7 @@ where
 
         self.execute(&operation)?;
 
-        let result = self.receive(&operation, 1)?;
+        let result = self.receive(&operation, 1, ParamLengthSize::TwoByte)?;
 
         Ok(result)
     }
@@ -314,10 +315,12 @@ where
         &mut self,
         operation: &Operation<P>,
         expected_num_params: u8,
+        param_length_size: ParamLengthSize,
     ) -> Result<ResponseData, Error> {
         self.control_pins.wait_for_esp_select();
 
-        let result = self.wait_response_cmd(&operation.command, expected_num_params);
+        let result =
+            self.wait_response_cmd(&operation.command, expected_num_params, param_length_size);
 
         self.control_pins.esp_deselect();
 
@@ -346,6 +349,7 @@ where
         &mut self,
         cmd: &NinaCommand,
         num_params: u8,
+        param_length_size: ParamLengthSize,
     ) -> Result<ResponseData, Error> {
         self.check_start_cmd()?;
         let byte_to_check: u8 = *cmd as u8 | ControlByte::Reply as u8;
@@ -361,21 +365,30 @@ where
             return Err(ProtocolError::InvalidNumberOfParameters.into());
         }
 
-        let num_params_to_read = self.get_byte().ok().unwrap() as usize;
+        let response_length: usize = match param_length_size {
+            ParamLengthSize::OneByte => self.get_one_byte_response_length().unwrap(),
 
-        // TODO: use a constant instead of inline params max == 8
-        if num_params_to_read > 8 {
-            return Err(ProtocolError::TooManyParameters.into());
-        }
+            ParamLengthSize::TwoByte => self.get_two_byte_response_length().unwrap(),
+        };
 
-        let mut params: ResponseData = [0; MAX_NINA_RESPONSE_LENGTH];
-        for (index, _param) in params.into_iter().enumerate() {
-            params[index] = self.get_byte().ok().unwrap()
+        let mut response_bytes: ResponseData = [0; MAX_NINA_RESPONSE_LENGTH];
+
+        for i in 0..response_length {
+            response_bytes[i] = self.get_byte().ok().unwrap()
         }
         let control_byte: u8 = ControlByte::End as u8;
         self.read_and_check_byte(&control_byte).ok();
 
-        Ok(params)
+        Ok(response_bytes)
+    }
+
+    fn get_one_byte_response_length(&mut self) -> Result<usize, Infallible> {
+        Ok(self.get_byte().unwrap() as usize)
+    }
+
+    fn get_two_byte_response_length(&mut self) -> Result<usize, Infallible> {
+        let bytes = (self.get_byte().unwrap(), self.get_byte().unwrap());
+        Ok(Self::combine_2_bytes(bytes.0, bytes.1) as usize)
     }
 
     fn send_end_cmd(&mut self) -> Result<(), Infallible> {
@@ -391,14 +404,16 @@ where
     }
 
     fn wait_for_byte(&mut self, wait_byte: u8) -> Result<bool, Error> {
-        let retry_limit: u16 = 1000u16;
+        let retry_limit: u32 = 1000000u32;
 
-        for _ in 0..retry_limit {
-            let byte_read = self.get_byte().ok().unwrap();
-            if byte_read == ControlByte::Error as u8 {
-                return Err(ProtocolError::NinaProtocolVersionMismatch.into());
-            } else if byte_read == wait_byte {
-                return Ok(true);
+        for i in 0..retry_limit {
+            if i % 6000 == 0 {
+                let byte_read = self.get_byte().ok().unwrap();
+                if byte_read == ControlByte::Error as u8 {
+                    return Err(ProtocolError::NinaProtocolVersionMismatch.into());
+                } else if byte_read == wait_byte {
+                    return Ok(true);
+                }
             }
         }
         Err(ProtocolError::CommunicationTimeout.into())

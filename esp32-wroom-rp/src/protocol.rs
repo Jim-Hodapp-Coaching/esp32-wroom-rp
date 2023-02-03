@@ -39,6 +39,13 @@ pub(crate) enum NinaCommand {
     GetDataBufTcp = 0x45,
 }
 
+#[repr(u8)]
+#[derive(Copy, Clone, Debug)]
+pub(crate) enum ParamLengthSize {
+    OneByte = 1,
+    TwoByte = 2,
+}
+
 pub(crate) trait NinaConcreteParam {
     // Length of parameter in bytes
     type LengthAsBytes: IntoIterator<Item = u8>;
@@ -387,8 +394,6 @@ pub enum ProtocolError {
     InvalidCommand,
     /// An invalid number of parameters sent over the data bus.
     InvalidNumberOfParameters,
-    /// Too many parameters sent over the data bus.
-    TooManyParameters,
 }
 
 impl Format for ProtocolError {
@@ -398,7 +403,6 @@ impl Format for ProtocolError {
             ProtocolError::CommunicationTimeout => write!(fmt, "Communication with ESP32 target timed out."),
             ProtocolError::InvalidCommand => write!(fmt, "Encountered an invalid command while communicating with ESP32 target."),
             ProtocolError::InvalidNumberOfParameters => write!(fmt, "Encountered an unexpected number of parameters for a NINA command while communicating with ESP32 target."),
-            ProtocolError::TooManyParameters => write!(fmt, "Encountered too many parameters for a NINA command while communicating with ESP32 target.")
         }
     }
 }
