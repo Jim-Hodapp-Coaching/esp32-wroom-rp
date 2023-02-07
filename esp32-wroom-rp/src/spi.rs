@@ -92,9 +92,7 @@ where
     }
 
     fn set_dns_config(&mut self, ip1: IpAddress, ip2: Option<IpAddress>) -> Result<(), Error> {
-        // FIXME: refactor Operation so it can take different NinaParam types
         let operation = Operation::new(NinaCommand::SetDNSConfig)
-            // FIXME: first param should be able to be a NinaByteParam:
             .param(NinaByteParam::from_bytes(&[1]).into())
             .param(NinaSmallArrayParam::from_bytes(&ip1).into())
             .param(NinaSmallArrayParam::from_bytes(&ip2.unwrap_or_default()).into());
@@ -113,7 +111,7 @@ where
         self.execute(&operation)?;
 
         let result = self.receive(&operation, 1, ParamLengthSize::OneByte)?;
-        // defmt::debug!("Response: {:?}", result);
+
         if result[0] != 1u8 {
             return Err(NetworkError::DnsResolveFailed.into());
         }
@@ -352,8 +350,9 @@ where
         param_length_size: ParamLengthSize,
     ) -> Result<ResponseData, Error> {
         self.check_start_cmd()?;
+
         let byte_to_check: u8 = *cmd as u8 | ControlByte::Reply as u8;
-        let result = self.read_and_check_byte(&byte_to_check).ok().unwrap();
+        let result = self.read_and_check_byte(&byte_to_check).unwrap();
         // Ensure we see a cmd byte
         if !result {
             return Err(ProtocolError::InvalidCommand.into());
@@ -365,19 +364,28 @@ where
             return Err(ProtocolError::InvalidNumberOfParameters.into());
         }
 
-        let response_length: usize = match param_length_size {
-            ParamLengthSize::OneByte => self.get_one_byte_response_length().unwrap(),
-
-            ParamLengthSize::TwoByte => self.get_two_byte_response_length().unwrap(),
-        };
+        let number_of_params_to_read = self.get_byte().unwrap();
 
         let mut response_bytes: ResponseData = [0; MAX_NINA_RESPONSE_LENGTH];
 
-        for i in 0..response_length {
-            response_bytes[i] = self.get_byte().ok().unwrap()
+        if number_of_params_to_read > 0 {
+            let response_length: usize = match param_length_size {
+                ParamLengthSize::OneByte => self.get_one_byte_response_length().unwrap(),
+
+                ParamLengthSize::TwoByte => self.get_two_byte_response_length().unwrap(),
+            };
+
+            for i in 0..response_length {
+                response_bytes[i] = self.get_byte().unwrap()
+            }
         }
-        let control_byte: u8 = ControlByte::End as u8;
-        self.read_and_check_byte(&control_byte).ok();
+
+        let end_byte = ControlByte::End as u8;
+        let result = self.read_and_check_byte(&end_byte).unwrap();
+
+        if !result {
+            return Err(ProtocolError::InvalidResponseRead.into());
+        }
 
         Ok(response_bytes)
     }
@@ -404,10 +412,10 @@ where
     }
 
     fn wait_for_byte(&mut self, wait_byte: u8) -> Result<bool, Error> {
-        let retry_limit: u32 = 1000000u32;
+        let retry_limit: u32 = 100_000u32;
 
         for i in 0..retry_limit {
-            if i % 6000 == 0 {
+            if i % 5000 == 0 {
                 let byte_read = self.get_byte().ok().unwrap();
                 if byte_read == ControlByte::Error as u8 {
                     return Err(ProtocolError::NinaProtocolVersionMismatch.into());

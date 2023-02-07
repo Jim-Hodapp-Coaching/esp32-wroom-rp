@@ -394,6 +394,8 @@ pub enum ProtocolError {
     InvalidCommand,
     /// An invalid number of parameters sent over the data bus.
     InvalidNumberOfParameters,
+    /// An invalid reading of response data
+    InvalidResponseRead,
 }
 
 impl Format for ProtocolError {
@@ -403,6 +405,7 @@ impl Format for ProtocolError {
             ProtocolError::CommunicationTimeout => write!(fmt, "Communication with ESP32 target timed out."),
             ProtocolError::InvalidCommand => write!(fmt, "Encountered an invalid command while communicating with ESP32 target."),
             ProtocolError::InvalidNumberOfParameters => write!(fmt, "Encountered an unexpected number of parameters for a NINA command while communicating with ESP32 target."),
+            ProtocolError::InvalidResponseRead => write!(fmt, "Encountered an invalid response read for a NINA command while communicating with ESP32 target."),
         }
     }
 }
