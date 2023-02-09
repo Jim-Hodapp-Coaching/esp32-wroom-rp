@@ -370,7 +370,7 @@ where
 
         if number_of_params_to_read > 0 {
             let response_length: usize = match param_length_size {
-                ParamLengthSize::OneByte => self.get_one_byte_response_length().unwrap(),
+                ParamLengthSize::OneByte => number_of_params_to_read.into(),
 
                 ParamLengthSize::TwoByte => self.get_two_byte_response_length().unwrap(),
             };
@@ -388,10 +388,6 @@ where
         }
 
         Ok(response_bytes)
-    }
-
-    fn get_one_byte_response_length(&mut self) -> Result<usize, Infallible> {
-        Ok(self.get_byte().unwrap() as usize)
     }
 
     fn get_two_byte_response_length(&mut self) -> Result<usize, Infallible> {
