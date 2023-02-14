@@ -13,9 +13,18 @@ use heapless::{String, Vec};
 
 use super::network::{ConnectionState, IpAddress, Port, Socket, TransportMode};
 use super::wifi::ConnectionStatus;
-use super::{Error, FirmwareVersion, ARRAY_LENGTH_PLACEHOLDER};
+use super::{Error, FirmwareVersion};
 
-pub(crate) const MAX_NINA_PARAM_LENGTH: usize = 4096;
+// The maximum number of NINA param u8 bytes in a command send/receive byte stream
+pub(crate) const MAX_NINA_PARAMS: usize = 8;
+
+pub(crate) const MAX_NINA_BYTE_PARAM_BUFFER_LENGTH: usize = 1;
+pub(crate) const MAX_NINA_WORD_PARAM_BUFFER_LENGTH: usize = 2;
+pub(crate) const MAX_NINA_SMALL_ARRAY_PARAM_BUFFER_LENGTH: usize = 255;
+pub(crate) const MAX_NINA_LARGE_ARRAY_PARAM_BUFFER_LENGTH: usize = 1024;
+
+// The maximum length that a 2-byte length NINA response can be
+pub(crate) const MAX_NINA_RESPONSE_LENGTH: usize = 32;
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug)]
@@ -35,6 +44,7 @@ pub(crate) enum NinaCommand {
 }
 
 pub(crate) trait NinaConcreteParam {
+    type DataBuffer;
     // Length of parameter in bytes
     type LengthAsBytes: IntoIterator<Item = u8>;
 
@@ -55,6 +65,7 @@ pub(crate) struct NinaNoParams {
 }
 
 impl NinaConcreteParam for NinaNoParams {
+    type DataBuffer = [u8; 0];
     type LengthAsBytes = [u8; 0];
 
     fn new(_data: &str) -> Self {
@@ -88,32 +99,32 @@ pub(crate) trait NinaParam {
 // Used for single byte params
 pub(crate) struct NinaByteParam {
     length: u8,
-    data: Vec<u8, 1>,
+    data: <NinaByteParam as NinaConcreteParam>::DataBuffer,
 }
 
 // Used for 2-byte params
 pub(crate) struct NinaWordParam {
     length: u8,
-    data: Vec<u8, 2>,
+    data: <NinaWordParam as NinaConcreteParam>::DataBuffer,
 }
 
 // Used for params that are smaller than 255 bytes
 pub(crate) struct NinaSmallArrayParam {
     length: u8,
-    data: Vec<u8, MAX_NINA_PARAM_LENGTH>,
+    data: <NinaSmallArrayParam as NinaConcreteParam>::DataBuffer,
 }
 
 // Used for params that can be larger than 255 bytes up to MAX_NINA_PARAM_LENGTH
 pub(crate) struct NinaLargeArrayParam {
     length: u16,
-    data: Vec<u8, MAX_NINA_PARAM_LENGTH>,
+    data: <NinaLargeArrayParam as NinaConcreteParam>::DataBuffer,
 }
 
 pub(crate) struct NinaAbstractParam {
     // Byte representation of length of data
     length_as_bytes: [u8; 2],
-    // Data to be transfered over SPI bus
-    data: Vec<u8, MAX_NINA_PARAM_LENGTH>,
+    // Data to be transferred over SPI bus
+    data: <NinaLargeArrayParam as NinaConcreteParam>::DataBuffer,
     // Number of bytes in data
     length: u16,
     // The number of bytes needed to represent
@@ -195,10 +206,11 @@ impl From<NinaLargeArrayParam> for NinaAbstractParam {
 }
 
 impl NinaConcreteParam for NinaByteParam {
+    type DataBuffer = Vec<u8, MAX_NINA_BYTE_PARAM_BUFFER_LENGTH>;
     type LengthAsBytes = [u8; 1];
 
     fn new(data: &str) -> Self {
-        let data_as_bytes: Vec<u8, 1> = String::from(data).into_bytes();
+        let data_as_bytes: Self::DataBuffer = String::from(data).into_bytes();
         Self {
             length: data_as_bytes.len() as u8,
             data: data_as_bytes,
@@ -206,7 +218,8 @@ impl NinaConcreteParam for NinaByteParam {
     }
 
     fn from_bytes(bytes: &[u8]) -> Self {
-        let mut data_as_bytes: Vec<u8, 1> = Vec::new();
+        let mut data_as_bytes: Self::DataBuffer = Vec::new();
+
         data_as_bytes.extend_from_slice(bytes).unwrap_or_default();
         Self {
             length: data_as_bytes.len() as u8,
@@ -228,10 +241,11 @@ impl NinaConcreteParam for NinaByteParam {
 }
 
 impl NinaConcreteParam for NinaWordParam {
+    type DataBuffer = Vec<u8, MAX_NINA_WORD_PARAM_BUFFER_LENGTH>;
     type LengthAsBytes = [u8; 1];
 
     fn new(data: &str) -> Self {
-        let data_as_bytes: Vec<u8, 2> = String::from(data).into_bytes();
+        let data_as_bytes: Self::DataBuffer = String::from(data).into_bytes();
         Self {
             length: data_as_bytes.len() as u8,
             data: data_as_bytes,
@@ -239,7 +253,7 @@ impl NinaConcreteParam for NinaWordParam {
     }
 
     fn from_bytes(bytes: &[u8]) -> Self {
-        let mut data_as_bytes: Vec<u8, 2> = Vec::new();
+        let mut data_as_bytes: Self::DataBuffer = Vec::new();
         data_as_bytes.extend_from_slice(bytes).unwrap_or_default();
         Self {
             length: data_as_bytes.len() as u8,
@@ -261,10 +275,11 @@ impl NinaConcreteParam for NinaWordParam {
 }
 
 impl NinaConcreteParam for NinaSmallArrayParam {
+    type DataBuffer = Vec<u8, MAX_NINA_SMALL_ARRAY_PARAM_BUFFER_LENGTH>;
     type LengthAsBytes = [u8; 1];
 
     fn new(data: &str) -> Self {
-        let data_as_bytes: Vec<u8, MAX_NINA_PARAM_LENGTH> = String::from(data).into_bytes();
+        let data_as_bytes: Self::DataBuffer = String::from(data).into_bytes();
         Self {
             length: data_as_bytes.len() as u8,
             data: data_as_bytes,
@@ -272,7 +287,7 @@ impl NinaConcreteParam for NinaSmallArrayParam {
     }
 
     fn from_bytes(bytes: &[u8]) -> Self {
-        let mut data_as_bytes: Vec<u8, MAX_NINA_PARAM_LENGTH> = Vec::new();
+        let mut data_as_bytes: Self::DataBuffer = Vec::new();
         data_as_bytes.extend_from_slice(bytes).unwrap_or_default();
         Self {
             length: data_as_bytes.len() as u8,
@@ -294,10 +309,11 @@ impl NinaConcreteParam for NinaSmallArrayParam {
 }
 
 impl NinaConcreteParam for NinaLargeArrayParam {
+    type DataBuffer = Vec<u8, MAX_NINA_LARGE_ARRAY_PARAM_BUFFER_LENGTH>;
     type LengthAsBytes = [u8; 2];
 
     fn new(data: &str) -> Self {
-        let data_as_bytes: Vec<u8, MAX_NINA_PARAM_LENGTH> = String::from(data).into_bytes();
+        let data_as_bytes: Self::DataBuffer = String::from(data).into_bytes();
         Self {
             length: data_as_bytes.len() as u16,
             data: data_as_bytes,
@@ -305,7 +321,7 @@ impl NinaConcreteParam for NinaLargeArrayParam {
     }
 
     fn from_bytes(bytes: &[u8]) -> Self {
-        let mut data_as_bytes: Vec<u8, MAX_NINA_PARAM_LENGTH> = Vec::new();
+        let mut data_as_bytes: Self::DataBuffer = Vec::new();
         data_as_bytes.extend_from_slice(bytes).unwrap_or_default();
         Self {
             length: data_as_bytes.len() as u16,
@@ -338,7 +354,7 @@ pub(crate) trait ProtocolInterface {
     fn get_conn_status(&mut self) -> Result<ConnectionStatus, Error>;
     fn set_dns_config(&mut self, dns1: IpAddress, dns2: Option<IpAddress>) -> Result<(), Error>;
     fn req_host_by_name(&mut self, hostname: &str) -> Result<u8, Error>;
-    fn get_host_by_name(&mut self) -> Result<[u8; 8], Error>;
+    fn get_host_by_name(&mut self) -> Result<[u8; MAX_NINA_RESPONSE_LENGTH], Error>;
     fn resolve(&mut self, hostname: &str) -> Result<IpAddress, Error>;
     fn get_socket(&mut self) -> Result<Socket, Error>;
     fn start_client_tcp(
@@ -354,7 +370,7 @@ pub(crate) trait ProtocolInterface {
         &mut self,
         data: &str,
         socket: Socket,
-    ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error>;
+    ) -> Result<[u8; MAX_NINA_RESPONSE_LENGTH], Error>;
 }
 
 #[derive(Debug)]

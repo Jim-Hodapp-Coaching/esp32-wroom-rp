@@ -16,11 +16,11 @@ use super::protocol::operation::Operation;
 use super::protocol::{
     NinaByteParam, NinaCommand, NinaConcreteParam, NinaLargeArrayParam, NinaParam,
     NinaProtocolHandler, NinaSmallArrayParam, NinaWordParam, ProtocolError, ProtocolInterface,
+    MAX_NINA_PARAMS, MAX_NINA_RESPONSE_LENGTH,
 };
 use super::wifi::ConnectionStatus;
-use super::{Error, FirmwareVersion, ARRAY_LENGTH_PLACEHOLDER};
+use super::{Error, FirmwareVersion};
 
-// TODO: this should eventually move into NinaCommandHandler
 #[repr(u8)]
 #[derive(Debug)]
 enum ControlByte {
@@ -52,8 +52,9 @@ where
         self.execute(&operation)?;
 
         let result = self.receive(&operation, 1)?;
+        let (version, _) = result.split_at(5);
 
-        Ok(FirmwareVersion::new(result)) // e.g. 1.7.4
+        Ok(FirmwareVersion::new(version)) // e.g. 1.7.4
     }
 
     fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error> {
@@ -118,7 +119,7 @@ where
         Ok(result[0])
     }
 
-    fn get_host_by_name(&mut self) -> Result<[u8; 8], Error> {
+    fn get_host_by_name(&mut self) -> Result<[u8; MAX_NINA_RESPONSE_LENGTH], Error> {
         let operation = Operation::new(NinaCommand::GetHostByName);
 
         self.execute(&operation)?;
@@ -212,7 +213,7 @@ where
         &mut self,
         data: &str,
         socket: Socket,
-    ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
+    ) -> Result<[u8; MAX_NINA_RESPONSE_LENGTH], Error> {
         let operation = Operation::new(NinaCommand::SendDataTcp)
             .param(NinaLargeArrayParam::from_bytes(&[socket]).into())
             .param(NinaLargeArrayParam::new(data).into());
@@ -270,7 +271,7 @@ where
         &mut self,
         operation: &Operation<P>,
         expected_num_params: u8,
-    ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
+    ) -> Result<[u8; MAX_NINA_RESPONSE_LENGTH], Error> {
         self.control_pins.wait_for_esp_select();
 
         let result = self.wait_response_cmd(&operation.command, expected_num_params);
@@ -302,7 +303,7 @@ where
         &mut self,
         cmd: &NinaCommand,
         num_params: u8,
-    ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
+    ) -> Result<[u8; MAX_NINA_RESPONSE_LENGTH], Error> {
         self.check_start_cmd()?;
         let byte_to_check: u8 = *cmd as u8 | ControlByte::Reply as u8;
         let result = self.read_and_check_byte(&byte_to_check).ok().unwrap();
@@ -317,21 +318,24 @@ where
             return Err(ProtocolError::InvalidNumberOfParameters.into());
         }
 
-        let num_params_to_read = self.get_byte().ok().unwrap() as usize;
+        let number_of_params_to_read = self.get_byte().ok().unwrap() as usize;
 
-        // TODO: use a constant instead of inline params max == 8
-        if num_params_to_read > 8 {
+        if number_of_params_to_read > MAX_NINA_PARAMS {
             return Err(ProtocolError::TooManyParameters.into());
         }
 
-        let mut params: [u8; ARRAY_LENGTH_PLACEHOLDER] = [0; ARRAY_LENGTH_PLACEHOLDER];
-        for (index, _param) in params.into_iter().enumerate() {
-            params[index] = self.get_byte().ok().unwrap()
+        let mut response_param_buffer: [u8; MAX_NINA_RESPONSE_LENGTH] =
+            [0; MAX_NINA_RESPONSE_LENGTH];
+        if number_of_params_to_read > 0 {
+            for (index, _) in response_param_buffer.into_iter().enumerate() {
+                response_param_buffer[index] = self.get_byte().ok().unwrap()
+            }
         }
+
         let control_byte: u8 = ControlByte::End as u8;
         self.read_and_check_byte(&control_byte).ok();
 
-        Ok(params)
+        Ok(response_param_buffer)
     }
 
     fn send_end_cmd(&mut self) -> Result<(), Infallible> {
