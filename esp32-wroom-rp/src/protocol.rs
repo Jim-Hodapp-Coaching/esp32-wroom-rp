@@ -59,36 +59,6 @@ pub(crate) trait NinaConcreteParam {
     fn length(&self) -> u16;
 }
 
-// Used for Nina protocol commands with no parameters
-pub(crate) struct NinaNoParams {
-    _placeholder: u8,
-}
-
-impl NinaConcreteParam for NinaNoParams {
-    type DataBuffer = [u8; 0];
-    type LengthAsBytes = [u8; 0];
-
-    fn new(_data: &str) -> Self {
-        Self { _placeholder: 0 }
-    }
-
-    fn from_bytes(_bytes: &[u8]) -> Self {
-        Self { _placeholder: 0 }
-    }
-
-    fn data(&self) -> &[u8] {
-        &[0u8]
-    }
-
-    fn length_as_bytes(&self) -> Self::LengthAsBytes {
-        []
-    }
-
-    fn length(&self) -> u16 {
-        0u16
-    }
-}
-
 pub(crate) trait NinaParam {
     fn length_as_bytes(&self) -> [u8; 2];
     fn data(&self) -> &[u8];
@@ -147,17 +117,6 @@ impl NinaParam for NinaAbstractParam {
 
     fn length_size(&self) -> u8 {
         self.length_size
-    }
-}
-
-impl From<NinaNoParams> for NinaAbstractParam {
-    fn from(concrete_param: NinaNoParams) -> NinaAbstractParam {
-        NinaAbstractParam {
-            length_as_bytes: [0, 0],
-            data: Vec::from_slice(concrete_param.data()).unwrap(),
-            length: concrete_param.length(),
-            length_size: 0,
-        }
     }
 }
 
