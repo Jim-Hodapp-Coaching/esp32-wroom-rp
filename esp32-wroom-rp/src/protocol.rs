@@ -43,14 +43,17 @@ pub(crate) enum NinaCommand {
     SendDataTcp = 0x44,
 }
 
-pub(crate) trait NinaConcreteParam {
+pub(crate) trait NinaConcreteParam
+where
+    Self: core::marker::Sized,
+{
     type DataBuffer;
     // Length of parameter in bytes
     type LengthAsBytes: IntoIterator<Item = u8>;
 
     fn new(data: &str) -> Self;
 
-    fn from_bytes(bytes: &[u8]) -> Self;
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Error>;
 
     fn data(&self) -> &[u8];
 
@@ -176,14 +179,17 @@ impl NinaConcreteParam for NinaByteParam {
         }
     }
 
-    fn from_bytes(bytes: &[u8]) -> Self {
-        let mut data_as_bytes: Self::DataBuffer = Vec::new();
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+        if bytes.len() > MAX_NINA_BYTE_PARAM_BUFFER_LENGTH {
+            return Err(ProtocolError::TooManyParameters.into());
+        }
 
+        let mut data_as_bytes: Self::DataBuffer = Vec::new();
         data_as_bytes.extend_from_slice(bytes).unwrap_or_default();
-        Self {
+        Ok(Self {
             length: data_as_bytes.len() as u8,
             data: data_as_bytes,
-        }
+        })
     }
 
     fn data(&self) -> &[u8] {
@@ -196,6 +202,15 @@ impl NinaConcreteParam for NinaByteParam {
 
     fn length_as_bytes(&self) -> Self::LengthAsBytes {
         [self.length]
+    }
+}
+
+impl Default for NinaByteParam {
+    fn default() -> Self {
+        Self {
+            length: 0,
+            data: Vec::new(),
+        }
     }
 }
 
@@ -211,13 +226,17 @@ impl NinaConcreteParam for NinaWordParam {
         }
     }
 
-    fn from_bytes(bytes: &[u8]) -> Self {
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+        if bytes.len() > MAX_NINA_WORD_PARAM_BUFFER_LENGTH {
+            return Err(ProtocolError::TooManyParameters.into());
+        }
+
         let mut data_as_bytes: Self::DataBuffer = Vec::new();
         data_as_bytes.extend_from_slice(bytes).unwrap_or_default();
-        Self {
+        Ok(Self {
             length: data_as_bytes.len() as u8,
             data: data_as_bytes,
-        }
+        })
     }
 
     fn data(&self) -> &[u8] {
@@ -230,6 +249,15 @@ impl NinaConcreteParam for NinaWordParam {
 
     fn length_as_bytes(&self) -> Self::LengthAsBytes {
         [self.length]
+    }
+}
+
+impl Default for NinaWordParam {
+    fn default() -> Self {
+        Self {
+            length: 0,
+            data: Vec::new(),
+        }
     }
 }
 
@@ -245,13 +273,17 @@ impl NinaConcreteParam for NinaSmallArrayParam {
         }
     }
 
-    fn from_bytes(bytes: &[u8]) -> Self {
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+        if bytes.len() > MAX_NINA_SMALL_ARRAY_PARAM_BUFFER_LENGTH {
+            return Err(ProtocolError::TooManyParameters.into());
+        }
+
         let mut data_as_bytes: Self::DataBuffer = Vec::new();
         data_as_bytes.extend_from_slice(bytes).unwrap_or_default();
-        Self {
+        Ok(Self {
             length: data_as_bytes.len() as u8,
             data: data_as_bytes,
-        }
+        })
     }
 
     fn data(&self) -> &[u8] {
@@ -267,6 +299,15 @@ impl NinaConcreteParam for NinaSmallArrayParam {
     }
 }
 
+impl Default for NinaSmallArrayParam {
+    fn default() -> Self {
+        Self {
+            length: 0,
+            data: Vec::new(),
+        }
+    }
+}
+
 impl NinaConcreteParam for NinaLargeArrayParam {
     type DataBuffer = Vec<u8, MAX_NINA_LARGE_ARRAY_PARAM_BUFFER_LENGTH>;
     type LengthAsBytes = [u8; 2];
@@ -279,13 +320,17 @@ impl NinaConcreteParam for NinaLargeArrayParam {
         }
     }
 
-    fn from_bytes(bytes: &[u8]) -> Self {
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+        if bytes.len() > MAX_NINA_LARGE_ARRAY_PARAM_BUFFER_LENGTH {
+            return Err(ProtocolError::TooManyParameters.into());
+        }
+
         let mut data_as_bytes: Self::DataBuffer = Vec::new();
         data_as_bytes.extend_from_slice(bytes).unwrap_or_default();
-        Self {
+        Ok(Self {
             length: data_as_bytes.len() as u16,
             data: data_as_bytes,
-        }
+        })
     }
 
     fn data(&self) -> &[u8] {
@@ -301,6 +346,15 @@ impl NinaConcreteParam for NinaLargeArrayParam {
             ((self.length & 0xff00) >> 8) as u8,
             (self.length & 0xff) as u8,
         ]
+    }
+}
+
+impl Default for NinaLargeArrayParam {
+    fn default() -> Self {
+        Self {
+            length: 0,
+            data: Vec::new(),
+        }
     }
 }
 
@@ -356,6 +410,9 @@ pub enum ProtocolError {
     InvalidNumberOfParameters,
     /// Too many parameters sent over the data bus.
     TooManyParameters,
+    /// Payload is larger than the maximum buffer size allowed for transmission over
+    /// the data bus.
+    PayloadTooLarge,
 }
 
 impl Format for ProtocolError {
@@ -365,7 +422,8 @@ impl Format for ProtocolError {
             ProtocolError::CommunicationTimeout => write!(fmt, "Communication with ESP32 target timed out."),
             ProtocolError::InvalidCommand => write!(fmt, "Encountered an invalid command while communicating with ESP32 target."),
             ProtocolError::InvalidNumberOfParameters => write!(fmt, "Encountered an unexpected number of parameters for a NINA command while communicating with ESP32 target."),
-            ProtocolError::TooManyParameters => write!(fmt, "Encountered too many parameters for a NINA command while communicating with ESP32 target.")
+            ProtocolError::TooManyParameters => write!(fmt, "Encountered too many parameters for a NINA command while communicating with ESP32 target."),
+            ProtocolError::PayloadTooLarge => write!(fmt, "The payload is larger than the max buffer size allowed for a NINA parameter while communicating with ESP32 target."),
         }
     }
 }

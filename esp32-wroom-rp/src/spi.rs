@@ -80,7 +80,8 @@ where
 
     fn disconnect(&mut self) -> Result<(), Error> {
         let dummy_param = NinaByteParam::from_bytes(&[ControlByte::Dummy as u8]);
-        let operation = Operation::new(NinaCommand::Disconnect).param(dummy_param.into());
+        let operation =
+            Operation::new(NinaCommand::Disconnect).param(dummy_param.unwrap_or_default().into());
 
         self.execute(&operation)?;
 
@@ -93,9 +94,17 @@ where
         // FIXME: refactor Operation so it can take different NinaParam types
         let operation = Operation::new(NinaCommand::SetDNSConfig)
             // FIXME: first param should be able to be a NinaByteParam:
-            .param(NinaByteParam::from_bytes(&[1]).into())
-            .param(NinaSmallArrayParam::from_bytes(&ip1).into())
-            .param(NinaSmallArrayParam::from_bytes(&ip2.unwrap_or_default()).into());
+            .param(NinaByteParam::from_bytes(&[1]).unwrap_or_default().into())
+            .param(
+                NinaSmallArrayParam::from_bytes(&ip1)
+                    .unwrap_or_default()
+                    .into(),
+            )
+            .param(
+                NinaSmallArrayParam::from_bytes(&ip2.unwrap_or_default())
+                    .unwrap_or_default()
+                    .into(),
+            );
 
         self.execute(&operation)?;
 
@@ -166,10 +175,26 @@ where
     ) -> Result<(), Error> {
         let port_as_bytes = [((port & 0xff00) >> 8) as u8, (port & 0xff) as u8];
         let operation = Operation::new(NinaCommand::StartClientTcp)
-            .param(NinaSmallArrayParam::from_bytes(&ip).into())
-            .param(NinaWordParam::from_bytes(&port_as_bytes).into())
-            .param(NinaByteParam::from_bytes(&[socket]).into())
-            .param(NinaByteParam::from_bytes(&[*mode as u8]).into());
+            .param(
+                NinaSmallArrayParam::from_bytes(&ip)
+                    .unwrap_or_default()
+                    .into(),
+            )
+            .param(
+                NinaWordParam::from_bytes(&port_as_bytes)
+                    .unwrap_or_default()
+                    .into(),
+            )
+            .param(
+                NinaByteParam::from_bytes(&[socket])
+                    .unwrap_or_default()
+                    .into(),
+            )
+            .param(
+                NinaByteParam::from_bytes(&[*mode as u8])
+                    .unwrap_or_default()
+                    .into(),
+            );
 
         self.execute(&operation)?;
 
@@ -184,8 +209,11 @@ where
     // TODO: passing in TransportMode but not using, for now. It will become a way
     // of stopping the right kind of client (e.g. TCP, vs UDP)
     fn stop_client_tcp(&mut self, socket: Socket, _mode: &TransportMode) -> Result<(), Error> {
-        let operation = Operation::new(NinaCommand::StopClientTcp)
-            .param(NinaByteParam::from_bytes(&[socket]).into());
+        let operation = Operation::new(NinaCommand::StopClientTcp).param(
+            NinaByteParam::from_bytes(&[socket])
+                .unwrap_or_default()
+                .into(),
+        );
 
         self.execute(&operation)?;
 
@@ -198,8 +226,11 @@ where
     }
 
     fn get_client_state_tcp(&mut self, socket: Socket) -> Result<ConnectionState, Error> {
-        let operation = Operation::new(NinaCommand::GetClientStateTcp)
-            .param(NinaByteParam::from_bytes(&[socket]).into());
+        let operation = Operation::new(NinaCommand::GetClientStateTcp).param(
+            NinaByteParam::from_bytes(&[socket])
+                .unwrap_or_default()
+                .into(),
+        );
 
         self.execute(&operation)?;
 
@@ -215,7 +246,11 @@ where
         socket: Socket,
     ) -> Result<[u8; MAX_NINA_RESPONSE_LENGTH], Error> {
         let operation = Operation::new(NinaCommand::SendDataTcp)
-            .param(NinaLargeArrayParam::from_bytes(&[socket]).into())
+            .param(
+                NinaLargeArrayParam::from_bytes(&[socket])
+                    .unwrap_or_default()
+                    .into(),
+            )
             .param(NinaLargeArrayParam::new(data).into());
 
         self.execute(&operation)?;
