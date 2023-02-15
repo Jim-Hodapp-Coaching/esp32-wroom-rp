@@ -327,8 +327,8 @@ where
         let mut response_param_buffer: [u8; MAX_NINA_RESPONSE_LENGTH] =
             [0; MAX_NINA_RESPONSE_LENGTH];
         if number_of_params_to_read > 0 {
-            for (index, _) in response_param_buffer.into_iter().enumerate() {
-                response_param_buffer[index] = self.get_byte().ok().unwrap()
+            for i in 0..number_of_params_to_read {
+                response_param_buffer[i] = self.get_byte().ok().unwrap()
             }
         }
 
