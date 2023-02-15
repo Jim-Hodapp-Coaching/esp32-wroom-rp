@@ -59,8 +59,12 @@ where
 
     fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error> {
         let operation = Operation::new(NinaCommand::SetPassphrase)
-            .param(NinaSmallArrayParam::new(ssid).into())
-            .param(NinaSmallArrayParam::new(passphrase).into());
+            .param(NinaSmallArrayParam::new(ssid).unwrap_or_default().into())
+            .param(
+                NinaSmallArrayParam::new(passphrase)
+                    .unwrap_or_default()
+                    .into(),
+            );
 
         self.execute(&operation)?;
 
@@ -114,8 +118,11 @@ where
     }
 
     fn req_host_by_name(&mut self, hostname: &str) -> Result<u8, Error> {
-        let operation = Operation::new(NinaCommand::ReqHostByName)
-            .param(NinaSmallArrayParam::new(hostname).into());
+        let operation = Operation::new(NinaCommand::ReqHostByName).param(
+            NinaSmallArrayParam::new(hostname)
+                .unwrap_or_default()
+                .into(),
+        );
 
         self.execute(&operation)?;
 
@@ -251,7 +258,7 @@ where
                     .unwrap_or_default()
                     .into(),
             )
-            .param(NinaLargeArrayParam::new(data).into());
+            .param(NinaLargeArrayParam::new(data).unwrap_or_default().into());
 
         self.execute(&operation)?;
 

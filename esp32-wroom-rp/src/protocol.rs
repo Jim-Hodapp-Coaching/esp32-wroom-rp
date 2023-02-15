@@ -51,7 +51,7 @@ where
     // Length of parameter in bytes
     type LengthAsBytes: IntoIterator<Item = u8>;
 
-    fn new(data: &str) -> Self;
+    fn new(data: &str) -> Result<Self, Error>;
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, Error>;
 
@@ -171,17 +171,21 @@ impl NinaConcreteParam for NinaByteParam {
     type DataBuffer = Vec<u8, MAX_NINA_BYTE_PARAM_BUFFER_LENGTH>;
     type LengthAsBytes = [u8; 1];
 
-    fn new(data: &str) -> Self {
+    fn new(data: &str) -> Result<Self, Error> {
+        if data.len() > MAX_NINA_BYTE_PARAM_BUFFER_LENGTH {
+            return Err(ProtocolError::PayloadTooLarge.into());
+        }
+
         let data_as_bytes: Self::DataBuffer = String::from(data).into_bytes();
-        Self {
+        Ok(Self {
             length: data_as_bytes.len() as u8,
             data: data_as_bytes,
-        }
+        })
     }
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
         if bytes.len() > MAX_NINA_BYTE_PARAM_BUFFER_LENGTH {
-            return Err(ProtocolError::TooManyParameters.into());
+            return Err(ProtocolError::PayloadTooLarge.into());
         }
 
         let mut data_as_bytes: Self::DataBuffer = Vec::new();
@@ -218,17 +222,21 @@ impl NinaConcreteParam for NinaWordParam {
     type DataBuffer = Vec<u8, MAX_NINA_WORD_PARAM_BUFFER_LENGTH>;
     type LengthAsBytes = [u8; 1];
 
-    fn new(data: &str) -> Self {
+    fn new(data: &str) -> Result<Self, Error> {
+        if data.len() > MAX_NINA_WORD_PARAM_BUFFER_LENGTH {
+            return Err(ProtocolError::PayloadTooLarge.into());
+        }
+
         let data_as_bytes: Self::DataBuffer = String::from(data).into_bytes();
-        Self {
+        Ok(Self {
             length: data_as_bytes.len() as u8,
             data: data_as_bytes,
-        }
+        })
     }
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
         if bytes.len() > MAX_NINA_WORD_PARAM_BUFFER_LENGTH {
-            return Err(ProtocolError::TooManyParameters.into());
+            return Err(ProtocolError::PayloadTooLarge.into());
         }
 
         let mut data_as_bytes: Self::DataBuffer = Vec::new();
@@ -265,17 +273,21 @@ impl NinaConcreteParam for NinaSmallArrayParam {
     type DataBuffer = Vec<u8, MAX_NINA_SMALL_ARRAY_PARAM_BUFFER_LENGTH>;
     type LengthAsBytes = [u8; 1];
 
-    fn new(data: &str) -> Self {
+    fn new(data: &str) -> Result<Self, Error> {
+        if data.len() > MAX_NINA_SMALL_ARRAY_PARAM_BUFFER_LENGTH {
+            return Err(ProtocolError::PayloadTooLarge.into());
+        }
+
         let data_as_bytes: Self::DataBuffer = String::from(data).into_bytes();
-        Self {
+        Ok(Self {
             length: data_as_bytes.len() as u8,
             data: data_as_bytes,
-        }
+        })
     }
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
         if bytes.len() > MAX_NINA_SMALL_ARRAY_PARAM_BUFFER_LENGTH {
-            return Err(ProtocolError::TooManyParameters.into());
+            return Err(ProtocolError::PayloadTooLarge.into());
         }
 
         let mut data_as_bytes: Self::DataBuffer = Vec::new();
@@ -312,17 +324,21 @@ impl NinaConcreteParam for NinaLargeArrayParam {
     type DataBuffer = Vec<u8, MAX_NINA_LARGE_ARRAY_PARAM_BUFFER_LENGTH>;
     type LengthAsBytes = [u8; 2];
 
-    fn new(data: &str) -> Self {
+    fn new(data: &str) -> Result<Self, Error> {
+        if data.len() > MAX_NINA_LARGE_ARRAY_PARAM_BUFFER_LENGTH {
+            return Err(ProtocolError::PayloadTooLarge.into());
+        }
+
         let data_as_bytes: Self::DataBuffer = String::from(data).into_bytes();
-        Self {
+        Ok(Self {
             length: data_as_bytes.len() as u16,
             data: data_as_bytes,
-        }
+        })
     }
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
         if bytes.len() > MAX_NINA_LARGE_ARRAY_PARAM_BUFFER_LENGTH {
-            return Err(ProtocolError::TooManyParameters.into());
+            return Err(ProtocolError::PayloadTooLarge.into());
         }
 
         let mut data_as_bytes: Self::DataBuffer = Vec::new();
