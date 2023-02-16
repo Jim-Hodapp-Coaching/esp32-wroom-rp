@@ -70,29 +70,34 @@ pub(crate) trait NinaParam {
 }
 
 // Used for single byte params
+#[derive(PartialEq, Debug)]
 pub(crate) struct NinaByteParam {
     length: u8,
     data: <NinaByteParam as NinaConcreteParam>::DataBuffer,
 }
 
 // Used for 2-byte params
+#[derive(PartialEq, Debug)]
 pub(crate) struct NinaWordParam {
     length: u8,
     data: <NinaWordParam as NinaConcreteParam>::DataBuffer,
 }
 
 // Used for params that are smaller than 255 bytes
+#[derive(PartialEq, Debug)]
 pub(crate) struct NinaSmallArrayParam {
     length: u8,
     data: <NinaSmallArrayParam as NinaConcreteParam>::DataBuffer,
 }
 
 // Used for params that can be larger than 255 bytes up to MAX_NINA_PARAM_LENGTH
+#[derive(PartialEq, Debug)]
 pub(crate) struct NinaLargeArrayParam {
     length: u16,
     data: <NinaLargeArrayParam as NinaConcreteParam>::DataBuffer,
 }
 
+#[derive(PartialEq, Debug)]
 pub(crate) struct NinaAbstractParam {
     // Byte representation of length of data
     length_as_bytes: [u8; 2],
@@ -441,5 +446,103 @@ impl Format for ProtocolError {
             ProtocolError::TooManyParameters => write!(fmt, "Encountered too many parameters for a NINA command while communicating with ESP32 target."),
             ProtocolError::PayloadTooLarge => write!(fmt, "The payload is larger than the max buffer size allowed for a NINA parameter while communicating with ESP32 target."),
         }
+    }
+}
+
+#[cfg(test)]
+mod protocol_tests {
+    use super::*;
+    use core::str;
+
+    #[test]
+    fn nina_byte_param_new_returns_payload_too_large_error_when_given_too_many_bytes() {
+        let str_slice: &str = "too many bytes";
+        let result = NinaByteParam::new(str_slice);
+
+        assert_eq!(
+            result.unwrap_err(),
+            Error::Protocol(ProtocolError::PayloadTooLarge)
+        )
+    }
+
+    #[test]
+    fn nina_byte_param_from_bytes_returns_payload_too_large_error_when_given_too_many_bytes() {
+        let bytes: [u8; 2] = [0; 2];
+        let result = NinaByteParam::from_bytes(&bytes);
+
+        assert_eq!(
+            result.unwrap_err(),
+            Error::Protocol(ProtocolError::PayloadTooLarge)
+        )
+    }
+
+    #[test]
+    fn nina_word_param_new_returns_payload_too_large_error_when_given_too_many_bytes() {
+        let str_slice: &str = "too many bytes";
+        let result = NinaWordParam::new(str_slice);
+
+        assert_eq!(
+            result.unwrap_err(),
+            Error::Protocol(ProtocolError::PayloadTooLarge)
+        )
+    }
+
+    #[test]
+    fn nina_word_param_from_bytes_returns_payload_too_large_error_when_given_too_many_bytes() {
+        let bytes: [u8; 3] = [0; 3];
+        let result = NinaWordParam::from_bytes(&bytes);
+
+        assert_eq!(
+            result.unwrap_err(),
+            Error::Protocol(ProtocolError::PayloadTooLarge)
+        )
+    }
+
+    #[test]
+    fn nina_small_array_param_new_returns_payload_too_large_error_when_given_too_many_bytes() {
+        let bytes = [0xA; 256];
+        let str_slice: &str = str::from_utf8(&bytes).unwrap();
+        let result = NinaSmallArrayParam::new(str_slice);
+
+        assert_eq!(
+            result.unwrap_err(),
+            Error::Protocol(ProtocolError::PayloadTooLarge)
+        )
+    }
+
+    #[test]
+    fn nina_small_array_param_from_bytes_returns_payload_too_large_error_when_given_too_many_bytes()
+    {
+        let bytes: [u8; 256] = [0xA; 256];
+        let result = NinaSmallArrayParam::from_bytes(&bytes);
+
+        assert_eq!(
+            result.unwrap_err(),
+            Error::Protocol(ProtocolError::PayloadTooLarge)
+        )
+    }
+
+    #[test]
+    fn nina_large_array_param_new_returns_payload_too_large_error_when_given_too_many_bytes() {
+        let bytes = [0xA; 1025];
+        let str_slice: &str = str::from_utf8(&bytes).unwrap();
+        let result = NinaLargeArrayParam::new(str_slice);
+
+        assert_eq!(
+            result.unwrap_err(),
+            Error::Protocol(ProtocolError::PayloadTooLarge)
+        )
+    }
+
+    #[test]
+    fn nina_large_array_param_from_bytes_returns_payload_too_large_error_when_given_too_many_bytes()
+    {
+        let bytes: [u8; 1025] = [0xA; 1025];
+        let result = NinaLargeArrayParam::from_bytes(&bytes);
+
+        assert_eq!(
+            result.unwrap_err(),
+            Error::Protocol(ProtocolError::PayloadTooLarge)
+        )
     }
 }
