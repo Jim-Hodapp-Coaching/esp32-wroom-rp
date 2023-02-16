@@ -316,11 +316,13 @@ where
     ) -> Result<[u8; MAX_NINA_RESPONSE_LENGTH], Error> {
         self.control_pins.wait_for_esp_select();
 
-        let result = self.wait_response_cmd(&operation.command, expected_num_params);
+        self.check_response_ready(&operation.command, expected_num_params)?;
+
+        let result = self.read_response()?;
 
         self.control_pins.esp_deselect();
 
-        result
+        Ok(result)
     }
 
     fn send_cmd(&mut self, cmd: &NinaCommand, num_params: u8) -> Result<(), Error> {
@@ -341,11 +343,27 @@ where
         Ok(())
     }
 
-    fn wait_response_cmd(
-        &mut self,
-        cmd: &NinaCommand,
-        num_params: u8,
-    ) -> Result<[u8; MAX_NINA_RESPONSE_LENGTH], Error> {
+    fn read_response(&mut self) -> Result<[u8; MAX_NINA_RESPONSE_LENGTH], Error> {
+        let response_length_in_bytes = self.get_byte().ok().unwrap() as usize;
+
+        if response_length_in_bytes > MAX_NINA_PARAMS {
+            return Err(ProtocolError::TooManyParameters.into());
+        }
+
+        let mut response_param_buffer: [u8; MAX_NINA_RESPONSE_LENGTH] =
+            [0; MAX_NINA_RESPONSE_LENGTH];
+        if response_length_in_bytes > 0 {
+            response_param_buffer =
+                self.read_response_bytes(response_param_buffer, response_length_in_bytes)?;
+        }
+
+        let control_byte: u8 = ControlByte::End as u8;
+        self.read_and_check_byte(&control_byte).ok();
+
+        Ok(response_param_buffer)
+    }
+
+    fn check_response_ready(&mut self, cmd: &NinaCommand, num_params: u8) -> Result<(), Error> {
         self.check_start_cmd()?;
         let byte_to_check: u8 = *cmd as u8 | ControlByte::Reply as u8;
         let result = self.read_and_check_byte(&byte_to_check).ok().unwrap();
@@ -359,24 +377,17 @@ where
         if !result {
             return Err(ProtocolError::InvalidNumberOfParameters.into());
         }
+        Ok(())
+    }
 
-        let number_of_params_to_read = self.get_byte().ok().unwrap() as usize;
-
-        if number_of_params_to_read > MAX_NINA_PARAMS {
-            return Err(ProtocolError::TooManyParameters.into());
+    fn read_response_bytes(
+        &mut self,
+        mut response_param_buffer: [u8; MAX_NINA_RESPONSE_LENGTH],
+        response_length_in_bytes: usize,
+    ) -> Result<[u8; MAX_NINA_RESPONSE_LENGTH], Error> {
+        for i in 0..response_length_in_bytes {
+            response_param_buffer[i] = self.get_byte().ok().unwrap()
         }
-
-        let mut response_param_buffer: [u8; MAX_NINA_RESPONSE_LENGTH] =
-            [0; MAX_NINA_RESPONSE_LENGTH];
-        if number_of_params_to_read > 0 {
-            for i in 0..number_of_params_to_read {
-                response_param_buffer[i] = self.get_byte().ok().unwrap()
-            }
-        }
-
-        let control_byte: u8 = ControlByte::End as u8;
-        self.read_and_check_byte(&control_byte).ok();
-
         Ok(response_param_buffer)
     }
 
@@ -398,6 +409,9 @@ where
         for _ in 0..retry_limit {
             let byte_read = self.get_byte().ok().unwrap();
             if byte_read == ControlByte::Error as u8 {
+                // consume remaining bytes after error: 0x00, 0xEE
+                self.get_byte().ok();
+                self.get_byte().ok();
                 return Err(ProtocolError::NinaProtocolVersionMismatch.into());
             } else if byte_read == wait_byte {
                 return Ok(true);

@@ -163,7 +163,10 @@ fn invalid_command_induces_nina_protocol_version_mismatch_error() {
     let mut invalid_command_expactations = vec![
         // wait_response_cmd()
         // read start command (should be ee)
+        // NINA Firmware send an error byte (0xef) followed by 0x00 and end 0xee
         spi::Transaction::transfer(vec![0xff], vec![0xef]),
+        spi::Transaction::transfer(vec![0xff], vec![0x00]),
+        spi::Transaction::transfer(vec![0xff], vec![0xee]),
     ];
     expectations.append(&mut invalid_command_expactations);
 
