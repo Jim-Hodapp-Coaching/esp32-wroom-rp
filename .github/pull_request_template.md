@@ -1,5 +1,5 @@
 ## Description
-_describe the intent of your changes here_
+_describe the intent of your changes here and/or what problem this tries to solve_
 
 
 #### GitHub Issue: _link your GitHub issue here_
