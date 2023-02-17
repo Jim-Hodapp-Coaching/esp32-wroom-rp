@@ -76,7 +76,10 @@ pub fn mock_receive(
     number_of_params_to_receive: u8,
     values_to_receive: &[u8],
 ) -> Vec<spi::Transaction> {
-    let mut buffer = vec![0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x21];
+    // let mut buffer = vec![0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x21];
+    // Size 4096 should match MAX_NINA_RESPONSE_LENGTH
+    let mut buffer = vec![0xff; 4096];
+    buffer[7] = 0x21;
 
     let length_of_values = if values_to_receive.len() > 0 {
         values_to_receive.len() - 1

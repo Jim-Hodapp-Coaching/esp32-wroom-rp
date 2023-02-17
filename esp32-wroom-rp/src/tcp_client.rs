@@ -50,9 +50,9 @@ use super::gpio::EspControlInterface;
 use super::network::{
     ConnectionState, Hostname, IpAddress, NetworkError, Port, Socket, TransportMode,
 };
-use super::protocol::{NinaProtocolHandler, ProtocolInterface};
+use super::protocol::{NinaProtocolHandler, ProtocolInterface, ResponseData};
 use super::wifi::Wifi;
-use super::{Error, ARRAY_LENGTH_PLACEHOLDER};
+use super::Error;
 
 const MAX_HOSTNAME_LENGTH: usize = 255;
 
@@ -176,9 +176,15 @@ where
     }
 
     /// Send a string slice of data to a connected server.
-    pub fn send_data(&mut self, data: &str) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
+    pub fn send_data(&mut self, data: &str) -> Result<ResponseData, Error> {
         self.protocol_handler
             .send_data(data, self.socket.unwrap_or_default())
+    }
+
+    /// Receive a response string slice of data from a connected server.
+    pub fn receive_data(&mut self) -> Result<ResponseData, Error> {
+        self.protocol_handler
+            .receive_data(self.socket.unwrap_or_default())
     }
 
     // Provides the in-common connect() functionality used by the public interface's

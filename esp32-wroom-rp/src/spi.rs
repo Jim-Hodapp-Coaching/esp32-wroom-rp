@@ -15,10 +15,11 @@ use super::network::{ConnectionState, IpAddress, NetworkError, Port, Socket, Tra
 use super::protocol::operation::Operation;
 use super::protocol::{
     NinaByteParam, NinaCommand, NinaConcreteParam, NinaLargeArrayParam, NinaParam,
-    NinaProtocolHandler, NinaSmallArrayParam, NinaWordParam, ProtocolError, ProtocolInterface,
+    NinaProtocolHandler, NinaSmallArrayParam, NinaWordParam, ParamLengthSize, ProtocolError,
+    ProtocolInterface, ResponseData, MAX_NINA_RESPONSE_LENGTH,
 };
 use super::wifi::ConnectionStatus;
-use super::{Error, FirmwareVersion, ARRAY_LENGTH_PLACEHOLDER};
+use super::{Error, FirmwareVersion};
 
 // TODO: this should eventually move into NinaCommandHandler
 #[repr(u8)]
@@ -51,9 +52,11 @@ where
 
         self.execute(&operation)?;
 
-        let result = self.receive(&operation, 1)?;
+        let result = self.receive(&operation, 1, ParamLengthSize::OneByte)?;
 
-        Ok(FirmwareVersion::new(result)) // e.g. 1.7.4
+        let (version, _) = result.split_at(5);
+
+        Ok(FirmwareVersion::new(version)) // e.g. 1.7.3
     }
 
     fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error> {
@@ -63,7 +66,7 @@ where
 
         self.execute(&operation)?;
 
-        self.receive(&operation, 1)?;
+        self.receive(&operation, 1, ParamLengthSize::OneByte)?;
         Ok(())
     }
 
@@ -72,7 +75,7 @@ where
 
         self.execute(&operation)?;
 
-        let result = self.receive(&operation, 1)?;
+        let result = self.receive(&operation, 1, ParamLengthSize::OneByte)?;
 
         Ok(ConnectionStatus::from(result[0]))
     }
@@ -83,22 +86,20 @@ where
 
         self.execute(&operation)?;
 
-        self.receive(&operation, 1)?;
+        self.receive(&operation, 1, ParamLengthSize::OneByte)?;
 
         Ok(())
     }
 
     fn set_dns_config(&mut self, ip1: IpAddress, ip2: Option<IpAddress>) -> Result<(), Error> {
-        // FIXME: refactor Operation so it can take different NinaParam types
         let operation = Operation::new(NinaCommand::SetDNSConfig)
-            // FIXME: first param should be able to be a NinaByteParam:
             .param(NinaByteParam::from_bytes(&[1]).into())
             .param(NinaSmallArrayParam::from_bytes(&ip1).into())
             .param(NinaSmallArrayParam::from_bytes(&ip2.unwrap_or_default()).into());
 
         self.execute(&operation)?;
 
-        self.receive(&operation, 1)?;
+        self.receive(&operation, 1, ParamLengthSize::OneByte)?;
 
         Ok(())
     }
@@ -109,7 +110,7 @@ where
 
         self.execute(&operation)?;
 
-        let result = self.receive(&operation, 1)?;
+        let result = self.receive(&operation, 1, ParamLengthSize::OneByte)?;
 
         if result[0] != 1u8 {
             return Err(NetworkError::DnsResolveFailed.into());
@@ -118,12 +119,12 @@ where
         Ok(result[0])
     }
 
-    fn get_host_by_name(&mut self) -> Result<[u8; 8], Error> {
+    fn get_host_by_name(&mut self) -> Result<ResponseData, Error> {
         let operation = Operation::new(NinaCommand::GetHostByName);
 
         self.execute(&operation)?;
 
-        let result = self.receive(&operation, 1)?;
+        let result = self.receive(&operation, 1, ParamLengthSize::OneByte)?;
 
         Ok(result)
     }
@@ -151,7 +152,7 @@ where
 
         self.execute(&operation)?;
 
-        let result = self.receive(&operation, 1)?;
+        let result = self.receive(&operation, 1, ParamLengthSize::OneByte)?;
 
         Ok(result[0])
     }
@@ -163,7 +164,7 @@ where
         port: Port,
         mode: &TransportMode,
     ) -> Result<(), Error> {
-        let port_as_bytes = [((port & 0xff00) >> 8) as u8, (port & 0xff) as u8];
+        let port_as_bytes = Self::split_word_into_bytes(port);
         let operation = Operation::new(NinaCommand::StartClientTcp)
             .param(NinaSmallArrayParam::from_bytes(&ip).into())
             .param(NinaWordParam::from_bytes(&port_as_bytes).into())
@@ -172,7 +173,7 @@ where
 
         self.execute(&operation)?;
 
-        let result = self.receive(&operation, 1)?;
+        let result = self.receive(&operation, 1, ParamLengthSize::OneByte)?;
         if result[0] == 1 {
             Ok(())
         } else {
@@ -188,7 +189,7 @@ where
 
         self.execute(&operation)?;
 
-        let result = self.receive(&operation, 1)?;
+        let result = self.receive(&operation, 1, ParamLengthSize::OneByte)?;
         if result[0] == 1 {
             Ok(())
         } else {
@@ -202,24 +203,66 @@ where
 
         self.execute(&operation)?;
 
-        let result = self.receive(&operation, 1)?;
+        let result = self.receive(&operation, 1, ParamLengthSize::OneByte)?;
         // TODO: Determine whether or not any ConnectionState variants should be considered
         // an error.
         Ok(ConnectionState::from(result[0]))
     }
 
-    fn send_data(
-        &mut self,
-        data: &str,
-        socket: Socket,
-    ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
+    fn send_data(&mut self, data: &str, socket: Socket) -> Result<ResponseData, Error> {
         let operation = Operation::new(NinaCommand::SendDataTcp)
             .param(NinaLargeArrayParam::from_bytes(&[socket]).into())
             .param(NinaLargeArrayParam::new(data).into());
 
         self.execute(&operation)?;
 
-        let result = self.receive(&operation, 1)?;
+        let result = self.receive(&operation, 1, ParamLengthSize::OneByte)?;
+
+        Ok(result)
+    }
+
+    fn receive_data(&mut self, socket: Socket) -> Result<ResponseData, Error> {
+        let mut timeout: u16 = 10_000;
+        let mut available_data_length: usize = 0;
+
+        while timeout > 0 {
+            available_data_length = self.avail_data_tcp(socket)?;
+            if available_data_length > 0 {
+                break;
+            }
+
+            timeout += 1;
+        }
+
+        self.get_data_buf_tcp(socket, available_data_length)
+    }
+
+    fn avail_data_tcp(&mut self, socket: Socket) -> Result<usize, Error> {
+        let operation = Operation::new(NinaCommand::AvailDataTcp)
+            .param(NinaByteParam::from_bytes(&[socket]).into());
+
+        self.execute(&operation)?;
+
+        let result = self.receive(&operation, 1, ParamLengthSize::OneByte)?;
+
+        let avail_data_length: usize = Self::combine_2_bytes(result[0], result[1]).into();
+
+        Ok(avail_data_length)
+    }
+
+    fn get_data_buf_tcp(
+        &mut self,
+        socket: Socket,
+        available_length: usize,
+    ) -> Result<ResponseData, Error> {
+        let available_length: [u8; 2] = Self::split_word_into_bytes(available_length as u16);
+        let operation = Operation::new(NinaCommand::GetDataBufTcp)
+            .param(NinaByteParam::from_bytes(&[socket]).into())
+            .param(NinaWordParam::from_bytes(&available_length).into());
+
+        self.execute(&operation)?;
+
+        let result = self.receive(&operation, 1, ParamLengthSize::TwoByte)?;
 
         Ok(result)
     }
@@ -270,10 +313,12 @@ where
         &mut self,
         operation: &Operation<P>,
         expected_num_params: u8,
-    ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
+        param_length_size: ParamLengthSize,
+    ) -> Result<ResponseData, Error> {
         self.control_pins.wait_for_esp_select();
 
-        let result = self.wait_response_cmd(&operation.command, expected_num_params);
+        let result =
+            self.wait_response_cmd(&operation.command, expected_num_params, param_length_size);
 
         self.control_pins.esp_deselect();
 
@@ -302,10 +347,12 @@ where
         &mut self,
         cmd: &NinaCommand,
         num_params: u8,
-    ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
+        param_length_size: ParamLengthSize,
+    ) -> Result<ResponseData, Error> {
         self.check_start_cmd()?;
+
         let byte_to_check: u8 = *cmd as u8 | ControlByte::Reply as u8;
-        let result = self.read_and_check_byte(&byte_to_check).ok().unwrap();
+        let result = self.read_and_check_byte(&byte_to_check).unwrap();
         // Ensure we see a cmd byte
         if !result {
             return Err(ProtocolError::InvalidCommand.into());
@@ -317,21 +364,35 @@ where
             return Err(ProtocolError::InvalidNumberOfParameters.into());
         }
 
-        let num_params_to_read = self.get_byte().ok().unwrap() as usize;
+        let number_of_params_to_read = self.get_byte().unwrap();
 
-        // TODO: use a constant instead of inline params max == 8
-        if num_params_to_read > 8 {
-            return Err(ProtocolError::TooManyParameters.into());
+        let mut response_bytes: ResponseData = [0; MAX_NINA_RESPONSE_LENGTH];
+
+        if number_of_params_to_read > 0 {
+            let response_length: usize = match param_length_size {
+                ParamLengthSize::OneByte => number_of_params_to_read.into(),
+
+                ParamLengthSize::TwoByte => self.get_two_byte_response_length().unwrap(),
+            };
+
+            for i in 0..response_length {
+                response_bytes[i] = self.get_byte().unwrap()
+            }
         }
 
-        let mut params: [u8; ARRAY_LENGTH_PLACEHOLDER] = [0; ARRAY_LENGTH_PLACEHOLDER];
-        for (index, _param) in params.into_iter().enumerate() {
-            params[index] = self.get_byte().ok().unwrap()
-        }
-        let control_byte: u8 = ControlByte::End as u8;
-        self.read_and_check_byte(&control_byte).ok();
+        let end_byte = ControlByte::End as u8;
+        let result = self.read_and_check_byte(&end_byte).unwrap();
 
-        Ok(params)
+        if !result {
+            return Err(ProtocolError::InvalidResponseRead.into());
+        }
+
+        Ok(response_bytes)
+    }
+
+    fn get_two_byte_response_length(&mut self) -> Result<usize, Infallible> {
+        let bytes = (self.get_byte().unwrap(), self.get_byte().unwrap());
+        Ok(Self::combine_2_bytes(bytes.0, bytes.1) as usize)
     }
 
     fn send_end_cmd(&mut self) -> Result<(), Infallible> {
@@ -347,14 +408,16 @@ where
     }
 
     fn wait_for_byte(&mut self, wait_byte: u8) -> Result<bool, Error> {
-        let retry_limit: u16 = 1000u16;
+        let retry_limit: u32 = 100_000u32;
 
-        for _ in 0..retry_limit {
-            let byte_read = self.get_byte().ok().unwrap();
-            if byte_read == ControlByte::Error as u8 {
-                return Err(ProtocolError::NinaProtocolVersionMismatch.into());
-            } else if byte_read == wait_byte {
-                return Ok(true);
+        for i in 0..retry_limit {
+            if i % 5000 == 0 {
+                let byte_read = self.get_byte().ok().unwrap();
+                if byte_read == ControlByte::Error as u8 {
+                    return Err(ProtocolError::NinaProtocolVersionMismatch.into());
+                } else if byte_read == wait_byte {
+                    return Ok(true);
+                }
             }
         }
         Err(ProtocolError::CommunicationTimeout.into())
@@ -390,5 +453,18 @@ where
             self.get_byte().ok();
             command_size += 1;
         }
+    }
+
+    // Accepts two separate bytes and packs them into 2 combined bytes as a u16
+    // byte 0 is the LSB, byte1 is the MSB
+    // See: https://en.wikipedia.org/wiki/Bit_numbering#LSB_0_bit_numbering
+    fn combine_2_bytes(byte0: u8, byte1: u8) -> u16 {
+        let word0: u16 = byte0 as u16;
+        let word1: u16 = byte1 as u16;
+        (word1 << 8) | (word0 & 0xff)
+    }
+
+    fn split_word_into_bytes(word: u16) -> [u8; 2] {
+        [((word & 0xff00) >> 8) as u8, (word & 0xff) as u8]
     }
 }

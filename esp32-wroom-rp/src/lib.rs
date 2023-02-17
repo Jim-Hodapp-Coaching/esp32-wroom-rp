@@ -163,8 +163,6 @@ use network::NetworkError;
 
 use protocol::ProtocolError;
 
-const ARRAY_LENGTH_PLACEHOLDER: usize = 8;
-
 /// Highest level error types for this crate.
 #[derive(Debug, Eq, PartialEq)]
 pub enum Error {
@@ -212,17 +210,15 @@ pub struct FirmwareVersion {
 }
 
 impl FirmwareVersion {
-    fn new(version: [u8; ARRAY_LENGTH_PLACEHOLDER]) -> FirmwareVersion {
+    fn new(version: &[u8]) -> FirmwareVersion {
         Self::parse(version)
     }
 
     // Takes in 8 bytes (e.g. 1.7.4) and returns a FirmwareVersion instance
-    fn parse(version: [u8; ARRAY_LENGTH_PLACEHOLDER]) -> FirmwareVersion {
-        let major_version: u8;
-        let minor_version: u8;
-        let patch_version: u8;
-
-        [major_version, _, minor_version, _, patch_version, _, _, _] = version;
+    fn parse(version: &[u8]) -> FirmwareVersion {
+        let major_version: u8 = version[0];
+        let minor_version: u8 = version[2];
+        let patch_version: u8 = version[4];
 
         FirmwareVersion {
             major: major_version,
@@ -248,8 +244,7 @@ mod tests {
 
     #[test]
     fn firmware_new_returns_a_populated_firmware_struct() {
-        let firmware_version: FirmwareVersion =
-            FirmwareVersion::new([0x1, 0x2e, 0x7, 0x2e, 0x4, 0x0, 0x0, 0x0]);
+        let firmware_version: FirmwareVersion = FirmwareVersion::new(&[0x1, 0x2e, 0x7, 0x2e, 0x4]);
 
         assert_eq!(
             firmware_version,

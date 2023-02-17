@@ -3,6 +3,7 @@ members = [
   "dns",
   "get_fw_version",
   "join",
+  "receive_data_tcp",
   "send_data_tcp"
 ]
 
