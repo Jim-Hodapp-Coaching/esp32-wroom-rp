@@ -30,6 +30,8 @@
 //! };
 //! ```
 
+use core::hint;
+
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::digital::v2::{InputPin, OutputPin};
 
@@ -131,13 +133,13 @@ where
 
     fn wait_for_esp_ready(&self) {
         while !self.get_esp_ready() {
-            //cortex_m::asm::nop(); // Make sure rustc doesn't optimize this loop out
+            hint::spin_loop(); // Make sure rustc doesn't optimize this loop out
         }
     }
 
     fn wait_for_esp_ack(&self) {
         while !self.get_esp_ack() {
-            //cortex_m::asm::nop(); // Make sure rustc doesn't optimize this loop out
+            hint::spin_loop(); // Make sure rustc doesn't optimize this loop out
         }
     }
 

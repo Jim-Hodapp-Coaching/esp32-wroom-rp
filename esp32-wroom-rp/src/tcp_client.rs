@@ -52,7 +52,7 @@ use super::network::{
 };
 use super::protocol::{NinaProtocolHandler, ProtocolInterface};
 use super::wifi::Wifi;
-use super::{Error, ARRAY_LENGTH_PLACEHOLDER};
+use super::Error;
 
 const MAX_HOSTNAME_LENGTH: usize = 255;
 
@@ -176,7 +176,7 @@ where
     }
 
     /// Send a string slice of data to a connected server.
-    pub fn send_data(&mut self, data: &str) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
+    pub fn send_data(&mut self, data: &str) -> Result<[u8; 1], Error> {
         self.protocol_handler
             .send_data(data, self.socket.unwrap_or_default())
     }

@@ -24,9 +24,9 @@ impl Operation<NinaAbstractParam> {
     // Pushes a new param into the internal `params` Vector which
     // builds up an internal byte stream representing one Nina command
     // on the data bus.
-    pub fn param(mut self, param: NinaAbstractParam) -> Self {
+    pub fn param<P: Into<NinaAbstractParam>>(mut self, param: P) -> Self {
         // FIXME: Vec::push() will return T when it is full, handle this gracefully
-        self.params.push(param).unwrap_or(());
+        self.params.push(param.into()).unwrap_or(());
         self
     }
 }

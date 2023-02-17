@@ -15,12 +15,12 @@ use super::network::{ConnectionState, IpAddress, NetworkError, Port, Socket, Tra
 use super::protocol::operation::Operation;
 use super::protocol::{
     NinaByteParam, NinaCommand, NinaConcreteParam, NinaLargeArrayParam, NinaParam,
-    NinaProtocolHandler, NinaSmallArrayParam, NinaWordParam, ProtocolError, ProtocolInterface,
+    NinaProtocolHandler, NinaResponseBuffer, NinaSmallArrayParam, NinaWordParam, ProtocolError,
+    ProtocolInterface, MAX_NINA_PARAMS, MAX_NINA_RESPONSE_LENGTH,
 };
 use super::wifi::ConnectionStatus;
-use super::{Error, FirmwareVersion, ARRAY_LENGTH_PLACEHOLDER};
+use super::{Error, FirmwareVersion};
 
-// TODO: this should eventually move into NinaCommandHandler
 #[repr(u8)]
 #[derive(Debug)]
 enum ControlByte {
@@ -52,14 +52,15 @@ where
         self.execute(&operation)?;
 
         let result = self.receive(&operation, 1)?;
+        let (version, _) = result.split_at(5);
 
-        Ok(FirmwareVersion::new(result)) // e.g. 1.7.4
+        Ok(FirmwareVersion::new(version)) // e.g. 1.7.4
     }
 
     fn set_passphrase(&mut self, ssid: &str, passphrase: &str) -> Result<(), Error> {
         let operation = Operation::new(NinaCommand::SetPassphrase)
-            .param(NinaSmallArrayParam::new(ssid).into())
-            .param(NinaSmallArrayParam::new(passphrase).into());
+            .param(NinaSmallArrayParam::new(ssid)?)
+            .param(NinaSmallArrayParam::new(passphrase)?);
 
         self.execute(&operation)?;
 
@@ -79,7 +80,8 @@ where
 
     fn disconnect(&mut self) -> Result<(), Error> {
         let dummy_param = NinaByteParam::from_bytes(&[ControlByte::Dummy as u8]);
-        let operation = Operation::new(NinaCommand::Disconnect).param(dummy_param.into());
+        let operation =
+            Operation::new(NinaCommand::Disconnect).param(dummy_param.unwrap_or_default());
 
         self.execute(&operation)?;
 
@@ -92,9 +94,9 @@ where
         // FIXME: refactor Operation so it can take different NinaParam types
         let operation = Operation::new(NinaCommand::SetDNSConfig)
             // FIXME: first param should be able to be a NinaByteParam:
-            .param(NinaByteParam::from_bytes(&[1]).into())
-            .param(NinaSmallArrayParam::from_bytes(&ip1).into())
-            .param(NinaSmallArrayParam::from_bytes(&ip2.unwrap_or_default()).into());
+            .param(NinaByteParam::from_bytes(&[1])?)
+            .param(NinaSmallArrayParam::from_bytes(&ip1)?)
+            .param(NinaSmallArrayParam::from_bytes(&ip2.unwrap_or_default())?);
 
         self.execute(&operation)?;
 
@@ -104,8 +106,8 @@ where
     }
 
     fn req_host_by_name(&mut self, hostname: &str) -> Result<u8, Error> {
-        let operation = Operation::new(NinaCommand::ReqHostByName)
-            .param(NinaSmallArrayParam::new(hostname).into());
+        let operation =
+            Operation::new(NinaCommand::ReqHostByName).param(NinaSmallArrayParam::new(hostname)?);
 
         self.execute(&operation)?;
 
@@ -118,7 +120,7 @@ where
         Ok(result[0])
     }
 
-    fn get_host_by_name(&mut self) -> Result<[u8; 8], Error> {
+    fn get_host_by_name(&mut self) -> Result<NinaResponseBuffer, Error> {
         let operation = Operation::new(NinaCommand::GetHostByName);
 
         self.execute(&operation)?;
@@ -165,10 +167,10 @@ where
     ) -> Result<(), Error> {
         let port_as_bytes = [((port & 0xff00) >> 8) as u8, (port & 0xff) as u8];
         let operation = Operation::new(NinaCommand::StartClientTcp)
-            .param(NinaSmallArrayParam::from_bytes(&ip).into())
-            .param(NinaWordParam::from_bytes(&port_as_bytes).into())
-            .param(NinaByteParam::from_bytes(&[socket]).into())
-            .param(NinaByteParam::from_bytes(&[*mode as u8]).into());
+            .param(NinaSmallArrayParam::from_bytes(&ip)?)
+            .param(NinaWordParam::from_bytes(&port_as_bytes)?)
+            .param(NinaByteParam::from_bytes(&[socket])?)
+            .param(NinaByteParam::from_bytes(&[*mode as u8])?);
 
         self.execute(&operation)?;
 
@@ -183,8 +185,8 @@ where
     // TODO: passing in TransportMode but not using, for now. It will become a way
     // of stopping the right kind of client (e.g. TCP, vs UDP)
     fn stop_client_tcp(&mut self, socket: Socket, _mode: &TransportMode) -> Result<(), Error> {
-        let operation = Operation::new(NinaCommand::StopClientTcp)
-            .param(NinaByteParam::from_bytes(&[socket]).into());
+        let operation =
+            Operation::new(NinaCommand::StopClientTcp).param(NinaByteParam::from_bytes(&[socket])?);
 
         self.execute(&operation)?;
 
@@ -198,7 +200,7 @@ where
 
     fn get_client_state_tcp(&mut self, socket: Socket) -> Result<ConnectionState, Error> {
         let operation = Operation::new(NinaCommand::GetClientStateTcp)
-            .param(NinaByteParam::from_bytes(&[socket]).into());
+            .param(NinaByteParam::from_bytes(&[socket])?);
 
         self.execute(&operation)?;
 
@@ -208,20 +210,16 @@ where
         Ok(ConnectionState::from(result[0]))
     }
 
-    fn send_data(
-        &mut self,
-        data: &str,
-        socket: Socket,
-    ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
+    fn send_data(&mut self, data: &str, socket: Socket) -> Result<[u8; 1], Error> {
         let operation = Operation::new(NinaCommand::SendDataTcp)
-            .param(NinaLargeArrayParam::from_bytes(&[socket]).into())
-            .param(NinaLargeArrayParam::new(data).into());
+            .param(NinaLargeArrayParam::from_bytes(&[socket])?)
+            .param(NinaLargeArrayParam::new(data)?);
 
         self.execute(&operation)?;
 
         let result = self.receive(&operation, 1)?;
 
-        Ok(result)
+        Ok([result[0]])
     }
 }
 
@@ -270,14 +268,16 @@ where
         &mut self,
         operation: &Operation<P>,
         expected_num_params: u8,
-    ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
+    ) -> Result<NinaResponseBuffer, Error> {
         self.control_pins.wait_for_esp_select();
 
-        let result = self.wait_response_cmd(&operation.command, expected_num_params);
+        self.check_response_ready(&operation.command, expected_num_params)?;
+
+        let result = self.read_response()?;
 
         self.control_pins.esp_deselect();
 
-        result
+        Ok(result)
     }
 
     fn send_cmd(&mut self, cmd: &NinaCommand, num_params: u8) -> Result<(), Error> {
@@ -298,11 +298,26 @@ where
         Ok(())
     }
 
-    fn wait_response_cmd(
-        &mut self,
-        cmd: &NinaCommand,
-        num_params: u8,
-    ) -> Result<[u8; ARRAY_LENGTH_PLACEHOLDER], Error> {
+    fn read_response(&mut self) -> Result<NinaResponseBuffer, Error> {
+        let response_length_in_bytes = self.get_byte().ok().unwrap() as usize;
+
+        if response_length_in_bytes > MAX_NINA_PARAMS {
+            return Err(ProtocolError::TooManyParameters.into());
+        }
+
+        let mut response_param_buffer: NinaResponseBuffer = [0; MAX_NINA_RESPONSE_LENGTH];
+        if response_length_in_bytes > 0 {
+            response_param_buffer =
+                self.read_response_bytes(response_param_buffer, response_length_in_bytes)?;
+        }
+
+        let control_byte: u8 = ControlByte::End as u8;
+        self.read_and_check_byte(&control_byte).ok();
+
+        Ok(response_param_buffer)
+    }
+
+    fn check_response_ready(&mut self, cmd: &NinaCommand, num_params: u8) -> Result<(), Error> {
         self.check_start_cmd()?;
         let byte_to_check: u8 = *cmd as u8 | ControlByte::Reply as u8;
         let result = self.read_and_check_byte(&byte_to_check).ok().unwrap();
@@ -316,22 +331,21 @@ where
         if !result {
             return Err(ProtocolError::InvalidNumberOfParameters.into());
         }
+        Ok(())
+    }
 
-        let num_params_to_read = self.get_byte().ok().unwrap() as usize;
-
-        // TODO: use a constant instead of inline params max == 8
-        if num_params_to_read > 8 {
-            return Err(ProtocolError::TooManyParameters.into());
+    fn read_response_bytes(
+        &mut self,
+        mut response_param_buffer: NinaResponseBuffer,
+        response_length_in_bytes: usize,
+    ) -> Result<NinaResponseBuffer, Error> {
+        for byte in response_param_buffer
+            .iter_mut()
+            .take(response_length_in_bytes)
+        {
+            *byte = self.get_byte().ok().unwrap();
         }
-
-        let mut params: [u8; ARRAY_LENGTH_PLACEHOLDER] = [0; ARRAY_LENGTH_PLACEHOLDER];
-        for (index, _param) in params.into_iter().enumerate() {
-            params[index] = self.get_byte().ok().unwrap()
-        }
-        let control_byte: u8 = ControlByte::End as u8;
-        self.read_and_check_byte(&control_byte).ok();
-
-        Ok(params)
+        Ok(response_param_buffer)
     }
 
     fn send_end_cmd(&mut self) -> Result<(), Infallible> {
@@ -352,6 +366,9 @@ where
         for _ in 0..retry_limit {
             let byte_read = self.get_byte().ok().unwrap();
             if byte_read == ControlByte::Error as u8 {
+                // consume remaining bytes after error: 0x00, 0xEE
+                self.get_byte().ok();
+                self.get_byte().ok();
                 return Err(ProtocolError::NinaProtocolVersionMismatch.into());
             } else if byte_read == wait_byte {
                 return Ok(true);
@@ -390,5 +407,85 @@ where
             self.get_byte().ok();
             command_size += 1;
         }
+    }
+}
+
+#[cfg(test)]
+mod spi_tests {
+    use super::*;
+
+    use crate::gpio::EspControlPins;
+    use crate::Error;
+    use core::cell::RefCell;
+    use core::str;
+    use embedded_hal::blocking::spi::Transfer;
+    use embedded_hal::digital::v2::{InputPin, OutputPin, PinState};
+
+    struct TransferMock {}
+
+    impl Transfer<u8> for TransferMock {
+        type Error = Error;
+        fn transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Error> {
+            Ok(words)
+        }
+    }
+
+    struct OutputPinMock {}
+
+    impl OutputPin for OutputPinMock {
+        type Error = Error;
+
+        fn set_low(&mut self) -> Result<(), Self::Error> {
+            Ok(())
+        }
+
+        fn set_high(&mut self) -> Result<(), Self::Error> {
+            Ok(())
+        }
+
+        fn set_state(&mut self, _state: PinState) -> Result<(), Self::Error> {
+            Ok(())
+        }
+    }
+
+    struct InputPinMock {}
+
+    impl InputPin for InputPinMock {
+        type Error = Error;
+
+        fn is_high(&self) -> Result<bool, Self::Error> {
+            Ok(true)
+        }
+
+        fn is_low(&self) -> Result<bool, Self::Error> {
+            Ok(true)
+        }
+    }
+
+    #[test]
+    fn too_large_of_a_nina_param_throws_error() {
+        let bytes = [0xA; 256];
+        let str_slice: &str = str::from_utf8(&bytes).unwrap();
+
+        let control_pins = EspControlPins {
+            cs: OutputPinMock {},
+            gpio0: OutputPinMock {},
+            resetn: OutputPinMock {},
+            ack: InputPinMock {},
+        };
+
+        let transfer_mock = TransferMock {};
+
+        let mut protocol_handler = NinaProtocolHandler {
+            bus: RefCell::new(transfer_mock),
+            control_pins: control_pins,
+        };
+
+        let result = protocol_handler.set_passphrase(str_slice, "");
+
+        assert_eq!(
+            result.unwrap_err(),
+            Error::Protocol(ProtocolError::PayloadTooLarge)
+        )
     }
 }
