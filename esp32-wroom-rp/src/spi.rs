@@ -339,8 +339,11 @@ where
         mut response_param_buffer: NinaResponseBuffer,
         response_length_in_bytes: usize,
     ) -> Result<NinaResponseBuffer, Error> {
-        for i in 0..response_length_in_bytes {
-            response_param_buffer[i] = self.get_byte().ok().unwrap()
+        for byte in response_param_buffer
+            .iter_mut()
+            .take(response_length_in_bytes)
+        {
+            *byte = self.get_byte().ok().unwrap();
         }
         Ok(response_param_buffer)
     }
