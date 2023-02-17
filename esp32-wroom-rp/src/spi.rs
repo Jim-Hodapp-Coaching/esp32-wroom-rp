@@ -221,6 +221,36 @@ where
 
         Ok([result[0]])
     }
+
+    fn avail_data_tcp(&mut self, socket: Socket) -> Result<usize, Error> {
+        let operation = Operation::new(NinaCommand::AvailDataTcp)
+            .param(NinaLargeArrayParam::from_bytes(&[socket])?);
+
+        self.execute(&operation)?;
+
+        let result = self.receive_data16(&operation, 1)?;
+
+        Ok(result[0] as usize)
+    }
+
+    // dummy implementations for now
+
+    fn get_data_buf_tcp(
+        &mut self,
+        socket: Socket,
+        available_length: usize,
+    ) -> Result<NinaResponseBuffer, Error> {
+        let mut response_param_buffer: NinaResponseBuffer = [0; MAX_NINA_RESPONSE_LENGTH];
+
+        Ok(response_param_buffer)
+    }
+
+    fn receive_data(&mut self, socket: Socket) -> Result<NinaResponseBuffer, Error> {
+        self.avail_data_tcp(socket);
+        let mut response_param_buffer: NinaResponseBuffer = [0; MAX_NINA_RESPONSE_LENGTH];
+
+        Ok(response_param_buffer)
+    }
 }
 
 impl<S, C> NinaProtocolHandler<S, C>
@@ -280,6 +310,22 @@ where
         Ok(result)
     }
 
+    fn receive_data16<P: NinaParam>(
+        &mut self,
+        operation: &Operation<P>,
+        expected_num_params: u8,
+    ) -> Result<NinaResponseBuffer, Error> {
+        self.control_pins.wait_for_esp_select();
+
+        self.check_response_ready(&operation.command, expected_num_params)?;
+
+        let result = self.read_response16()?;
+
+        self.control_pins.esp_deselect();
+
+        Ok(result)
+    }
+
     fn send_cmd(&mut self, cmd: &NinaCommand, num_params: u8) -> Result<(), Error> {
         let buf: [u8; 3] = [
             ControlByte::Start as u8,
@@ -309,6 +355,34 @@ where
         if response_length_in_bytes > 0 {
             response_param_buffer =
                 self.read_response_bytes(response_param_buffer, response_length_in_bytes)?;
+        }
+
+        let control_byte: u8 = ControlByte::End as u8;
+        self.read_and_check_byte(&control_byte).ok();
+
+        Ok(response_param_buffer)
+    }
+
+    fn read_response16(&mut self) -> Result<NinaResponseBuffer, Error> {
+        // let response_length_in_bytes = self.get_byte().ok().unwrap() as usize;
+
+        let number_of_params = self.get_byte().unwrap() as usize;
+
+        // if response_length_in_bytes > MAX_NINA_PARAMS {
+        //     return Err(ProtocolError::TooManyParameters.into());
+        // }
+
+        let mut response_param_buffer: NinaResponseBuffer = [0; MAX_NINA_RESPONSE_LENGTH];
+        if number_of_params > 0 {
+            let bytes = (self.get_byte().unwrap(), self.get_byte().unwrap());
+            defmt::debug!("avail_data_tcp bytes: {:?}", bytes);
+            let response_length_as_u16: usize = Self::combine_2_bytes(bytes.0, bytes.1).into();
+            defmt::debug!(
+                "avail_data_tcp response_length_as_u16: {:?}",
+                response_length_as_u16
+            );
+            response_param_buffer =
+                self.read_response_bytes(response_param_buffer, response_length_as_u16)?;
         }
 
         let control_byte: u8 = ControlByte::End as u8;
@@ -407,6 +481,15 @@ where
             self.get_byte().ok();
             command_size += 1;
         }
+    }
+
+    // Accepts two separate bytes and packs them into 2 combined bytes as a u16
+    // byte 0 is the LSB, byte1 is the MSB
+    // See: https://en.wikipedia.org/wiki/Bit_numbering#LSB_0_bit_numbering
+    fn combine_2_bytes(byte0: u8, byte1: u8) -> u16 {
+        let word0: u16 = byte0 as u16;
+        let word1: u16 = byte1 as u16;
+        (word1 << 8) | (word0 & 0xff)
     }
 }
 

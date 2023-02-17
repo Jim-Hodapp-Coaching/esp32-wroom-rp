@@ -50,7 +50,7 @@ use super::gpio::EspControlInterface;
 use super::network::{
     ConnectionState, Hostname, IpAddress, NetworkError, Port, Socket, TransportMode,
 };
-use super::protocol::{NinaProtocolHandler, ProtocolInterface};
+use super::protocol::{NinaProtocolHandler, NinaResponseBuffer, ProtocolInterface};
 use super::wifi::Wifi;
 use super::Error;
 
@@ -179,6 +179,12 @@ where
     pub fn send_data(&mut self, data: &str) -> Result<[u8; 1], Error> {
         self.protocol_handler
             .send_data(data, self.socket.unwrap_or_default())
+    }
+
+    /// Receive a response string slice of data from a connected server.
+    pub fn receive_data(&mut self) -> Result<NinaResponseBuffer, Error> {
+        self.protocol_handler
+            .receive_data(self.socket.unwrap_or_default())
     }
 
     // Provides the in-common connect() functionality used by the public interface's
