@@ -24,7 +24,11 @@ pub(crate) const MAX_NINA_SMALL_ARRAY_PARAM_BUFFER_LENGTH: usize = 255;
 pub(crate) const MAX_NINA_LARGE_ARRAY_PARAM_BUFFER_LENGTH: usize = 1024;
 
 // The maximum length that a 2-byte length NINA response can be
-pub(crate) const MAX_NINA_RESPONSE_LENGTH: usize = 1064;
+pub(crate) const MAX_NINA_RESPONSE_LENGTH: usize = 1024;
+
+// TODO: unalias this type and turn into a full wrapper struct
+/// Provides a byte buffer to hold responses returned from NINA-FW
+pub type NinaResponseBuffer = [u8; MAX_NINA_RESPONSE_LENGTH];
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug)]
@@ -400,11 +404,7 @@ pub(crate) trait ProtocolInterface {
     ) -> Result<(), Error>;
     fn stop_client_tcp(&mut self, socket: Socket, _mode: &TransportMode) -> Result<(), Error>;
     fn get_client_state_tcp(&mut self, socket: Socket) -> Result<ConnectionState, Error>;
-    fn send_data(
-        &mut self,
-        data: &str,
-        socket: Socket,
-    ) -> Result<[u8; MAX_NINA_RESPONSE_LENGTH], Error>;
+    fn send_data(&mut self, data: &str, socket: Socket) -> Result<[u8; 1], Error>;
 }
 
 #[derive(Debug)]

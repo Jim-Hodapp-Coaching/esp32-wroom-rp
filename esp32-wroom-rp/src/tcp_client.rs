@@ -50,7 +50,7 @@ use super::gpio::EspControlInterface;
 use super::network::{
     ConnectionState, Hostname, IpAddress, NetworkError, Port, Socket, TransportMode,
 };
-use super::protocol::{NinaProtocolHandler, ProtocolInterface, MAX_NINA_RESPONSE_LENGTH};
+use super::protocol::{NinaProtocolHandler, ProtocolInterface};
 use super::wifi::Wifi;
 use super::Error;
 
@@ -176,7 +176,7 @@ where
     }
 
     /// Send a string slice of data to a connected server.
-    pub fn send_data(&mut self, data: &str) -> Result<[u8; MAX_NINA_RESPONSE_LENGTH], Error> {
+    pub fn send_data(&mut self, data: &str) -> Result<[u8; 1], Error> {
         self.protocol_handler
             .send_data(data, self.socket.unwrap_or_default())
     }
