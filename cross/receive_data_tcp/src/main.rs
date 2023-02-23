@@ -180,8 +180,12 @@ fn main() -> ! {
                                     defmt::info!("Receiving Response");
 
                                     match tcp_client.receive_data() {
-                                        Ok(response) => { defmt::info!("Response: {:?}", response); }
-                                        Err(e) => { defmt::info!("Error receiving data: {:?}", e); }
+                                        Ok(response) => {
+                                            defmt::info!("Response: {:?}", response);
+                                        }
+                                        Err(e) => {
+                                            defmt::info!("Error receiving data: {:?}", e);
+                                        }
                                     }
                                 }
                                 Err(e) => {

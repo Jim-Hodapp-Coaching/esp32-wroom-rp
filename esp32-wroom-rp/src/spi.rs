@@ -212,7 +212,7 @@ where
 
     fn send_data(&mut self, data: &str, socket: Socket) -> Result<[u8; 1], Error> {
         let operation = Operation::new(NinaCommand::SendDataTcp)
-            .param(NinaLargeArrayParam::from_bytes(&[socket])?)
+            .param(NinaByteParam::from_bytes(&[socket])?)
             .param(NinaLargeArrayParam::new(data)?);
 
         self.execute(&operation)?;
@@ -223,8 +223,8 @@ where
     }
 
     fn avail_data_tcp(&mut self, socket: Socket) -> Result<usize, Error> {
-        let operation = Operation::new(NinaCommand::AvailDataTcp)
-            .param(NinaLargeArrayParam::from_bytes(&[socket])?);
+        let operation =
+            Operation::new(NinaCommand::AvailDataTcp).param(NinaByteParam::from_bytes(&[socket])?);
 
         self.execute(&operation)?;
 
@@ -246,8 +246,16 @@ where
     }
 
     fn receive_data(&mut self, socket: Socket) -> Result<NinaResponseBuffer, Error> {
-        self.avail_data_tcp(socket);
-        let mut response_param_buffer: NinaResponseBuffer = [0; MAX_NINA_RESPONSE_LENGTH];
+        let mut avail_data: usize = 0;
+        loop {
+            avail_data = self.avail_data_tcp(socket)?;
+            if avail_data > 0 {
+                break;
+            }
+        }
+
+        defmt::debug!("available data: {:?}", avail_data);
+        let response_param_buffer: NinaResponseBuffer = [0; MAX_NINA_RESPONSE_LENGTH];
 
         Ok(response_param_buffer)
     }
