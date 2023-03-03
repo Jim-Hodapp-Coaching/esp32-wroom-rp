@@ -230,16 +230,20 @@ where
 
         let result = self.receive(&operation, 1)?;
 
-        defmt::debug!(
-            "available_data_length combined: {:?}",
-            (result[0], result[1])
-        );
+        if result[0] > 0 || result[1] > 0 {
+            defmt::debug!(
+                "available_data_length not combined: {:?}",
+                (result[0], result[1])
+            );
+        }
 
         let available_data_length: usize = Self::combine_2_bytes(result[0], result[1]).into();
-        defmt::debug!(
-            "available_data_length combined: {:?}",
-            available_data_length
-        );
+        if available_data_length > 0 {
+            defmt::debug!(
+                "available_data_length combined: {:?}",
+                available_data_length
+            );
+        }
         Ok(available_data_length)
     }
 
