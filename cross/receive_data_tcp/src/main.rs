@@ -181,7 +181,8 @@ fn main() -> ! {
 
                                     match tcp_client.receive_data() {
                                         Ok(response) => {
-                                            defmt::info!("Response: {:?}", response);
+                                            
+                                            defmt::info!("{=[u8]:X}", response)
                                         }
                                         Err(e) => {
                                             defmt::info!("Error receiving data: {:?}", e);

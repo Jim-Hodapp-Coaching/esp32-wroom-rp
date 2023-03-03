@@ -45,7 +45,8 @@ pub(crate) enum NinaCommand {
     GetHostByName = 0x35u8,
     GetFwVersion = 0x37u8,
     GetSocket = 0x3fu8,
-    SendDataTcp = 0x44,
+    SendDataTcp = 0x44u8,
+    GetDataBufTcp = 0x45u8,
 }
 
 pub(crate) trait NinaConcreteParam
@@ -554,3 +555,7 @@ mod protocol_tests {
         )
     }
 }
+
+// START CMD   NUM_PARAMS  2B LEN P1  2B SOCK    2B LEN P2   2B AVAIL LEN END   PADDING
+// 0xE0  0x45  0x02        0x00 0x01  0x00       0x00  0x02  0xC0 0x1F    0xEE  0xFF <-- Good C++
+// 0xE0  0x45  0x02        0x00 0x01  0x00       0x00  0x02  0x01 0x4f    0xEE  0xFF <-- Rust crate

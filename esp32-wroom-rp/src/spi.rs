@@ -228,9 +228,19 @@ where
 
         self.execute(&operation)?;
 
-        let result = self.receive_data16(&operation, 1)?;
+        let result = self.receive(&operation, 1)?;
 
-        Ok(result[0] as usize)
+        defmt::debug!(
+            "available_data_length combined: {:?}",
+            (result[0], result[1])
+        );
+
+        let available_data_length: usize = Self::combine_2_bytes(result[0], result[1]).into();
+        defmt::debug!(
+            "available_data_length combined: {:?}",
+            available_data_length
+        );
+        Ok(available_data_length)
     }
 
     // dummy implementations for now
@@ -240,24 +250,34 @@ where
         socket: Socket,
         available_length: usize,
     ) -> Result<NinaResponseBuffer, Error> {
-        let mut response_param_buffer: NinaResponseBuffer = [0; MAX_NINA_RESPONSE_LENGTH];
+        let response_param_buffer_length: [u8; 2] = Self::split_word(available_length as u16);
 
-        Ok(response_param_buffer)
+        let operation = Operation::new(NinaCommand::GetDataBufTcp)
+            .param(NinaLargeArrayParam::from_bytes(&[socket])?)
+            .param(NinaLargeArrayParam::from_bytes(
+                &response_param_buffer_length,
+            )?);
+
+        self.execute(&operation)?;
+
+        let result = self.receive_data16(&operation, 1)?;
+
+        Ok(result)
     }
 
     fn receive_data(&mut self, socket: Socket) -> Result<NinaResponseBuffer, Error> {
-        let mut avail_data: usize = 0;
+        let mut available_data_length: usize = 0;
         loop {
-            avail_data = self.avail_data_tcp(socket)?;
-            if avail_data > 0 {
+            available_data_length = self.avail_data_tcp(socket)?;
+            if available_data_length > 0 {
                 break;
             }
         }
 
-        defmt::debug!("available data: {:?}", avail_data);
-        let response_param_buffer: NinaResponseBuffer = [0; MAX_NINA_RESPONSE_LENGTH];
+        defmt::debug!("available data length: {:?}", available_data_length);
+        let result = self.get_data_buf_tcp(socket, available_data_length)?;
 
-        Ok(response_param_buffer)
+        Ok(result)
     }
 }
 
@@ -374,24 +394,20 @@ where
     fn read_response16(&mut self) -> Result<NinaResponseBuffer, Error> {
         // let response_length_in_bytes = self.get_byte().ok().unwrap() as usize;
 
-        let number_of_params = self.get_byte().unwrap() as usize;
-
-        // if response_length_in_bytes > MAX_NINA_PARAMS {
-        //     return Err(ProtocolError::TooManyParameters.into());
-        // }
+        // let _dummy_byte = self.get_byte().unwrap() as usize;
 
         let mut response_param_buffer: NinaResponseBuffer = [0; MAX_NINA_RESPONSE_LENGTH];
-        if number_of_params > 0 {
-            let bytes = (self.get_byte().unwrap(), self.get_byte().unwrap());
-            defmt::debug!("avail_data_tcp bytes: {:?}", bytes);
-            let response_length_as_u16: usize = Self::combine_2_bytes(bytes.0, bytes.1).into();
-            defmt::debug!(
-                "avail_data_tcp response_length_as_u16: {:?}",
-                response_length_as_u16
-            );
-            response_param_buffer =
-                self.read_response_bytes(response_param_buffer, response_length_as_u16)?;
-        }
+        // if number_of_params > 0 {
+        let bytes = (self.get_byte().unwrap(), self.get_byte().unwrap());
+
+        // TODO: Check capture to see why this is reading as (0,0) sometimes. If the capture
+        // also reflects what we're seeing in logs then we need to figure that out
+        defmt::debug!("avail_data_tcp bytes: {:?}", bytes);
+        let response_length_as_u16: usize = Self::combine_2_bytes(bytes.0, bytes.1).into();
+
+        response_param_buffer =
+            self.read_response_bytes(response_param_buffer, response_length_as_u16)?;
+        // }
 
         let control_byte: u8 = ControlByte::End as u8;
         self.read_and_check_byte(&control_byte).ok();
@@ -489,6 +505,10 @@ where
             self.get_byte().ok();
             command_size += 1;
         }
+    }
+
+    fn split_word(word: u16) -> [u8; 2] {
+        [((word & 0xff00) >> 8) as u8, (word & 0xff) as u8]
     }
 
     // Accepts two separate bytes and packs them into 2 combined bytes as a u16
