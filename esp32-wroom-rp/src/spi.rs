@@ -232,7 +232,7 @@ where
 
         if result[0] > 0 || result[1] > 0 {
             defmt::debug!(
-                "available_data_length not combined: {:?}",
+                "available_data_length (total bytes to read): {:?}",
                 (result[0], result[1])
             );
         }
@@ -240,7 +240,7 @@ where
         let available_data_length: usize = Self::combine_2_bytes(result[0], result[1]).into();
         if available_data_length > 0 {
             defmt::debug!(
-                "available_data_length combined: {:?}",
+                "available_data_length (total bytes to read): {:?}",
                 available_data_length
             );
         }
@@ -278,7 +278,6 @@ where
             }
         }
 
-        defmt::debug!("available data length: {:?}", available_data_length);
         let result = self.get_data_buf_tcp(socket, available_data_length)?;
 
         Ok(result)
@@ -406,8 +405,12 @@ where
 
         // TODO: Check capture to see why this is reading as (0,0) sometimes. If the capture
         // also reflects what we're seeing in logs then we need to figure that out
-        defmt::debug!("avail_data_tcp bytes: {:?}", bytes);
-        let response_length_as_u16: usize = Self::combine_2_bytes(bytes.0, bytes.1).into();
+        let response_length_as_u16: usize = Self::combine_2_bytes(bytes.1, bytes.0).into();
+        defmt::debug!("response 2 bytes (chunk read): {:?}", bytes);
+        defmt::debug!(
+            "response_length_as_u16 bytes (chunk read): {:?}",
+            response_length_as_u16
+        );
 
         response_param_buffer =
             self.read_response_bytes(response_param_buffer, response_length_as_u16)?;

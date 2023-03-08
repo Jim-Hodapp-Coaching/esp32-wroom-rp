@@ -21,7 +21,7 @@ pub(crate) const MAX_NINA_PARAMS: usize = 8;
 pub(crate) const MAX_NINA_BYTE_PARAM_BUFFER_LENGTH: usize = 1;
 pub(crate) const MAX_NINA_WORD_PARAM_BUFFER_LENGTH: usize = 2;
 pub(crate) const MAX_NINA_SMALL_ARRAY_PARAM_BUFFER_LENGTH: usize = 255;
-pub(crate) const MAX_NINA_LARGE_ARRAY_PARAM_BUFFER_LENGTH: usize = 1024;
+pub(crate) const MAX_NINA_LARGE_ARRAY_PARAM_BUFFER_LENGTH: usize = 3000;
 
 // The maximum length that a 2-byte length NINA response can be
 pub(crate) const MAX_NINA_RESPONSE_LENGTH: usize = 1024;

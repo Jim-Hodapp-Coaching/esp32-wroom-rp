@@ -142,36 +142,36 @@ fn main() -> ! {
 
                     defmt::info!("set_dns result: {:?}", dns_result);
 
-                    let hostname = "github.com";
-                    // let ip_address: IpAddress = [140, 82, 114, 3]; // github.com
+                    //let hostname = "ambi.matrix.net:4000";
+                    let ip_address: IpAddress = [10, 0, 1, 3]; // github.com
 
-                    let port: Port = 80;
+                    let port: Port = 4000;
                     let mode: TransportMode = TransportMode::Tcp;
 
                     let mut http_document: String<MAX_HTTP_DOC_LENGTH> = String::from("");
-                    // write!(http_document, "GET / HTTP/1.1\r\nHost: {}.{}.{}.{}:{}\r\nAccept: */*\r\n\r\n",
-                    //     ip_address[0],
-                    //     ip_address[1],
-                    //     ip_address[2],
-                    //     ip_address[3],
-                    //     port
-                    // ).ok().unwrap();
+                    write!(http_document, "GGET / HTTP/1.1\r\nHost: {}.{}.{}.{}:{}\r\nAccept: */*\r\n\r\n",
+                         ip_address[0],
+                         ip_address[1],
+                         ip_address[2],
+                         ip_address[3],
+                         port
+                    ).ok().unwrap();
 
-                    write!(
-                        http_document,
-                        "GET / HTTP/1.1\r\nHost: {}:{}\r\nAccept: */*\r\n\r\n",
-                        hostname, port
-                    )
-                    .ok()
-                    .unwrap();
+                    // write!(
+                    //     http_document,
+                    //     "GET / HTTP/1.1\r\nHost: {}:{}\r\nAccept: */*\r\n\r\n",
+                    //     hostname, port
+                    // )
+                    // .ok()
+                    // .unwrap();
 
                     if let Err(e) = TcpClient::build(&mut wifi).connect(
-                        hostname,
+                        ip_address,
                         port,
                         mode,
                         &mut delay,
                         &mut |tcp_client| {
-                            defmt::info!("TCP connection to {:?}:{:?} successful", hostname, port);
+                            //defmt::info!("TCP connection to {:?}:{:?} successful", hostname, port);
                             defmt::info!("Hostname: {:?}", tcp_client.server_hostname());
                             defmt::info!("Sending HTTP Document: {:?}", http_document.as_str());
                             match tcp_client.send_data(&http_document) {
@@ -181,8 +181,8 @@ fn main() -> ! {
 
                                     match tcp_client.receive_data() {
                                         Ok(response) => {
-                                            
-                                            defmt::info!("{=[u8]:X}", response)
+                                            defmt::info!("{=[u8]:X}", response);
+                                            defmt::info!("{=[u8]:a}", response);
                                         }
                                         Err(e) => {
                                             defmt::info!("Error receiving data: {:?}", e);
@@ -197,7 +197,7 @@ fn main() -> ! {
                     ) {
                         defmt::error!(
                             "TCP connection to {:?}:{:?} failed: {:?}",
-                            hostname,
+                            ip_address,
                             port,
                             e
                         );
