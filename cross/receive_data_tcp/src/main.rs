@@ -149,7 +149,7 @@ fn main() -> ! {
                     let mode: TransportMode = TransportMode::Tcp;
 
                     let mut http_document: String<MAX_HTTP_DOC_LENGTH> = String::from("");
-                    write!(http_document, "GGET / HTTP/1.1\r\nHost: {}.{}.{}.{}:{}\r\nAccept: */*\r\n\r\n",
+                    write!(http_document, "GET / HTTP/1.1\r\nHost: {}.{}.{}.{}:{}\r\nAccept: */*\r\n\r\n",
                          ip_address[0],
                          ip_address[1],
                          ip_address[2],

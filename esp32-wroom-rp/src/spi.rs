@@ -212,7 +212,7 @@ where
 
     fn send_data(&mut self, data: &str, socket: Socket) -> Result<[u8; 1], Error> {
         let operation = Operation::new(NinaCommand::SendDataTcp)
-            .param(NinaByteParam::from_bytes(&[socket])?)
+            .param(NinaLargeArrayParam::from_bytes(&[socket])?)
             .param(NinaLargeArrayParam::new(data)?);
 
         self.execute(&operation)?;
