@@ -249,6 +249,9 @@ where
 
     // dummy implementations for now
 
+    // 1024: E0 45 02 00 01 00 00 02 16 70 EE FF
+    // 3000: E0 45
+
     fn get_data_buf_tcp(
         &mut self,
         socket: Socket,
@@ -272,6 +275,9 @@ where
     fn receive_data(&mut self, socket: Socket) -> Result<NinaResponseBuffer, Error> {
         let mut available_data_length: usize = 0;
         loop {
+            // NOTE: Increasing the MAX_NINA_RESPONSE_LENGTH size seems to cause
+            // avail_data_tcp to eventually error. Seems to happen between the receive of
+            // the final working avail_data_tcp call and the start of the next.
             available_data_length = self.avail_data_tcp(socket)?;
             if available_data_length > 0 {
                 break;
@@ -332,10 +338,14 @@ where
     ) -> Result<NinaResponseBuffer, Error> {
         self.control_pins.wait_for_esp_select();
 
+        defmt::debug!("check_response_ready starting");
         self.check_response_ready(&operation.command, expected_num_params)?;
+        defmt::debug!("check_response_ready completed");
 
         let result = self.read_response()?;
+        defmt::debug!("read_response completed");
 
+        defmt::debug!("receive: deselecting");
         self.control_pins.esp_deselect();
 
         Ok(result)
@@ -444,6 +454,9 @@ where
         mut response_param_buffer: NinaResponseBuffer,
         response_length_in_bytes: usize,
     ) -> Result<NinaResponseBuffer, Error> {
+        if response_length_in_bytes > MAX_NINA_RESPONSE_LENGTH {
+            defmt::error!("The response_param_buffer is not large enough to read the total data chunk size {}", response_length_in_bytes);
+        }
         for byte in response_param_buffer
             .iter_mut()
             .take(response_length_in_bytes)
@@ -474,6 +487,7 @@ where
                 // consume remaining bytes after error: 0x00, 0xEE
                 self.get_byte().ok();
                 self.get_byte().ok();
+                // TODO: We should consider a more descriptive error here
                 return Err(ProtocolError::NinaProtocolVersionMismatch.into());
             } else if byte_read == wait_byte {
                 return Ok(true);
