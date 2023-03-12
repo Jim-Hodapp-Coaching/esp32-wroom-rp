@@ -272,12 +272,17 @@ where
         Ok(result)
     }
 
-    fn receive_data(&mut self, socket: Socket) -> Result<NinaResponseBuffer, Error> {
-        let mut available_data_length: usize = 0;
+    fn receive_data<D: DelayMs<u16>>(
+        &mut self,
+        socket: Socket,
+        delay: &mut D,
+    ) -> Result<NinaResponseBuffer, Error> {
+        let mut available_data_length: usize;
         loop {
-            // NOTE: Increasing the MAX_NINA_RESPONSE_LENGTH size seems to cause
-            // avail_data_tcp to eventually error. Seems to happen between the receive of
-            // the final working avail_data_tcp call and the start of the next.
+            // Without a delay we seem to overwhelm the ESP32 NINA-FW and it gets into a
+            // bad state where it thinks it's expecting to receive a command while we think
+            // we're expecting to receive a response.
+            delay.delay_ms(50);
             available_data_length = self.avail_data_tcp(socket)?;
             if available_data_length > 0 {
                 break;

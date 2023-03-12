@@ -147,10 +147,8 @@ fn successful_tcp_connection_with_hostname_invokes_closure() {
     let mut value: u8 = 1;
     let test_value = &mut value;
 
-    TcpClient::build(&mut wifi)
-        .connect(hostname, port, mode, &mut delay, &mut |_tcp_client| {
-            *test_value = 2
-        })
+    TcpClient::build(&mut wifi, &mut delay)
+        .connect(hostname, port, mode, &mut |_tcp_client| *test_value = 2)
         .unwrap();
 
     assert_eq!(value, 2);
@@ -254,10 +252,8 @@ fn successful_tcp_connection_with_ip_address_invokes_closure() {
     let mut value: u8 = 1;
     let test_value = &mut value;
 
-    TcpClient::build(&mut wifi)
-        .connect(ip_address, port, mode, &mut delay, &mut |_tcp_client| {
-            *test_value = 2
-        })
+    TcpClient::build(&mut wifi, &mut delay)
+        .connect(ip_address, port, mode, &mut |_tcp_client| *test_value = 2)
         .unwrap();
 
     assert_eq!(value, 2);
@@ -378,11 +374,10 @@ fn tcp_connection_timeout_error() {
     let port: Port = 0x1111;
     let mode: TransportMode = TransportMode::Tcp;
 
-    let result = TcpClient::build(&mut wifi).connect(
+    let result = TcpClient::build(&mut wifi, &mut delay).connect(
         ip_address,
         port,
         mode,
-        &mut delay,
         &mut |_tcp_client| {},
     );
 

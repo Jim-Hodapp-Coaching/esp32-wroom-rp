@@ -165,11 +165,10 @@ fn main() -> ! {
                     // .ok()
                     // .unwrap();
 
-                    if let Err(e) = TcpClient::build(&mut wifi).connect(
+                    if let Err(e) = TcpClient::build(&mut wifi, &mut delay).connect(
                         ip_address,
                         port,
                         mode,
-                        &mut delay,
                         &mut |tcp_client| {
                             //defmt::info!("TCP connection to {:?}:{:?} successful", hostname, port);
                             defmt::info!("Hostname: {:?}", tcp_client.server_hostname());
