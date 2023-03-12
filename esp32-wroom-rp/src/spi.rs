@@ -343,14 +343,10 @@ where
     ) -> Result<NinaResponseBuffer, Error> {
         self.control_pins.wait_for_esp_select();
 
-        defmt::debug!("check_response_ready starting");
         self.check_response_ready(&operation.command, expected_num_params)?;
-        defmt::debug!("check_response_ready completed");
 
         let result = self.read_response()?;
-        defmt::debug!("read_response completed");
 
-        defmt::debug!("receive: deselecting");
         self.control_pins.esp_deselect();
 
         Ok(result)
