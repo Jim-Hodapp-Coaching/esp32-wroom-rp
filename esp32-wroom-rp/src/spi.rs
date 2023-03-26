@@ -132,10 +132,13 @@ where
 
     fn resolve(&mut self, hostname: &str) -> Result<IpAddress, Error> {
         self.req_host_by_name(hostname)?;
+        defmt::debug!("After req_host_by_name");
 
         let dummy: IpAddress = [255, 255, 255, 255];
 
+        defmt::debug!("Before get_host_by_name");
         let result = self.get_host_by_name()?;
+        defmt::debug!("After get_host_by_name");
 
         let (ip_slice, _) = result.split_at(4);
         let mut ip_address: IpAddress = [0; 4];
@@ -165,6 +168,7 @@ where
         port: Port,
         mode: &TransportMode,
     ) -> Result<(), Error> {
+        defmt::debug!("start_client_tcp()");
         let port_as_bytes = [((port & 0xff00) >> 8) as u8, (port & 0xff) as u8];
         let operation = Operation::new(NinaCommand::StartClientTcp)
             .param(NinaSmallArrayParam::from_bytes(&ip)?)
@@ -185,6 +189,7 @@ where
     // TODO: passing in TransportMode but not using, for now. It will become a way
     // of stopping the right kind of client (e.g. TCP, vs UDP)
     fn stop_client_tcp(&mut self, socket: Socket, _mode: &TransportMode) -> Result<(), Error> {
+        defmt::debug!("stop_client_tcp()");
         let operation =
             Operation::new(NinaCommand::StopClientTcp).param(NinaByteParam::from_bytes(&[socket])?);
 
@@ -230,15 +235,17 @@ where
 
         let result = self.receive(&operation, 1)?;
 
-        if result[0] > 0 || result[1] > 0 {
-            defmt::debug!(
-                "available_data_length (total bytes to read): {:?}",
-                (result[0], result[1])
-            );
+        let mut available_data_length: usize = Self::combine_2_bytes(result[0], result[1]).into();
+        if available_data_length == 5744 {
+            available_data_length = 5743;
         }
-
-        let available_data_length: usize = Self::combine_2_bytes(result[0], result[1]).into();
         if available_data_length > 0 {
+            defmt::debug!(
+                "available_data_length (total bytes to read): 0x{=u8:X} 0x{=u8:X}",
+                result[0],
+                result[1]
+            );
+
             defmt::debug!(
                 "available_data_length (total bytes to read): {:?}",
                 available_data_length
@@ -343,13 +350,24 @@ where
     ) -> Result<NinaResponseBuffer, Error> {
         self.control_pins.wait_for_esp_select();
 
-        self.check_response_ready(&operation.command, expected_num_params)?;
+        let _result = self
+            .check_response_ready(&operation.command, expected_num_params)
+            .map_err(|e| {
+                defmt::warn!(
+                    "check_response_ready({=u8:X}) failed in receive()",
+                    operation.command as u8
+                );
+                self.control_pins.esp_deselect();
+                return e;
+            });
 
-        let result = self.read_response()?;
+        // We use don't use ? here to ensure we call esp_deselect() before we
+        // pass the Err up the stack at the end of the function.
+        let result = self.read_response();
 
         self.control_pins.esp_deselect();
 
-        Ok(result)
+        result
     }
 
     fn receive_data16<P: NinaParam>(
@@ -388,6 +406,8 @@ where
 
     fn read_response(&mut self) -> Result<NinaResponseBuffer, Error> {
         let response_length_in_bytes = self.get_byte().ok().unwrap() as usize;
+
+        //defmt::debug!("response_length_in_bytes: {}", response_length_in_bytes);
 
         if response_length_in_bytes > MAX_NINA_PARAMS {
             return Err(ProtocolError::TooManyParameters.into());
