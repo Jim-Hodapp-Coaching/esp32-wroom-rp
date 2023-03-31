@@ -15,8 +15,8 @@ use super::network::{ConnectionState, IpAddress, NetworkError, Port, Socket, Tra
 use super::protocol::operation::Operation;
 use super::protocol::{
     NinaByteParam, NinaCommand, NinaConcreteParam, NinaLargeArrayParam, NinaParam,
-    NinaProtocolHandler, NinaResponseBuffer, NinaSmallArrayParam, NinaWordParam, ProtocolError,
-    ProtocolInterface, MAX_NINA_PARAMS, MAX_NINA_RESPONSE_LENGTH,
+    NinaProtocolHandler, NinaResponseBuffer, NinaResponseBufferWithLength, NinaSmallArrayParam,
+    NinaWordParam, ProtocolError, ProtocolInterface, MAX_NINA_PARAMS, MAX_NINA_RESPONSE_LENGTH,
 };
 use super::wifi::ConnectionStatus;
 use super::{Error, FirmwareVersion};
@@ -254,16 +254,11 @@ where
         Ok(available_data_length)
     }
 
-    // dummy implementations for now
-
-    // 1024: E0 45 02 00 01 00 00 02 16 70 EE FF
-    // 3000: E0 45
-
     fn get_data_buf_tcp(
         &mut self,
         socket: Socket,
         available_length: usize,
-    ) -> Result<NinaResponseBuffer, Error> {
+    ) -> Result<NinaResponseBufferWithLength, Error> {
         let response_param_buffer_length: [u8; 2] = Self::split_word(available_length as u16);
 
         let operation = Operation::new(NinaCommand::GetDataBufTcp)
@@ -295,10 +290,23 @@ where
                 break;
             }
         }
+        let mut data_length: usize = 0;
+        let mut result_buffer_idx = 0;
+        let mut result_buffer: NinaResponseBuffer = [0; MAX_NINA_RESPONSE_LENGTH];
+        while available_data_length > data_length && data_length < MAX_NINA_RESPONSE_LENGTH {
+            let (current_length, response_buffer) =
+                self.get_data_buf_tcp(socket, available_data_length)?;
 
-        let result = self.get_data_buf_tcp(socket, available_data_length)?;
+            for i in 0..(current_length - 1) {
+                result_buffer[result_buffer_idx] = response_buffer[i];
+                result_buffer_idx += 1;
+            }
+            result_buffer_idx += 1;
 
-        Ok(result)
+            data_length += current_length
+        }
+
+        Ok(result_buffer)
     }
 }
 
@@ -374,7 +382,7 @@ where
         &mut self,
         operation: &Operation<P>,
         expected_num_params: u8,
-    ) -> Result<NinaResponseBuffer, Error> {
+    ) -> Result<NinaResponseBufferWithLength, Error> {
         self.control_pins.wait_for_esp_select();
 
         self.check_response_ready(&operation.command, expected_num_params)?;
@@ -425,32 +433,20 @@ where
         Ok(response_param_buffer)
     }
 
-    fn read_response16(&mut self) -> Result<NinaResponseBuffer, Error> {
-        // let response_length_in_bytes = self.get_byte().ok().unwrap() as usize;
-
-        // let _dummy_byte = self.get_byte().unwrap() as usize;
-
+    fn read_response16(&mut self) -> Result<NinaResponseBufferWithLength, Error> {
         let mut response_param_buffer: NinaResponseBuffer = [0; MAX_NINA_RESPONSE_LENGTH];
-        // if number_of_params > 0 {
         let bytes = (self.get_byte().unwrap(), self.get_byte().unwrap());
 
-        // TODO: Check capture to see why this is reading as (0,0) sometimes. If the capture
-        // also reflects what we're seeing in logs then we need to figure that out
-        let response_length_as_u16: usize = Self::combine_2_bytes(bytes.1, bytes.0).into();
+        let response_length: usize = Self::combine_2_bytes(bytes.1, bytes.0).into();
         defmt::debug!("response 2 bytes (chunk read): {:?}", bytes);
-        defmt::debug!(
-            "response_length_as_u16 bytes (chunk read): {:?}",
-            response_length_as_u16
-        );
+        defmt::debug!("response_length bytes (chunk read): {:?}", response_length);
 
-        response_param_buffer =
-            self.read_response_bytes(response_param_buffer, response_length_as_u16)?;
-        // }
+        response_param_buffer = self.read_response_bytes(response_param_buffer, response_length)?;
 
         let control_byte: u8 = ControlByte::End as u8;
         self.read_and_check_byte(&control_byte).ok();
 
-        Ok(response_param_buffer)
+        Ok((response_length, response_param_buffer))
     }
 
     fn check_response_ready(&mut self, cmd: &NinaCommand, num_params: u8) -> Result<(), Error> {

@@ -30,6 +30,8 @@ pub(crate) const MAX_NINA_RESPONSE_LENGTH: usize = 6144;
 /// Provides a byte buffer to hold responses returned from NINA-FW
 pub type NinaResponseBuffer = [u8; MAX_NINA_RESPONSE_LENGTH];
 
+pub(crate) type NinaResponseBufferWithLength = (usize, NinaResponseBuffer);
+
 #[repr(u8)]
 #[derive(Copy, Clone, Debug)]
 pub(crate) enum NinaCommand {
@@ -417,7 +419,7 @@ pub(crate) trait ProtocolInterface {
         &mut self,
         socket: Socket,
         available_length: usize,
-    ) -> Result<NinaResponseBuffer, Error>;
+    ) -> Result<NinaResponseBufferWithLength, Error>;
 }
 
 #[derive(Debug)]
