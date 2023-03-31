@@ -89,7 +89,7 @@ fn main() -> ! {
         &mut pac.RESETS,
     );
 
-    defmt::info!("ESP32-WROOM-RP example to send data over TCP socket");
+    defmt::info!("ESP32-WROOM-RP example to send HTTP data over TCP socket and receive server response");
 
     // These are implicitly used by the spi driver if they are in the correct mode
     let _spi_miso = pins.gpio16.into_mode::<hal::gpio::FunctionSpi>();
@@ -142,40 +142,99 @@ fn main() -> ! {
 
                     defmt::info!("set_dns result: {:?}", dns_result);
 
-                    let hostname = "github.com";
-                    // let ip_address: IpAddress = [140, 82, 114, 3]; // github.com
+                    //let hostname = "ambi.matrix.net:4000";
+                    //let ip_address: IpAddress = [10, 0, 1, 3]; // github.com
+                    let ip_address: IpAddress = [52, 20, 27, 92]; // httpbin.org
 
+                    //let port: Port = 4000;
                     let port: Port = 80;
                     let mode: TransportMode = TransportMode::Tcp;
 
                     let mut http_document: String<MAX_HTTP_DOC_LENGTH> = String::from("");
-                    // write!(http_document, "GET / HTTP/1.1\r\nHost: {}.{}.{}.{}:{}\r\nAccept: */*\r\n\r\n",
+                    write!(http_document, "GET / HTTP/1.1\r\nHost: {}.{}.{}.{}:{}\r\nAccept: */*\r\n\r\n",
+                         ip_address[0],
+                         ip_address[1],
+                         ip_address[2],
+                         ip_address[3],
+                         port
+                    ).ok().unwrap();
+
+                    // write!(
+                    //     http_document,
+                    //     "GET / HTTP/1.1\r\nHost: {}:{}\r\nAccept: */*\r\n\r\n",
+                    //     hostname, port
+                    // )
+                    // .ok()
+                    // .unwrap();
+
+
+                    // let temperature = 22.0;
+                    // let humidity = 33.1;
+                    // let pressure = 997.0;
+
+                    // let mut http_document: String<MAX_HTTP_DOC_LENGTH> = String::from("POST /api/readings/add");
+                    // http_document
+                    //     .push_str(" HTTP/1.1\r\nHost: ")
+                    //     .ok()
+                    //     .unwrap();
+                    // let mut host_address_str: String<MAX_HTTP_DOC_LENGTH> = String::new();
+                    // write!(
+                    //     host_address_str,
+                    //     "{}.{}.{}.{}:{:?}\r\n",
                     //     ip_address[0],
                     //     ip_address[1],
                     //     ip_address[2],
                     //     ip_address[3],
                     //     port
+                    // )
+                    // .unwrap();
+                    // http_document.push_str(&host_address_str).ok().unwrap();
+                    // http_document
+                    //     .push_str("User-Agent: edge/0.0.1\r\n")
+                    //     .ok()
+                    //     .unwrap();
+                    // http_document.push_str("Accept: */*\r\n").ok().unwrap();
+                    // http_document
+                    //     .push_str("Content-Type: application/json\r\n")
+                    //     .ok()
+                    //     .unwrap();
+                    // let mut json_str: String<MAX_HTTP_DOC_LENGTH> = String::new();
+                    // write!(json_str,
+                    //     "{{\"temperature\":\"{:.1?}\",\"humidity\":\"{:.1?}\",\"pressure\":\"{:.0?}\",\"dust_concentration\":\"200\",\"air_purity\":\"Low Pollution\"}}\r\n",
+                    //     temperature, humidity, pressure / 100.0
                     // ).ok().unwrap();
-
-                    write!(
-                        http_document,
-                        "GET / HTTP/1.1\r\nHost: {}:{}\r\nAccept: */*\r\n\r\n",
-                        hostname, port
-                    )
-                    .ok()
-                    .unwrap();
+                    // let mut content_len_str: String<MAX_HTTP_DOC_LENGTH> = String::new();
+                    // write!(content_len_str, "{:?}\r\n", json_str.len())
+                    //     .ok()
+                    //     .unwrap();
+                    // http_document.push_str("Content-Length: ").ok().unwrap();
+                    // http_document.push_str(&content_len_str).ok().unwrap();
+                    // http_document.push_str("\r\n").ok().unwrap();
+                    // http_document.push_str(&json_str).ok().unwrap();
+                    // http_document.push_str("\r\n").ok().unwrap();
 
                     if let Err(e) = TcpClient::build(&mut wifi, &mut delay).connect(
-                        hostname,
+                        ip_address,
                         port,
                         mode,
                         &mut |tcp_client| {
-                            defmt::info!("TCP connection to {:?}:{:?} successful", hostname, port);
+                            //defmt::info!("TCP connection to {:?}:{:?} successful", hostname, port);
                             defmt::info!("Hostname: {:?}", tcp_client.server_hostname());
                             defmt::info!("Sending HTTP Document: {:?}", http_document.as_str());
                             match tcp_client.send_data(&http_document) {
-                                Ok(response) => {
-                                    defmt::info!("Response: {:?}", response)
+                                Ok(result) => {
+                                    defmt::info!("Data sent successfully: {:?}", result);
+                                    defmt::info!("Receiving response...");
+
+                                    match tcp_client.receive_data() {
+                                        Ok(response) => {
+                                            defmt::info!("{=[u8]:#X}", response);
+                                            defmt::info!("{=[u8]:a}", response);
+                                        }
+                                        Err(e) => {
+                                            defmt::info!("Error receiving data: {:?}", e);
+                                        }
+                                    }
                                 }
                                 Err(e) => {
                                     defmt::error!("Response error: {:?}", e)
@@ -185,7 +244,7 @@ fn main() -> ! {
                     ) {
                         defmt::error!(
                             "TCP connection to {:?}:{:?} failed: {:?}",
-                            hostname,
+                            ip_address,
                             port,
                             e
                         );

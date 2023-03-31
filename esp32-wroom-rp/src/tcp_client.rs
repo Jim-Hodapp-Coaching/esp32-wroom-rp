@@ -50,7 +50,7 @@ use super::gpio::EspControlInterface;
 use super::network::{
     ConnectionState, Hostname, IpAddress, NetworkError, Port, Socket, TransportMode,
 };
-use super::protocol::{NinaProtocolHandler, ProtocolInterface};
+use super::protocol::{NinaProtocolHandler, NinaResponseBuffer, ProtocolInterface};
 use super::wifi::Wifi;
 use super::Error;
 
@@ -59,22 +59,22 @@ const MAX_HOSTNAME_LENGTH: usize = 255;
 /// Allows for a [`TcpClient`] instance to connect to a remote server by providing
 /// either a [`Hostname`] or an [`IpAddress`]. This trait also makes it possible to
 /// implement and support IPv6 addresses.
-pub trait Connect<'a, S, B, C> {
+pub trait Connect<'a, S, B, C, D> {
     /// Enable a client to connect to `server` on `port` using transport layer `mode`.
-    fn connect<F: FnMut(&mut TcpClient<'a, B, C>), D: DelayMs<u16>>(
+    fn connect<F: FnMut(&mut TcpClient<'a, B, C, D>)>(
         &mut self,
         server: S,
         port: Port,
         mode: TransportMode,
-        delay: &mut D,
         f: &mut F,
     ) -> Result<(), Error>;
 }
 
 /// A client type that connects to and performs send/receive operations with a remote
 /// server using the TCP protocol.
-pub struct TcpClient<'a, B, C> {
+pub struct TcpClient<'a, B, C, D> {
     pub(crate) protocol_handler: &'a mut NinaProtocolHandler<B, C>,
+    pub(crate) delay: &'a mut D,
     pub(crate) socket: Option<Socket>,
     pub(crate) server_ip_address: Option<IpAddress>,
     pub(crate) port: Port,
@@ -82,17 +82,17 @@ pub struct TcpClient<'a, B, C> {
     pub(crate) server_hostname: Option<String<MAX_HOSTNAME_LENGTH>>,
 }
 
-impl<'a, B, C> Connect<'a, IpAddress, B, C> for TcpClient<'a, B, C>
+impl<'a, B, C, D> Connect<'a, IpAddress, B, C, D> for TcpClient<'a, B, C, D>
 where
     B: Transfer<u8>,
     C: EspControlInterface,
+    D: DelayMs<u16>,
 {
-    fn connect<F: FnMut(&mut TcpClient<'a, B, C>), D: DelayMs<u16>>(
+    fn connect<F: FnMut(&mut TcpClient<'a, B, C, D>)>(
         &mut self,
         ip: IpAddress,
         port: Port,
         mode: TransportMode,
-        delay: &mut D,
         f: &mut F,
     ) -> Result<(), Error> {
         let socket = self.get_socket()?;
@@ -102,21 +102,21 @@ where
         self.port = port;
         self.mode = mode;
 
-        self.connect_common(delay, f)
+        self.connect_common(f)
     }
 }
 
-impl<'a, B, C> Connect<'a, Hostname<'_>, B, C> for TcpClient<'a, B, C>
+impl<'a, B, C, D> Connect<'a, Hostname<'_>, B, C, D> for TcpClient<'a, B, C, D>
 where
     B: Transfer<u8>,
     C: EspControlInterface,
+    D: DelayMs<u16>,
 {
-    fn connect<F: FnMut(&mut TcpClient<'a, B, C>), D: DelayMs<u16>>(
+    fn connect<F: FnMut(&mut TcpClient<'a, B, C, D>)>(
         &mut self,
         server_hostname: Hostname,
         port: Port,
         mode: TransportMode,
-        delay: &mut D,
         f: &mut F,
     ) -> Result<(), Error> {
         let socket = self.get_socket()?;
@@ -125,19 +125,21 @@ where
         self.port = port;
         self.mode = mode;
 
-        self.connect_common(delay, f)
+        self.connect_common(f)
     }
 }
 
-impl<'a, B, C> TcpClient<'a, B, C>
+impl<'a, B, C, D> TcpClient<'a, B, C, D>
 where
     B: Transfer<u8>,
     C: EspControlInterface,
+    D: DelayMs<u16>,
 {
     /// Build a new instance of a [`TcpClient`] provided a [`Wifi`] instance.
-    pub fn build(wifi: &'a mut Wifi<B, C>) -> Self {
+    pub fn build(wifi: &'a mut Wifi<B, C>, delay_ms: &'a mut D) -> Self {
         Self {
             protocol_handler: wifi.protocol_handler.get_mut(),
+            delay: delay_ms,
             socket: None,
             server_ip_address: None,
             port: 0,
@@ -181,11 +183,16 @@ where
             .send_data(data, self.socket.unwrap_or_default())
     }
 
+    /// Receive a response string slice of data from a connected server.
+    pub fn receive_data(&mut self) -> Result<NinaResponseBuffer, Error> {
+        self.protocol_handler
+            .receive_data(self.socket.unwrap_or_default(), self.delay)
+    }
+
     // Provides the in-common connect() functionality used by the public interface's
     // connect(ip_address) or connect(hostname) instances.
-    fn connect_common<F: FnMut(&mut TcpClient<'a, B, C>), D: DelayMs<u16>>(
+    fn connect_common<F: FnMut(&mut TcpClient<'a, B, C, D>)>(
         &mut self,
-        delay: &mut D,
         mut f: F,
     ) -> Result<(), Error> {
         let socket = self.socket.unwrap_or_default();
@@ -208,7 +215,7 @@ where
         // a CmdResponseErr. We may not be handling busy/ack flag handling properly
         // and needs further investigation. I suspect that the ESP32 isn't ready to
         // receive another command yet. (copied this from POC)
-        delay.delay_ms(250);
+        self.delay.delay_ms(250);
 
         let mut retry_limit = 10_000;
 
@@ -222,7 +229,7 @@ where
                     return Ok(());
                 }
                 Ok(_status) => {
-                    delay.delay_ms(100);
+                    self.delay.delay_ms(100);
                     retry_limit -= 1;
                 }
                 Err(error) => {

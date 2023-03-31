@@ -21,14 +21,16 @@ pub(crate) const MAX_NINA_PARAMS: usize = 8;
 pub(crate) const MAX_NINA_BYTE_PARAM_BUFFER_LENGTH: usize = 1;
 pub(crate) const MAX_NINA_WORD_PARAM_BUFFER_LENGTH: usize = 2;
 pub(crate) const MAX_NINA_SMALL_ARRAY_PARAM_BUFFER_LENGTH: usize = 255;
-pub(crate) const MAX_NINA_LARGE_ARRAY_PARAM_BUFFER_LENGTH: usize = 1024;
+pub(crate) const MAX_NINA_LARGE_ARRAY_PARAM_BUFFER_LENGTH: usize = 3000;
 
 // The maximum length that a 2-byte length NINA response can be
-pub(crate) const MAX_NINA_RESPONSE_LENGTH: usize = 1024;
+pub(crate) const MAX_NINA_RESPONSE_LENGTH: usize = 6144;
 
 // TODO: unalias this type and turn into a full wrapper struct
 /// Provides a byte buffer to hold responses returned from NINA-FW
 pub type NinaResponseBuffer = [u8; MAX_NINA_RESPONSE_LENGTH];
+
+pub(crate) type NinaResponseBufferWithLength = (usize, NinaResponseBuffer);
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug)]
@@ -36,6 +38,7 @@ pub(crate) enum NinaCommand {
     SetPassphrase = 0x11u8,
     SetDNSConfig = 0x15u8,
     GetConnStatus = 0x20u8,
+    AvailDataTcp = 0x2bu8,
     StartClientTcp = 0x2du8,
     StopClientTcp = 0x2eu8,
     GetClientStateTcp = 0x2fu8,
@@ -44,7 +47,8 @@ pub(crate) enum NinaCommand {
     GetHostByName = 0x35u8,
     GetFwVersion = 0x37u8,
     GetSocket = 0x3fu8,
-    SendDataTcp = 0x44,
+    SendDataTcp = 0x44u8,
+    GetDataBufTcp = 0x45u8,
 }
 
 pub(crate) trait NinaConcreteParam
@@ -392,7 +396,7 @@ pub(crate) trait ProtocolInterface {
     fn get_conn_status(&mut self) -> Result<ConnectionStatus, Error>;
     fn set_dns_config(&mut self, dns1: IpAddress, dns2: Option<IpAddress>) -> Result<(), Error>;
     fn req_host_by_name(&mut self, hostname: &str) -> Result<u8, Error>;
-    fn get_host_by_name(&mut self) -> Result<[u8; MAX_NINA_RESPONSE_LENGTH], Error>;
+    fn get_host_by_name(&mut self) -> Result<NinaResponseBuffer, Error>;
     fn resolve(&mut self, hostname: &str) -> Result<IpAddress, Error>;
     fn get_socket(&mut self) -> Result<Socket, Error>;
     fn start_client_tcp(
@@ -405,6 +409,17 @@ pub(crate) trait ProtocolInterface {
     fn stop_client_tcp(&mut self, socket: Socket, _mode: &TransportMode) -> Result<(), Error>;
     fn get_client_state_tcp(&mut self, socket: Socket) -> Result<ConnectionState, Error>;
     fn send_data(&mut self, data: &str, socket: Socket) -> Result<[u8; 1], Error>;
+    fn receive_data<D: DelayMs<u16>>(
+        &mut self,
+        socket: Socket,
+        delay: &mut D,
+    ) -> Result<NinaResponseBuffer, Error>;
+    fn avail_data_tcp(&mut self, socket: Socket) -> Result<usize, Error>;
+    fn get_data_buf_tcp(
+        &mut self,
+        socket: Socket,
+        available_length: usize,
+    ) -> Result<NinaResponseBufferWithLength, Error>;
 }
 
 #[derive(Debug)]
@@ -467,7 +482,8 @@ mod protocol_tests {
 
     #[test]
     fn nina_byte_param_from_bytes_returns_payload_too_large_error_when_given_too_many_bytes() {
-        let bytes: [u8; 2] = [0; 2];
+        let bytes: [u8; MAX_NINA_BYTE_PARAM_BUFFER_LENGTH + 1] =
+            [0; MAX_NINA_BYTE_PARAM_BUFFER_LENGTH + 1];
         let result = NinaByteParam::from_bytes(&bytes);
 
         assert_eq!(
@@ -489,7 +505,8 @@ mod protocol_tests {
 
     #[test]
     fn nina_word_param_from_bytes_returns_payload_too_large_error_when_given_too_many_bytes() {
-        let bytes: [u8; 3] = [0; 3];
+        let bytes: [u8; MAX_NINA_WORD_PARAM_BUFFER_LENGTH + 1] =
+            [0; MAX_NINA_WORD_PARAM_BUFFER_LENGTH + 1];
         let result = NinaWordParam::from_bytes(&bytes);
 
         assert_eq!(
@@ -500,7 +517,7 @@ mod protocol_tests {
 
     #[test]
     fn nina_small_array_param_new_returns_payload_too_large_error_when_given_too_many_bytes() {
-        let bytes = [0xA; 256];
+        let bytes = [0xA; MAX_NINA_SMALL_ARRAY_PARAM_BUFFER_LENGTH + 1];
         let str_slice: &str = str::from_utf8(&bytes).unwrap();
         let result = NinaSmallArrayParam::new(str_slice);
 
@@ -513,7 +530,8 @@ mod protocol_tests {
     #[test]
     fn nina_small_array_param_from_bytes_returns_payload_too_large_error_when_given_too_many_bytes()
     {
-        let bytes: [u8; 256] = [0xA; 256];
+        let bytes: [u8; MAX_NINA_SMALL_ARRAY_PARAM_BUFFER_LENGTH + 1] =
+            [0xA; MAX_NINA_SMALL_ARRAY_PARAM_BUFFER_LENGTH + 1];
         let result = NinaSmallArrayParam::from_bytes(&bytes);
 
         assert_eq!(
@@ -524,7 +542,7 @@ mod protocol_tests {
 
     #[test]
     fn nina_large_array_param_new_returns_payload_too_large_error_when_given_too_many_bytes() {
-        let bytes = [0xA; 1025];
+        let bytes = [0xA; MAX_NINA_LARGE_ARRAY_PARAM_BUFFER_LENGTH + 1];
         let str_slice: &str = str::from_utf8(&bytes).unwrap();
         let result = NinaLargeArrayParam::new(str_slice);
 
@@ -537,7 +555,8 @@ mod protocol_tests {
     #[test]
     fn nina_large_array_param_from_bytes_returns_payload_too_large_error_when_given_too_many_bytes()
     {
-        let bytes: [u8; 1025] = [0xA; 1025];
+        let bytes: [u8; MAX_NINA_LARGE_ARRAY_PARAM_BUFFER_LENGTH + 1] =
+            [0xA; MAX_NINA_LARGE_ARRAY_PARAM_BUFFER_LENGTH + 1];
         let result = NinaLargeArrayParam::from_bytes(&bytes);
 
         assert_eq!(
@@ -546,3 +565,7 @@ mod protocol_tests {
         )
     }
 }
+
+// START CMD   NUM_PARAMS  2B LEN P1  2B SOCK    2B LEN P2   2B AVAIL LEN END   PADDING
+// 0xE0  0x45  0x02        0x00 0x01  0x00       0x00  0x02  0xC0 0x1F    0xEE  0xFF <-- Good C++
+// 0xE0  0x45  0x02        0x00 0x01  0x00       0x00  0x02  0x01 0x4f    0xEE  0xFF <-- Rust crate

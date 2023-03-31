@@ -15,8 +15,8 @@ use super::network::{ConnectionState, IpAddress, NetworkError, Port, Socket, Tra
 use super::protocol::operation::Operation;
 use super::protocol::{
     NinaByteParam, NinaCommand, NinaConcreteParam, NinaLargeArrayParam, NinaParam,
-    NinaProtocolHandler, NinaResponseBuffer, NinaSmallArrayParam, NinaWordParam, ProtocolError,
-    ProtocolInterface, MAX_NINA_PARAMS, MAX_NINA_RESPONSE_LENGTH,
+    NinaProtocolHandler, NinaResponseBuffer, NinaResponseBufferWithLength, NinaSmallArrayParam,
+    NinaWordParam, ProtocolError, ProtocolInterface, MAX_NINA_PARAMS, MAX_NINA_RESPONSE_LENGTH,
 };
 use super::wifi::ConnectionStatus;
 use super::{Error, FirmwareVersion};
@@ -132,10 +132,13 @@ where
 
     fn resolve(&mut self, hostname: &str) -> Result<IpAddress, Error> {
         self.req_host_by_name(hostname)?;
+        defmt::debug!("After req_host_by_name");
 
         let dummy: IpAddress = [255, 255, 255, 255];
 
+        defmt::debug!("Before get_host_by_name");
         let result = self.get_host_by_name()?;
+        defmt::debug!("After get_host_by_name");
 
         let (ip_slice, _) = result.split_at(4);
         let mut ip_address: IpAddress = [0; 4];
@@ -165,6 +168,7 @@ where
         port: Port,
         mode: &TransportMode,
     ) -> Result<(), Error> {
+        defmt::debug!("start_client_tcp()");
         let port_as_bytes = [((port & 0xff00) >> 8) as u8, (port & 0xff) as u8];
         let operation = Operation::new(NinaCommand::StartClientTcp)
             .param(NinaSmallArrayParam::from_bytes(&ip)?)
@@ -185,6 +189,7 @@ where
     // TODO: passing in TransportMode but not using, for now. It will become a way
     // of stopping the right kind of client (e.g. TCP, vs UDP)
     fn stop_client_tcp(&mut self, socket: Socket, _mode: &TransportMode) -> Result<(), Error> {
+        defmt::debug!("stop_client_tcp()");
         let operation =
             Operation::new(NinaCommand::StopClientTcp).param(NinaByteParam::from_bytes(&[socket])?);
 
@@ -220,6 +225,88 @@ where
         let result = self.receive(&operation, 1)?;
 
         Ok([result[0]])
+    }
+
+    fn avail_data_tcp(&mut self, socket: Socket) -> Result<usize, Error> {
+        let operation =
+            Operation::new(NinaCommand::AvailDataTcp).param(NinaByteParam::from_bytes(&[socket])?);
+
+        self.execute(&operation)?;
+
+        let result = self.receive(&operation, 1)?;
+
+        let mut available_data_length: usize = Self::combine_2_bytes(result[0], result[1]).into();
+        if available_data_length == 5744 {
+            available_data_length = 5743;
+        }
+        if available_data_length > 0 {
+            defmt::debug!(
+                "available_data_length (total bytes to read): 0x{=u8:X} 0x{=u8:X}",
+                result[0],
+                result[1]
+            );
+
+            defmt::debug!(
+                "available_data_length (total bytes to read): {:?}",
+                available_data_length
+            );
+        }
+        Ok(available_data_length)
+    }
+
+    fn get_data_buf_tcp(
+        &mut self,
+        socket: Socket,
+        available_length: usize,
+    ) -> Result<NinaResponseBufferWithLength, Error> {
+        let response_param_buffer_length: [u8; 2] = Self::split_word(available_length as u16);
+
+        let operation = Operation::new(NinaCommand::GetDataBufTcp)
+            .param(NinaLargeArrayParam::from_bytes(&[socket])?)
+            .param(NinaLargeArrayParam::from_bytes(
+                &response_param_buffer_length,
+            )?);
+
+        self.execute(&operation)?;
+
+        let result = self.receive_data16(&operation, 1)?;
+
+        Ok(result)
+    }
+
+    fn receive_data<D: DelayMs<u16>>(
+        &mut self,
+        socket: Socket,
+        delay: &mut D,
+    ) -> Result<NinaResponseBuffer, Error> {
+        let mut available_data_length: usize;
+        loop {
+            // Without a delay we seem to overwhelm the ESP32 NINA-FW and it gets into a
+            // bad state where it thinks it's expecting to receive a command while we think
+            // we're expecting to receive a response.
+            delay.delay_ms(50);
+            available_data_length = self.avail_data_tcp(socket)?;
+            if available_data_length > 0 {
+                break;
+            }
+        }
+        let mut data_length: usize = 0;
+        let mut result_buffer_idx = 0;
+        let mut result_buffer: NinaResponseBuffer = [0; MAX_NINA_RESPONSE_LENGTH];
+        while available_data_length > data_length && data_length < MAX_NINA_RESPONSE_LENGTH {
+            let (current_length, response_buffer) =
+                self.get_data_buf_tcp(socket, available_data_length)?;
+
+            for i in 0..(current_length - 1) {
+                result_buffer[result_buffer_idx] = response_buffer[i];
+                result_buffer_idx += 1;
+            }
+            result_buffer_idx += 1;
+
+            data_length += current_length
+        }
+
+        Ok(result_buffer)
     }
 }
 
@@ -271,9 +358,36 @@ where
     ) -> Result<NinaResponseBuffer, Error> {
         self.control_pins.wait_for_esp_select();
 
+        let _result = self
+            .check_response_ready(&operation.command, expected_num_params)
+            .map_err(|e| {
+                defmt::warn!(
+                    "check_response_ready({=u8:X}) failed in receive()",
+                    operation.command as u8
+                );
+                self.control_pins.esp_deselect();
+                return e;
+            });
+
+        // We use don't use ? here to ensure we call esp_deselect() before we
+        // pass the Err up the stack at the end of the function.
+        let result = self.read_response();
+
+        self.control_pins.esp_deselect();
+
+        result
+    }
+
+    fn receive_data16<P: NinaParam>(
+        &mut self,
+        operation: &Operation<P>,
+        expected_num_params: u8,
+    ) -> Result<NinaResponseBufferWithLength, Error> {
+        self.control_pins.wait_for_esp_select();
+
         self.check_response_ready(&operation.command, expected_num_params)?;
 
-        let result = self.read_response()?;
+        let result = self.read_response16()?;
 
         self.control_pins.esp_deselect();
 
@@ -301,6 +415,8 @@ where
     fn read_response(&mut self) -> Result<NinaResponseBuffer, Error> {
         let response_length_in_bytes = self.get_byte().ok().unwrap() as usize;
 
+        //defmt::debug!("response_length_in_bytes: {}", response_length_in_bytes);
+
         if response_length_in_bytes > MAX_NINA_PARAMS {
             return Err(ProtocolError::TooManyParameters.into());
         }
@@ -315,6 +431,22 @@ where
         self.read_and_check_byte(&control_byte).ok();
 
         Ok(response_param_buffer)
+    }
+
+    fn read_response16(&mut self) -> Result<NinaResponseBufferWithLength, Error> {
+        let mut response_param_buffer: NinaResponseBuffer = [0; MAX_NINA_RESPONSE_LENGTH];
+        let bytes = (self.get_byte().unwrap(), self.get_byte().unwrap());
+
+        let response_length: usize = Self::combine_2_bytes(bytes.1, bytes.0).into();
+        defmt::debug!("response 2 bytes (chunk read): {:?}", bytes);
+        defmt::debug!("response_length bytes (chunk read): {:?}", response_length);
+
+        response_param_buffer = self.read_response_bytes(response_param_buffer, response_length)?;
+
+        let control_byte: u8 = ControlByte::End as u8;
+        self.read_and_check_byte(&control_byte).ok();
+
+        Ok((response_length, response_param_buffer))
     }
 
     fn check_response_ready(&mut self, cmd: &NinaCommand, num_params: u8) -> Result<(), Error> {
@@ -339,6 +471,9 @@ where
         mut response_param_buffer: NinaResponseBuffer,
         response_length_in_bytes: usize,
     ) -> Result<NinaResponseBuffer, Error> {
+        if response_length_in_bytes > MAX_NINA_RESPONSE_LENGTH {
+            defmt::error!("The response_param_buffer is not large enough to read the total data chunk size {}", response_length_in_bytes);
+        }
         for byte in response_param_buffer
             .iter_mut()
             .take(response_length_in_bytes)
@@ -369,6 +504,7 @@ where
                 // consume remaining bytes after error: 0x00, 0xEE
                 self.get_byte().ok();
                 self.get_byte().ok();
+                // TODO: We should consider a more descriptive error here
                 return Err(ProtocolError::NinaProtocolVersionMismatch.into());
             } else if byte_read == wait_byte {
                 return Ok(true);
@@ -407,6 +543,19 @@ where
             self.get_byte().ok();
             command_size += 1;
         }
+    }
+
+    fn split_word(word: u16) -> [u8; 2] {
+        [((word & 0xff00) >> 8) as u8, (word & 0xff) as u8]
+    }
+
+    // Accepts two separate bytes and packs them into 2 combined bytes as a u16
+    // byte 0 is the LSB, byte1 is the MSB
+    // See: https://en.wikipedia.org/wiki/Bit_numbering#LSB_0_bit_numbering
+    fn combine_2_bytes(byte0: u8, byte1: u8) -> u16 {
+        let word0: u16 = byte0 as u16;
+        let word1: u16 = byte1 as u16;
+        (word1 << 8) | (word0 & 0xff)
     }
 }
 
