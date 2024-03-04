@@ -33,7 +33,7 @@ heapless = "0.7.16"
 panic-probe = { version = "0.3", features = ["print-rtt"] }
 
 [dev-dependencies]
-embedded-hal-mock = "0.8.0"
+embedded-hal-mock = "0.9.0"
 
 [features]
 default = [
